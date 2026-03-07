@@ -61,15 +61,18 @@ class GameSession < ApplicationRecord
   end
 
   def played_card_counts_by_state(state_name)
-    SessionCard.find_by_sql(<<~SQL
-      SELECT count(*), cards.name FROM session_cards
-      INNER JOIN session_frames ON session_frames.subject_id = session_cards.id AND session_frames.subject_type = 'SessionCard'
-      INNER JOIN cards ON cards.id = session_cards.card_id
-      WHERE session_cards.game_session_id = #{id}
-      AND session_frames."action" = 'card_played'
-      AND session_frames."state" = '#{state_name}'
-      GROUP BY cards.name
-    SQL
+    SessionCard.find_by_sql(
+      <<~SQL,
+        SELECT count(*), cards.name FROM session_cards
+        INNER JOIN session_frames ON session_frames.subject_id = session_cards.id AND session_frames.subject_type = 'SessionCard'
+        INNER JOIN cards ON cards.id = session_cards.card_id
+        WHERE session_cards.game_session_id = ?
+        AND session_frames."action" = 'card_played'
+        AND session_frames."state" = ?
+        GROUP BY cards.name
+      SQL
+      id,
+      state_name
     )
   end
 

@@ -299,15 +299,17 @@ class Play::Pandemic < Play::Base
   end
 
   def deck_cards(key)
-    SessionCard.find_by_sql(<<~SQL
-      select session_cards.* from session_cards
-      inner join session_decks on session_decks.id = session_cards.session_deck_id
-      where session_cards.game_session_id = #{session.id}
-      and session_decks.key like '#{key}%'
-      and dealt_at is null
-      and discarded_at is null
-      order by session_decks.key DESC, random()
-    SQL
+    SessionCard.find_by_sql(
+      <<~SQL,
+        select session_cards.* from session_cards
+        inner join session_decks on session_decks.id = session_cards.session_deck_id
+        where session_cards.game_session_id = #{session.id}
+        and session_decks.key like ?
+        and dealt_at is null
+        and discarded_at is null
+        order by session_decks.key DESC, random()
+      SQL
+      "#{key}%"
     )
   end
 
