@@ -45,7 +45,7 @@ But it **does not track player money or auction outcomes**, which remain part of
 
 The backend is built around a **game session engine** that models state transitions and player actions.
 
-Each game runs inside a `GameSession` and is controlled by a game-specific rule engine under `Play::*`.
+A session stores the current state of play, while game-specific engines define rules, phase transitions, and player actions. Significant actions are recorded as session events and exposed to the frontend as structured API data.
 
 ---
 
@@ -54,8 +54,7 @@ Each game runs inside a `GameSession` and is controlled by a game-specific rule 
         Player Action
              │
              ▼
-       Play::<Game>
-    (game rule engine)
+    Game Specific Engine
              │
              ▼
       SessionFrame
@@ -72,7 +71,7 @@ Each game runs inside a `GameSession` and is controlled by a game-specific rule 
              ▼
           Svelte UI
 
-The system records **game actions as events** and exposes structured session state to the frontend.
+This structure keeps the system centered on **state transitions and event history**, rather than tying it to a specific frontend.
 
 ---
 
@@ -94,22 +93,9 @@ A `GameSession` is the primary container for gameplay.
 
 ---
 
-## Play Engine
+## Game Engine
 
-Game rules live under:
-
-
-```
-Play::<Game>
-```
-
-Examples:
-
-
-Play::ModernArt
-Play::Pandemic
-Play::Arkham
-
+Game-specific rules live in dedicated engine classes.
 
 Each game defines:
 
@@ -118,86 +104,39 @@ Each game defines:
 - card behavior
 - game-specific rule hooks
 
-The shared engine logic lives in `Play::Base`.
+The shared engine layer provides common session flow and transition behavior, while individual games implement their own rules on top of it.
 
 ---
 
-## Event History
+## Session Events
 
-Every significant action is recorded as a **SessionFrame**.
+Every significant action is recorded as a session event / frame.
 
 Examples:
 
+- card played
+- player passed
+- phase advanced
+- turn advanced
 
-card_played
-player_passed
-season_started
-turn_advanced
+This event history supports:
 
-
-Frames record:
-
-- the action taken
-- the acting player
-- any affected player
-- the session state
-- an optional subject (such as a card)
-
-This event log allows:
-
-- play history
+- play logs
 - debugging
 - analytics
-- replay possibilities
-
----
+- replay-friendly design
 
 ## Services
 
-Mutation logic is handled through service objects rather than controllers.
-
-Examples:
-
-
-Services::Create
-Services::Update
-Services::Build
-
-
-Services return structured response objects and isolate domain mutations from controllers.
-
----
+Mutation logic is handled through service objects where appropriate, keeping controllers thin and domain behavior explicit.
 
 ## Representers
 
-API serialization is handled through representers instead of controller JSON.
-
-Examples:
-
-
-Representers::Player
-Representers::SessionFrame
-
-
-Representers define the exact structure exposed to the frontend.
-
----
+API serialization is handled through representers that define the exact structures exposed to the frontend.
 
 ## Query Objects
 
-Game statistics and analytics live under:
-
-
-Query::*
-
-
-These classes contain reporting queries that do not belong in domain models.
-
-Examples include:
-
-- player performance stats
-- turn order statistics
-- card usage patterns
+Analytics and reporting queries live separately from the domain models.
 
 ---
 
@@ -206,9 +145,9 @@ Examples include:
 Current implementation:
 
 
-Rails 8
-PostgreSQL
-Svelte
+- Rails 8
+- PostgreSQL
+- Svelte
 
 
 The Rails backend manages game sessions and exposes structured game state while the Svelte frontend provides the user interface.
@@ -219,13 +158,10 @@ The Rails backend manages game sessions and exposes structured game state while 
 
 Initial supported games:
 
+- Modern Art
+- Pandemic
 
-Modern Art
-Pandemic
-Arkham Horror (encounter generator)
-
-
-The engine is designed so new games can be implemented by adding a new `Play::<Game>` class.
+The goal is to support new games by implementing a new game-specific engine rather than building an entirely new application.
 
 ---
 
@@ -233,12 +169,6 @@ The engine is designed so new games can be implemented by adding a new `Play::<G
 
 This repository is the **modern rebuild** of an earlier prototype.
 
-The previous implementation lives in:
-
-
-remote-gaming-v1
-
+The previous implementation lives in `remote-gaming-v1`
 
 The new version modernizes the stack and simplifies the frontend while preserving the core game session engine architecture.
-
-If you'd like, I can also give yo
