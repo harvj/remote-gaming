@@ -22,11 +22,11 @@ class ApplicationController < ActionController::Base
     if current_user.present?
       flash[:info] = "Logged in as <a href='#{user_path(current_user)}'>#{current_user.username}</a>" if current_user.present?
     else
-      flash[:warning] = 'Not signed in.'
+      flash[:warning] = "Not signed in."
     end
   end
 
   def not_found
-    render '404'
+    render "404"
   end
 end

@@ -2,7 +2,7 @@ class UsersController < ApplicationController
   before_action :load_user
 
   def show
-    game = Game.find_by(key: 'modern_art')
+    game = Game.find_by(key: "modern_art")
     @active_sessions = @user.sessions.incomplete
     @game_stats = Query::Users.(:game_stats, user_id: @user.id)
     @score_stats = Query::Players.(:score_stats, game_id: game.id)

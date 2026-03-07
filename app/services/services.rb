@@ -1,5 +1,5 @@
 module Services
-  Response = ImmutableStruct.new(:subject, [:errors]) do
+  Response = ImmutableStruct.new(:subject, [ :errors ]) do
     def success?
       errors.empty?
     end
@@ -44,11 +44,11 @@ module Services
   # ----- Services::Build
 
   class Build < Services::Base
-    def self.call(parent, params={})
+    def self.call(parent, params = {})
       new(parent, params).()
     end
 
-    def initialize(parent, params={})
+    def initialize(parent, params = {})
       @parent = parent
       @params = params
     end
@@ -69,15 +69,15 @@ module Services
   # ----- Services::Create
 
   class Create < Services::Base
-    def self.call(parent, params={})
+    def self.call(parent, params = {})
       new(parent, params).()
     end
 
-    def self.!(parent, params={})
+    def self.!(parent, params = {})
       new(parent, params).call!
     end
 
-    def initialize(parent, params={})
+    def initialize(parent, params = {})
       @parent = parent
       @subject = if params.class.name == target_class_name
         params
@@ -107,15 +107,15 @@ module Services
   # ----- Services::Update
 
   class Update < Services::Base
-    def self.call(subject, params={})
+    def self.call(subject, params = {})
       new(subject, params).()
     end
 
-    def self.!(subject, params={})
+    def self.!(subject, params = {})
       new(subject, params).call!
     end
 
-    def initialize(subject, params={})
+    def initialize(subject, params = {})
       @subject = subject
       @params = params
     end

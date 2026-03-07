@@ -1,6 +1,6 @@
 class GameSessionsController < ApplicationController
-  before_action :load_game_session, only: %i(update show destroy)
-  before_action :load_game, only: %i(create update destroy)
+  before_action :load_game_session, only: %i[update show destroy]
+  before_action :load_game, only: %i[create update destroy]
 
   def create
     game_session = @game.play_class.().subject
@@ -10,14 +10,14 @@ class GameSessionsController < ApplicationController
   def update
     updated_session = @game.play_class.(@game_session, current_user).subject
     @rep_session = Representers::GameSession.(updated_session, user: current_user)
-    render json: { status: 'success', content: { session: @rep_session } }
+    render json: { status: "success", content: { session: @rep_session } }
   end
 
   def show
     @rep_session = Representers::GameSession.(@game_session, user: current_user)
     respond_to do |format|
       format.html
-      format.json { render json: { status: 'success', content: { session: @rep_session } } }
+      format.json { render json: { status: "success", content: { session: @rep_session } } }
     end
   end
 

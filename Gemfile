@@ -7,9 +7,9 @@ gem "puma", ">= 5.0"
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
 gem "importmap-rails"
 
-gem 'devise'
-gem 'immutable-struct'
-gem 'passphrase'
+gem "devise"
+gem "immutable-struct"
+gem "passphrase"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
@@ -37,6 +37,10 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  gem "pry"
+  gem "rspec-rails"
+  gem "factory_bot_rails"
 end
 
 group :development do

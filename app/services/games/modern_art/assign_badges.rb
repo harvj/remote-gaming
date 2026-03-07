@@ -3,7 +3,7 @@ module Games
     include ServiceObject
 
     def initialize
-      @game = Game.find_by(key: 'modern_art')
+      @game = Game.find_by(key: "modern_art")
       @last_session = game.sessions.completed.last
     end
 
@@ -18,7 +18,7 @@ module Games
     attr_reader :game, :last_session
 
     def assign_dog_man
-      badge = game.badges.find_by(name: 'dog_man')
+      badge = game.badges.find_by(name: "dog_man")
       return if already_assigned?(badge)
 
       results = {}
@@ -33,40 +33,40 @@ module Games
         results[username] = stddevs.sum / stddevs.length
       end
 
-      dog_user, dog_score = results.min_by {|name, score| score}
+      dog_user, dog_score = results.min_by { |name, score| score }
 
       create_user_badge(badge, dog_user, dog_score.round(2).to_f)
     end
 
     def assign_card_badges
-      %i(lite_metal yoko cristin_p gitter krypto fixed double open sealed once_around).each do |card_type|
-        %i(up down).each do |direction|
+      %i[lite_metal yoko cristin_p gitter krypto fixed double open sealed once_around].each do |card_type|
+        %i[up down].each do |direction|
           badge = game.badges.find_by(name: "#{card_type}_#{direction}")
           next if badge.nil?
           next if already_assigned?(badge)
 
-          which_one = direction == :up ? 'last' : 'first'
+          which_one = direction == :up ? "last" : "first"
           stats = Query::Players.(:modern_art_card_stats)
-          recipient = stats.sort_by{|p| p.send("#{card_type}_crown")}.send(which_one)
+          recipient = stats.sort_by { |p| p.send("#{card_type}_crown") }.send(which_one)
 
           create_user_badge(badge, recipient.username, recipient.send("#{card_type}_crown").round(1).to_f)
         end
       end
 
-      %i(sd_ratio_first sd_ratio_last).each do |badge_name|
+      %i[sd_ratio_first sd_ratio_last].each do |badge_name|
         badge = game.badges.find_by(name: badge_name)
         next if badge.nil?
         next if already_assigned?(badge)
 
-        which_one = badge_name.to_s.split('_').last
+        which_one = badge_name.to_s.split("_").last
         stats = Query::Players.(:single_double_stats)
-        recipient = stats.sort_by{ |row| -row.sd_ratio }.send(which_one)
+        recipient = stats.sort_by { |row| -row.sd_ratio }.send(which_one)
         create_user_badge(badge, recipient.username, recipient.sd_ratio)
       end
     end
 
     def assign_win_streak
-      badge = game.badges.find_by(name: 'win_streak')
+      badge = game.badges.find_by(name: "win_streak")
       return if already_assigned?(badge)
       create_user_badge(badge, last_session.winner.user.username, Query::Players.(:current_win_streak).streak)
     end
@@ -98,6 +98,5 @@ module Games
         as_of_session: last_session
       )
     end
-
   end
 end

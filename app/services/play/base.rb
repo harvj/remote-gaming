@@ -1,7 +1,7 @@
 class Play::Base
   include ServiceObject
 
-  def initialize(game_session=nil, active_user=nil)
+  def initialize(game_session = nil, active_user = nil)
     @session     = game_session || create_session!
     @active_user = active_user
   end
@@ -27,24 +27,24 @@ class Play::Base
   end
 
   def started
-    session.update_attribute(:started_at, Time.zone.now)
+    session.update_column(:started_at, Time.zone.now)
     build_card_decks
     set_turn_order
   end
 
   def completed
-    session.update_attribute(:completed_at, Time.zone.now)
+    session.update_column(:completed_at, Time.zone.now)
   end
 
   def transition_state
     action = next_action
-    session.update_attribute(:state, action)
+    session.update_column(:state, action)
     SessionFrame::Create.(session,
       action: action,
       acting_player: active_player,
       subject: session
     )
-    send(action)
+    public_send(action)
   end
 
   def last_card_played
@@ -56,7 +56,7 @@ class Play::Base
   end
 
   def last_card_played_frame
-    session.frames.where(subject_type: 'SessionCard', action: 'card_played', state: session.state).last
+    session.frames.where(subject_type: "SessionCard", action: "card_played", state: session.state).last
   end
 
   # --- Player actions
@@ -71,11 +71,11 @@ class Play::Base
   end
 
   def player_start_turn(player)
-    player.update_attribute(:action_phase, 'active')
+    player.update_column(:action_phase, "active")
   end
 
   def player_end_turn(player)
-    player.update_attribute(:action_phase, 'inactive')
+    player.update_column(:action_phase, "inactive")
   end
 
   # --- Player attributes
@@ -130,17 +130,17 @@ class Play::Base
   end
 
   def set_turn_order
-    randomized_players = players.shuffle
+    randomized_players = players.reload.shuffle
     first_player = randomized_players[0]
 
     randomized_players.each_with_index do |player, index|
-      player.update_attributes!(
+      player.update!(
         turn_order: index + 1,
         next_player: randomized_players[index + 1] || first_player
       )
     end
     first_player.start_turn
-    session.update_attribute(:current_player, first_player)
+    session.update(current_player: first_player)
   end
 
   def special_game_phase?

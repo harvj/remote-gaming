@@ -4,7 +4,7 @@ class Player::Create < Services::Create
     @params = params
     assign_role
     super(user, params.merge(
-      action_phase: 'inactive',
+      action_phase: "inactive",
       game_id: params[:session].game_id
     ))
   end
@@ -12,7 +12,7 @@ class Player::Create < Services::Create
   attr_reader :user, :role
 
   def assign_role
-    params[:role] = params[:session].game_play.assign_role(user)
+    params[:role] = params[:session].engine.assign_role(user)
   end
 
   def apply_post_processing

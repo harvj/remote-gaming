@@ -1,6 +1,6 @@
 class SessionDeck < ApplicationRecord
   belongs_to :game_session
-  has_many :cards, class_name: 'SessionCard', dependent: :destroy
+  has_many :cards, class_name: "SessionCard", dependent: :destroy
 
   def deal_cards(players, count)
     count.times do

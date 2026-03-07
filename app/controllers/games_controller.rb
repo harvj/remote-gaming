@@ -1,5 +1,5 @@
 class GamesController < ApplicationController
-  before_action :load_game, only: %i(show)
+  before_action :load_game, only: %i[show]
 
   def index
     games = Game.all.order(:name)
@@ -7,7 +7,7 @@ class GamesController < ApplicationController
     @rep_games = Representers::Game.(games, scalar: true)
     respond_to do |format|
       format.html
-      format.json { render json: { status: 'success', content: { games: @rep_games }}.to_json }
+      format.json { render json: { status: "success", content: { games: @rep_games } }.to_json }
     end
   end
 
@@ -15,7 +15,7 @@ class GamesController < ApplicationController
     @rep_game = Representers::Game.(@game)
     respond_to do |format|
       format.html
-      format.json { render json: { status: 'success', content: { game: @rep_game }}.to_json }
+      format.json { render json: { status: "success", content: { game: @rep_game } }.to_json }
     end
   end
 
