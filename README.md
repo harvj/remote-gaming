@@ -14,6 +14,8 @@ Players still use the **physical game components** and track resources like mone
 
 This allows games to be supported with **far less UI complexity** while still providing meaningful digital assistance.
 
+[![CI](https://github.com/harvj/remote-gaming/actions/workflows/ci.yml/badge.svg)](https://github.com/harvj/remote-gaming/actions/workflows/ci.yml)
+
 ---
 
 # Philosophy
