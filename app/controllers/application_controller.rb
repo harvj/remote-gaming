@@ -1,7 +1,7 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery
 
-  before_action :require_user
+  # before_action :require_user
   before_action :set_session_flash
   before_action :init_common_data
 

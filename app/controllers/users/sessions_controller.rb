@@ -1,5 +1,5 @@
 class Users::SessionsController < Devise::SessionsController
-  skip_before_action :require_user, only: %i[new create]
+  # skip_before_action :require_user, only: %i[new create]
   before_action :init_common_data, only: %i[new create]
 
   def create

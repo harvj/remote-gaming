@@ -1,0 +1,15 @@
+<%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+  <div class="form-group col-md-3">
+    <%= f.label :username, for: :username %>
+    <%= f.text_field :username, autofocus: true, autocomplete: "email", class: "form-control" %>
+  </div>
+
+  <div class="form-group col-md-3">
+    <%= f.label :password, for: :password %>
+    <%= f.password_field :password, autocomplete: "current-password", class: "form-control" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.submit "Log in", class: "btn btn-dark"%>
+  </div>
+<% end %>
