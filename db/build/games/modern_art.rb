@@ -21,7 +21,13 @@ class GameBuild::ModernArt < GameBuild::Base
   ]
 
   def add_game
-    game = create_game(name: 'Modern Art', key: 'modern_art', min_players: 3, max_players: 5)
+    game = create_game(
+      name: 'Modern Art',
+      key: 'modern_art',
+      slug: 'modernart',
+      min_players: 3,
+      max_players: 5
+    )
 
     %w[lite_metal yoko cristin_p karl_gitter krypto].each_with_index do |name, name_sort|
       %w[double sealed open once_around fixed].each_with_index do |value, value_sort|

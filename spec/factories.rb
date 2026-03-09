@@ -2,6 +2,7 @@ FactoryBot.define do
   factory :game do
     name { "Card Game" }
     key { 'card_game' }
+    slug { 'cardgame' }
     min_players { 1 }
     max_players { 3 }
 

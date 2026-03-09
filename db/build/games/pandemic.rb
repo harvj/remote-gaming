@@ -67,7 +67,13 @@ class GameBuild::Pandemic < GameBuild::Base
   ]
 
   def add_game
-    game = create_game(name: 'Pandemic', key: 'pandemic', min_players: 2, max_players: 4)
+    game = create_game(
+      name: 'Pandemic',
+      key: 'pandemic',
+      slug: 'pandemic',
+      min_players: 2,
+      max_players: 4
+    )
 
     (CITIES + SPECIALS).sort_by { |k| k[:name] }.each_with_index do |params, index|
       create_card(params.merge(game_id: game.id, name_sort: index))

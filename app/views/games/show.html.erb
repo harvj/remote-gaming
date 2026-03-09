@@ -1,0 +1,13 @@
+<div
+  id="games-show"
+  data-props="<%= json_escape({
+    game: @rep_game,
+    token: form_authenticity_token,
+    paths: {
+      gameSessionsPath: game_sessions_path
+    }
+  }.to_json) %>"
+></div>
+
+<%= vite_client_tag %>
+<%= vite_javascript_tag "game" %>

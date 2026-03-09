@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  constraints ->(req) { req.subdomain.present? } do
+    root "games#show", as: :game_root
+  end
+
   root "games#index"
 
   resources :game_sessions, only: %i[create]

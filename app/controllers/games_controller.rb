@@ -22,6 +22,7 @@ class GamesController < ApplicationController
   private
 
   def load_game
-    @game = Game.find_by(key: params[:game_key]) || not_found
+    Rails.logger.info "SUBDOMAIN: #{request.subdomain.inspect}"
+    @game = Game.find_by!(slug: request.subdomain)
   end
 end

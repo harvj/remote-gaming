@@ -1,8 +1,8 @@
 import { mount } from "svelte"
 import "../styles/app.css"
-import GameSessionPage from "../pages/GameSessionPage.svelte"
+import GameSessionPage from "../components/GameSession.svelte"
 
-const el = document.getElementById("game-session-app")
+const el = document.getElementById("game-sessions-show")
 
 if (el) {
   const session = JSON.parse(el.dataset.session || "{}")

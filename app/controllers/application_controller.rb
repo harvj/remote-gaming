@@ -25,8 +25,4 @@ class ApplicationController < ActionController::Base
       flash[:warning] = "Not signed in."
     end
   end
-
-  def not_found
-    render "404"
-  end
 end

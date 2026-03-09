@@ -58,6 +58,9 @@ Rails.application.configure do
   # Highlight code that triggered redirect in logs.
   config.action_dispatch.verbose_redirect_logs = true
 
+  # Support subdomains
+  config.action_dispatch.tld_length = 0
+
   # Suppress logger output for asset requests.
   config.assets.quiet = true
 
