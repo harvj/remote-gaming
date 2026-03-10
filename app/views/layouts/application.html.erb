@@ -25,24 +25,26 @@
 
   <body>
     <header class="navbar">
-      <div class="nav-inner">
-        <div class="nav-left">
-          <span class="brand">remote-gaming</span>
+      <div id="navbar-app"></div>
 
-          <% if @game %>
-            <span class="separator">|</span>
-            <span class="game-title"><%= link_to @game.name, game_root_path(@game) %></span>
-          <% end %>
-        </div>
+      <script id="navbar-data" type="application/json">
+        <%= raw json_escape({
+          currentUser: current_user ? {
+            name: current_user.username || current_user.name,
+            profilePath: user_path(current_user),
+            logoutPath: logout_path
+          } : nil,
+          currentGame: @game ? {
+            uri: game_root_path(@game),
+            name: @game.name
+          } : nil,
+          rootPath: root_path,
+          loginPath: login_path,
+          csrfToken: form_authenticity_token
+        }.to_json) %>
+      </script>
 
-        <div class="nav-right">
-          <% if current_user %>
-            Logged in as <strong><%= current_user.username %></strong>
-          <% else %>
-            <%= link_to "Log in", login_path %>
-          <% end %>
-        </div>
-      </div>
+      <%= vite_javascript_tag "navbar" %>
     </header>
 
     <main class="page">
