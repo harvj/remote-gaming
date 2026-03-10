@@ -17,9 +17,8 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= vite_client_tag %>
-    <%= vite_javascript_tag 'application' %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <script src="https://kit.fontawesome.com/c8fac941ce.js" crossorigin="anonymous"></script>
 
   </head>
@@ -28,11 +27,11 @@
     <header class="navbar">
       <div class="nav-inner">
         <div class="nav-left">
-          <%= link_to "remote-gaming", root_path, class: "brand" %>
+          <span class="brand">remote-gaming</span>
 
           <% if @game %>
             <span class="separator">|</span>
-            <span class="game-title"><%= @game.name %></span>
+            <span class="game-title"><%= link_to @game.name, game_root_path(@game) %></span>
           <% end %>
         </div>
 

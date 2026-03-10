@@ -1,7 +1,7 @@
-<div
-  id="game-sessions-show"
-  data-session="<%= json_escape(@rep_session.to_json) %>">
-</div>
+<div id="game-sessions-show"></div>
 
-<%= vite_client_tag %>
+<script id="game-sessions-show-data" type="application/json">
+  <%= raw json_escape(@rep_session.to_json) %>
+</script>
+
 <%= vite_javascript_tag "game_session" %>

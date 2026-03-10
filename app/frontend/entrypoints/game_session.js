@@ -1,13 +1,14 @@
 import { mount } from "svelte"
 import GameSessionPage from "../components/GameSession.svelte"
 
-const el = document.getElementById("game-sessions-show")
+const target = document.getElementById("game-sessions-show");
+const dataEl = document.getElementById("game-sessions-show-data");
 
-if (el) {
-  const session = JSON.parse(el.dataset.session || "{}")
+if (target && dataEl) {
+  const session = JSON.parse(dataEl.textContent);
 
   mount(GameSessionPage, {
-    target: el,
+    target,
     props: { session }
   })
 }

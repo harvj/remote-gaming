@@ -11,6 +11,7 @@ module Representers
         completed: session.completed_at.present?,
         completedAt: session.completed_at&.strftime("%a %e %b %Y %k:%M:%S"),
         completedAtDate: session.completed_at&.strftime("%e %b %Y"),
+        createdAt: session.created_at.iso8601,
         playerCount: session.player_count,
         started: session.started_at.present?,
         startedAt: session.started_at&.strftime("%a %e %b %Y %k:%M:%S"),

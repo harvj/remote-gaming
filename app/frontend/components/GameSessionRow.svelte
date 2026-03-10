@@ -1,5 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte"
+  import RelativeTime from "../helpers/RelativeTime.svelte";
 
   export let session
 
@@ -57,6 +58,10 @@
   </div>
 
   <div class="session-right">
+
+    {#if session.waiting}
+      <RelativeTime timestamp={session.createdAt} />
+    {/if}
 
     {#if session.active}
       <div class="session-date">

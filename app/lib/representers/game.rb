@@ -24,6 +24,7 @@ module Representers
           game_sessions.id,
           game_sessions.uid,
           game_sessions.started_at,
+          game_sessions.created_at,
           game_sessions.completed_at,
           game_sessions.state,
           (SELECT count(*) FROM players WHERE players.game_session_id = game_sessions.id) AS player_count,

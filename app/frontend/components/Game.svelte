@@ -39,7 +39,9 @@
 
   {#if waitingSessions.length > 0}
     <section class="panel waiting">
-      <h5 class="panel-title">Waiting for players...</h5>
+      <h5 class="panel-title">
+        Waiting for players<span class="ellipsis"></span>
+      </h5>
 
       {#each waitingSessions as session (session.uid)}
         <GameSessionRow {session} on:deleted={handleDelete}/>
