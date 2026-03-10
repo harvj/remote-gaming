@@ -1,5 +1,4 @@
 import { mount } from "svelte"
-import "../styles/app.css"
 import GameSessionPage from "../components/GameSession.svelte"
 
 const el = document.getElementById("game-sessions-show")

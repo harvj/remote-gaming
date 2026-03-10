@@ -1,5 +1,5 @@
 class GamesController < ApplicationController
-  before_action :load_game, only: %i[show]
+  # before_action :load_game, only: %i[show]
 
   def index
     games = Game.all.order(:name)
@@ -17,12 +17,5 @@ class GamesController < ApplicationController
       format.html
       format.json { render json: { status: "success", content: { game: @rep_game } }.to_json }
     end
-  end
-
-  private
-
-  def load_game
-    Rails.logger.info "SUBDOMAIN: #{request.subdomain.inspect}"
-    @game = Game.find_by!(slug: request.subdomain)
   end
 end

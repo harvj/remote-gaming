@@ -1,7 +1,7 @@
 <script>
-  export let initSession
+  import { createEventDispatcher } from "svelte"
 
-  const session = initSession
+  export let session
 
   const containerId = `session-${session.uid}-row`
 
@@ -12,6 +12,20 @@
 
   if (session.active) playerCountClass += " badge-bisque"
   if (session.completed) playerCountClass += " badge-darkgreen"
+
+  const dispatch = createEventDispatcher()
+  const csrfToken = document.querySelector("meta[name='csrf-token']").content
+
+  async function destroySession() {
+    const res = await fetch(session.uri, {
+      method: "DELETE",
+      headers: { "X-CSRF-Token": csrfToken }
+    })
+
+    if (res.ok) {
+      dispatch("deleted", session.uid)
+    }
+  }
 </script>
 
 <div id={containerId} class="session-row">
@@ -61,6 +75,7 @@
         href={session.uri}
         data-method="delete"
         class="btn-ghost danger"
+        on:click|preventDefault={() => destroySession()}
       >
         <i class="fa-solid fa-trash"></i>
       </a>

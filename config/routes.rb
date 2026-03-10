@@ -34,8 +34,8 @@ Rails.application.routes.draw do
   end
 
   get "s/:uid" => "game_sessions#show", as: :game_session
-  patch "sessions/:uid" => "game_sessions#update"
-  delete "sessions/:uid" => "game_sessions#destroy"
+  patch "s/:uid" => "game_sessions#update"
+  delete "s/:uid" => "game_sessions#destroy"
 
   get ":game_key" => "games#show", as: :game
 end

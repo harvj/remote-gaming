@@ -11,31 +11,43 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= vite_client_tag %>
     <%= vite_javascript_tag 'application' %>
     <script src="https://kit.fontawesome.com/c8fac941ce.js" crossorigin="anonymous"></script>
-    <!--
-      If using a TypeScript entrypoint file:
-        vite_typescript_tag 'application'
-
-      If using a .jsx or .tsx entrypoint, add the extension:
-        vite_javascript_tag 'application.jsx'
-
-      Visit the guide for more information: https://vite-ruby.netlify.app/guide/rails
-    -->
 
   </head>
 
   <body>
-    <%= yield %>
+    <header class="navbar">
+      <div class="nav-inner">
+        <div class="nav-left">
+          <%= link_to "remote-gaming", root_path, class: "brand" %>
+
+          <% if @game %>
+            <span class="separator">|</span>
+            <span class="game-title"><%= @game.name %></span>
+          <% end %>
+        </div>
+
+        <div class="nav-right">
+          <% if current_user %>
+            Logged in as <strong><%= current_user.username %></strong>
+          <% else %>
+            <%= link_to "Log in", login_path %>
+          <% end %>
+        </div>
+      </div>
+    </header>
+
+    <main class="page">
+      <%= yield %>
+    </main>
   </body>
 </html>

@@ -20,7 +20,10 @@ class GameSession < ApplicationRecord
   scope :incomplete, -> { where("completed_at IS NULL") }
 
   def self.generate_uid
-    Passphrase::Passphrase.new(number_of_words: 4).passphrase.tr(" ", "-")
+    Passphrase::Passphrase.new(
+      number_of_words: 3,
+      languages: %w[english]
+    ).passphrase.tr(" ", "-")
   end
 
   delegate :play_class, :min_players, :max_players,

@@ -1,6 +1,5 @@
 class GameSessionsController < ApplicationController
   before_action :load_game_session, only: %i[update show destroy]
-  before_action :load_game, only: %i[create update destroy]
 
   def create
     game_session = @game.play_class.().subject
@@ -23,16 +22,12 @@ class GameSessionsController < ApplicationController
 
   def destroy
     @game_session.destroy
-    redirect_to game_path(@game.key)
+    head :ok
   end
 
   private
 
-  def load_game
-    @game = @game_session&.game || Game.find_by(key: params[:game_key])
-  end
-
   def load_game_session
-    @game_session = GameSession.find_by(uid: params[:uid]) || not_found
+    @game_session = GameSession.find_by!(uid: params[:uid])
   end
 end

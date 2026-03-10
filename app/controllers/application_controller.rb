@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery
 
   # before_action :require_user
+  before_action :load_game
   before_action :set_session_flash
   before_action :init_common_data
 
@@ -24,5 +25,12 @@ class ApplicationController < ActionController::Base
     else
       flash[:warning] = "Not signed in."
     end
+  end
+
+  private
+
+  def load_game
+    Rails.logger.info "SUBDOMAIN: #{request.subdomain.inspect}"
+    @game = Game.find_by(slug: request.subdomain)
   end
 end
