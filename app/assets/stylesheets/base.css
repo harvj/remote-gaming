@@ -1,0 +1,39 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+h1,h2,h3 {
+  margin-top: 0;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* =========================
+   LINKS (invert on hover)
+========================= */
+
+a {
+  color: var(--text);
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background .15s ease, color .15s ease;
+}
+
+a:hover {
+  background: var(--link-hover-bg);
+  color: var(--link-hover-text);
+}

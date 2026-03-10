@@ -1,0 +1,39 @@
+:root {
+  --bg: #ffffff;
+  --navbg: #f6f8fa;
+  --text: #111111;
+  --muted: #666;
+  --border: #e5e5e5;
+
+  --panel: #f6f8fa;
+  --panel-hover: #f3f3f3;
+
+  --accent: #000;
+  --danger: #d64545;
+
+  --link-hover-bg: #111;
+  --link-hover-text: #fff;
+
+  --badge-bg: #eee;
+  --badge-text: #111;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --navbg: #141414;
+    --text: #e6e6e6;
+    --muted: #9a9a9a;
+
+    --panel: #1e1e1e;
+    --panel-hover: #262626;
+
+    --border: #2a2a2a;
+
+    --link-hover-bg: #e6e6e6;
+    --link-hover-text: #111;
+
+    --badge-bg: #333;
+    --badge-text: #e6e6e6;
+  }
+}

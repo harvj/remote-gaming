@@ -32,7 +32,6 @@
 <div id={containerId} class="session-row">
 
   <div class="session-left">
-
     {#if showPlayerCount}
       <span class={playerCountClass}>
         {session.playerCount}er
@@ -54,13 +53,13 @@
     <span class="session-link">
       <a href={session.uri}>{session.uid}</a>
     </span>
-
   </div>
 
   <div class="session-right">
-
     {#if session.waiting}
-      <RelativeTime timestamp={session.createdAt} />
+      <div class="session-date">
+        <RelativeTime timestamp={session.createdAt} />
+      </div>
     {/if}
 
     {#if session.active}
@@ -85,7 +84,32 @@
         <i class="fa-solid fa-trash"></i>
       </a>
     {/if}
-
   </div>
 
 </div>
+
+<style>
+  .session-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+  }
+
+  .session-left {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  .session-right {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+
+  .session-date {
+    font-size: .85rem;
+    color: var(--muted);
+  }
+</style>
