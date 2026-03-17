@@ -13,15 +13,19 @@
 
 .page-title {
   font-family: "Fraunces", serif;
-  font-size: 2rem;
   font-weight: 700;
   margin: 14px;
+}
+
+.page-title .name {
+  color: var(--muted);
 }
 
 .panel {
   background: var(--panel);
   border-radius: 12px;
   padding: 22px;
+  margin-bottom: 12px;
 }
 
 .panel-title {
@@ -32,18 +36,59 @@
   margin-bottom: 14px;
 }
 
-.panel-waiting {
-  background: var(--panel);
+.panel.ghost {
+  background: var(--bg);
 }
 
-.panel-active {
-  background: #2a2a00;
+.panel.active {
+  background: var(--active-bg);
+}
+
+.panel.active a {
+  color: var(--active-link);
+}
+
+.panel.active a:hover {
+  background: var(--active-link-hover-bg);
+  color: var(--active-link-hover-text);
+}
+
+.panel.active .panel-title {
+  color: var(--active-header-bg);
 }
 
 .panel-completed {
   background: #002a12;
 }
 
+/* horizontal container */
+
+.row-split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* left side */
+
+.row-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* right side */
+
+.row-right {
+  display: flex;
+  align-items: center;
+}
+
+/* small button spacing */
+
+.gap-sm {
+  gap: 0.5rem;
+}
 
 /* =========================
    SPACING UTILITIES

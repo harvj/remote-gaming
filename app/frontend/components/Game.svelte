@@ -25,7 +25,7 @@
 <div id={`game-${game.key}`}>
 
   <header class="page-header">
-    <h2 class="page-title">Sessions</h2>
+    <h1 class="page-title">Sessions</h1>
 
     <form method="post" action={paths.gameSessionsPath}>
       <input type="hidden" name="authenticity_token" value={token} />
@@ -51,7 +51,9 @@
 
   {#if activeSessions.length > 0}
     <section class="panel active">
-      <h5>In Progress</h5>
+      <h5 class="panel-title">
+        In Progress<span class="ellipsis"></span>
+      </h5>
 
       {#each activeSessions as session (session.uid)}
         <GameSessionRow {session}/>
@@ -80,18 +82,6 @@
 </div>
 
 <style>
-
-.waiting {
-  background: var(--panel);
-}
-
-.active {
-  background: #ffeaa7;
-}
-
-.completed {
-  background: #c8f7c5;
-}
 
 .archive-toggle {
   margin-top: 10px;

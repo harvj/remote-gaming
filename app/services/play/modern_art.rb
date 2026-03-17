@@ -122,18 +122,9 @@ class Play::ModernArt < Play::Base
   # --- Game specific functions
 
   def can_pass?(player)
-    return false if player.inactive?
+    return false if player.idle?
     return false if last_card_played_frame.blank?
     return false if session.frames.last&.action == "free_single_double"
     last_card_played.value == "double" && session.frames.where(action: "player_passed", acting_player: player).where("created_at > ?", last_card_played_frame.created_at).blank?
-  end
-
-  # --- Action prompts
-
-  def player_action_prompts(action_phase)
-    prompts = {
-      active: "Your turn..."
-    }
-    prompts[action_phase.to_sym]
   end
 end

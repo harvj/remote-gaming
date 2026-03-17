@@ -17,8 +17,9 @@ def new_session
   game.play_class.().subject
 end
 
-def add_player
-  Player::Create.(user, session: session)
+def add_player(user_for_player = nil)
+  user_for_player ||= user
+  Player::Create.(user_for_player, session: session).subject
 end
 
 def session_proceed

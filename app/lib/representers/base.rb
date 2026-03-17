@@ -1,6 +1,7 @@
 module Representers
   class Base
     include Rails.application.routes.url_helpers
+    include SimpleLog
 
     def self.call(record, options = {})
       new(record, options).()
@@ -9,7 +10,7 @@ module Representers
     def initialize(record, options)
       @record = record
       @format = options[:format] || nil
-      @user = options[:user] || nil
+      @viewer = options[:viewer] || nil
       @options = options
     end
 
@@ -19,10 +20,10 @@ module Representers
 
     private
 
-    attr_reader :record, :format, :options, :user
+    attr_reader :record, :format, :options, :viewer
 
     def process_record
-      return "null" unless record.present?
+      return nil unless record.present?
       result = build_object(record)
       format == :json ? result.to_json : result
     end

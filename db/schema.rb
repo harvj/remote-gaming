@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_09_171831) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_11_205208) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -78,6 +78,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_09_171831) do
     t.integer "game_session_id"
     t.boolean "moderator", default: false
     t.integer "next_player_id"
+    t.datetime "removed_at"
     t.integer "role_id"
     t.integer "score"
     t.integer "turn_order"

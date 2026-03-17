@@ -40,11 +40,13 @@
     document.removeEventListener("click", handleDocumentClick);
     document.removeEventListener("keydown", handleEscape);
   });
+
+  $: onLoginPage = window.location.pathname === loginPath;
 </script>
 
 <div class="nav-inner">
   <div class="nav-left">
-    <a class="brand" href={rootPath}>remote-gaming</a>
+    <span class="brand">remote-gaming</span>
 
     {#if currentGame}
       <span class="separator">|</span>
@@ -87,7 +89,7 @@
           </div>
         {/if}
       </div>
-    {:else}
+    {:else if !onLoginPage}
       <a href={loginPath}>Log in</a>
     {/if}
   </div>

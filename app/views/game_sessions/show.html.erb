@@ -1,7 +1,12 @@
 <div id="game-sessions-show"></div>
 
 <script id="game-sessions-show-data" type="application/json">
-  <%= raw json_escape(@rep_session.to_json) %>
+  <%= raw json_escape({
+    session: @rep_session,
+    token: form_authenticity_token,
+    currentUser: Representers::User.(current_user),
+    paths: Representers::Paths.()
+  }.to_json) %>
 </script>
 
 <%= vite_javascript_tag "game_session" %>

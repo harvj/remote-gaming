@@ -5,7 +5,8 @@ class GameSession < ApplicationRecord
   belongs_to :game
   belongs_to :current_player, class_name: "Player", optional: true
 
-  has_many :players, -> { order("turn_order asc") }, dependent: :destroy
+  has_many :players, -> { joined.order(:turn_order) }
+  has_many :all_players, class_name: "Player", dependent: :destroy
   has_one :winner, -> { where(winner: true) }, class_name: "Player"
 
   has_many :decks, class_name: "SessionDeck", dependent: :destroy
@@ -113,7 +114,7 @@ class GameSession < ApplicationRecord
 
   def display_state
     if waiting?
-      playable? ? "Ready to begin": "Waiting for players..."
+      playable? ? "Ready to begin": "Waiting for players"
     else
       state.titleize
     end
@@ -155,5 +156,25 @@ class GameSession < ApplicationRecord
 
   def show_inactive_cards?
     completed? || engine.show_inactive_cards?
+  end
+
+  # --- Streaming session data
+
+  def broadcast_live!
+    return if completed?
+
+    # 1️⃣ Public broadcast (identical for all viewers)
+    GameSessionChannel.broadcast_to(
+      [ uid, :public ],
+      Representers::GameSession.(self, viewer: nil)
+    )
+
+    # 2️⃣ Per-player broadcast
+    players.includes(:user).find_each do |player|
+      GameSessionChannel.broadcast_to(
+        [ uid, player.user.username ],
+        Representers::GameSession.(self, viewer: player.user)
+      )
+    end
   end
 end

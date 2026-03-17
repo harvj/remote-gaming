@@ -41,7 +41,7 @@
       return 1000 - (diffMs % 1000);
     }
 
-    if (minutesTotal < 60) {
+    if (minutesTotal < 1440) {
       return 60000 - (diffMs % 60000);
     }
 

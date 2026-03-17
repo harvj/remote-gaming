@@ -1,15 +1,29 @@
-<%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
-  <div class="form-group col-md-3">
-    <%= f.label :username, for: :username %>
-    <%= f.text_field :username, autofocus: true, autocomplete: "email", class: "form-control" %>
-  </div>
+<div class="auth-page">
+  <div class="auth-card panel">
 
-  <div class="form-group col-md-3">
-    <%= f.label :password, for: :password %>
-    <%= f.password_field :password, autocomplete: "current-password", class: "form-control" %>
-  </div>
+    <h1 class="auth-title">Log In</h1>
 
-  <div class="col-md-3">
-    <%= f.submit "Log in", class: "btn btn-dark"%>
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "auth-form" }) do |f| %>
+
+      <div class="auth-field-group">
+
+        <%= f.text_field :username,
+          autofocus: true,
+          autocomplete: "username",
+          placeholder: "Username",
+          class: "auth-username"
+        %>
+
+        <%= f.password_field :password,
+          autocomplete: "current-password",
+          placeholder: "Password"
+        %>
+
+      </div>
+
+      <%= f.submit "Log In", class: "auth-submit" %>
+
+    <% end %>
+
   </div>
-<% end %>
+</div>

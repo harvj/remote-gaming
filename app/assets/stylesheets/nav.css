@@ -40,6 +40,10 @@
   color: var(--muted);
 }
 
+.game-title > a:hover {
+  color: var(--link-hover-text);
+}
+
 .nav-menu {
   position: relative;
 }

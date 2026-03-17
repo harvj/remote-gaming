@@ -13,6 +13,11 @@ class Player < ApplicationRecord
   validate :session_not_in_progress, on: :create
   validate :session_not_full, on: :create
 
+  scope :joined, -> { where(removed_at: nil) }
+  scope :removed, -> { where.not(removed_at: nil) }
+
+  after_commit :broadcast_session
+
   def play(action: nil, params: {})
     Player.transaction do
       SessionFrame::Create.(session,
@@ -22,6 +27,15 @@ class Player < ApplicationRecord
       )
       session.engine.player_action(self, action: action, params: params)
     end
+  end
+
+  def leave_session
+    update!(removed_at: Time.current)
+    SessionFrame::Create.(session,
+      action: "player_left",
+      acting_player: self,
+      subject: self
+    )
   end
 
   def start_turn
@@ -45,11 +59,15 @@ class Player < ApplicationRecord
     session.engine.can_pass?(self)
   end
 
-  def inactive?
-    action_phase == "inactive"
+  def idle?
+    action_phase == "idle"
   end
 
   private
+
+  def broadcast_session
+    GameSession::Broadcast.(session)
+  end
 
   def session_not_in_progress
     errors.add(:session, "in progress") if session.started?

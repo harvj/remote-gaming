@@ -12,7 +12,10 @@ class SessionCardsController < ApplicationController
     end
 
     @session_card.public_send(action)
-    @rep_session = Representers::GameSession.(@session_card.session, user: current_user)
+
+    @session_card.session.broadcast_live!
+
+    @rep_session = Representers::GameSession.(@session_card.session, viewer: current_user)
 
     render json: { status: "success", content: { session: @rep_session }, errors: [] }
   end

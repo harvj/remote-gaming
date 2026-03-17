@@ -1,28 +1,54 @@
 class PlayersController < ApplicationController
-  before_action :load_player, only: %i[play pass update]
+  before_action :load_player, only: %i[play update]
   before_action :load_game_session, only: %i[create]
 
+  VALID_ACTIONS = %w[leave_session].freeze
+
   def create
-    player_create = Player::Create.!(current_user, game_session: @game_session)
+    player = @game_session.all_players.find_by(user: current_user)
+
+    if player
+      player.update!(removed_at: nil)
+    else
+      Player::Create.!(current_user, session: @game_session)
+    end
+
+    @game_session.reload.broadcast_live!
+
     render json: {
-      status: player_create.status,
-      content: { session: Representers::GameSession.(@game_session.reload, user: current_user) },
-      errors: player_create.errors
+      status: "success",
+      content: { session: Representers::GameSession.(@game_session, viewer: current_user) },
+      errors: []
     }
   end
 
   def update
-    player_update = Player::Update.(@player, player_params)
-    render json: {
-      status: player_update.status,
-      content: { session: Representers::GameSession.(@player.session, user: current_user) },
-      errors: player_update.errors
-    }
+    action = params[:player_action].to_s
+
+    if action.present?
+      unless VALID_ACTIONS.include?(action)
+        render json: { status: "error", content: {}, errors: [ "Invalid player action" ] }, status: :unprocessable_entity
+        return
+      end
+
+      @player.public_send(action)
+    else
+      Player::Update.(@player, player_params)
+    end
+
+    @player.reload.session.broadcast_live!
+
+    @rep_session = Representers::GameSession.(@player.session, viewer: current_user)
+
+    render json: { status: "success", content: { session: @rep_session }, errors: [] }
   end
 
   def play
     @player.play(action: params[:player_action], params: play_params)
-    @rep_session = Representers::GameSession.(@player.session, user: current_user)
+
+    @player.session.broadcast_live!
+
+    @rep_session = Representers::GameSession.(@player.session, viewer: current_user)
     render json: { status: "success", content: { session: @rep_session }, errors: [] }
   end
 

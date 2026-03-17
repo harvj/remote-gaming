@@ -9,11 +9,6 @@
   const showPlayerCount = session.playerCount > 0
   const showWinner = session.winnerImagePath && session.winnerInitials
 
-  let playerCountClass = "badge"
-
-  if (session.active) playerCountClass += " badge-bisque"
-  if (session.completed) playerCountClass += " badge-darkgreen"
-
   const dispatch = createEventDispatcher()
   const csrfToken = document.querySelector("meta[name='csrf-token']").content
 
@@ -33,7 +28,7 @@
 
   <div class="session-left">
     {#if showPlayerCount}
-      <span class={playerCountClass}>
+      <span class="badge">
         {session.playerCount}er
       </span>
     {/if}

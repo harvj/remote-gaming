@@ -25,12 +25,16 @@ module Representers
         scalar[:lastWinDate] = player.last_win_date&.strftime("%b %e")
         scalar[:lastWinDateClass] = last_win_date_class(player.last_win_date)
       end
-      scalar.merge(
+      scalar.merge!(
         activeCards: Representers::SessionCard.(player.cards.active),
         inactiveCards: Representers::SessionCard.(player.cards.inactive),
         playHistory: Representers::SessionFrame.(player.frames.card_played),
         possibleActions: player.possible_actions,
-      )
+      ) if viewer&.id == player.user_id
+
+      log("viewer id: #{viewer&.id} | player user id: #{player.user_id}")
+
+      scalar
     end
 
     private

@@ -22,7 +22,7 @@ class Play::Pandemic < Play::Base
   INFECTION_DEAL_COUNTS = { "0" => 2, "1" => 2, "2" => 2, "3" => 3, "4" => 3, "5" => 4, "6" => 4 }.freeze
 
   PLAYER_ACTIONS = {
-    inactive: %w[trade],
+    idle: %w[trade],
     draw: %w[trade draw],
     infect: %w[infect],
     trade: %w[cancel submit_trade],

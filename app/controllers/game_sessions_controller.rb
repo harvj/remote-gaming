@@ -3,17 +3,19 @@ class GameSessionsController < ApplicationController
 
   def create
     game_session = @game.play_class.().subject
-    redirect_to game_session_path(game_session.uid)
+    redirect_to game_root_path(@game)
   end
 
   def update
     updated_session = @game.play_class.(@game_session, current_user).subject
-    @rep_session = Representers::GameSession.(updated_session, user: current_user)
+    updated_session.broadcast_live!
+
+    @rep_session = Representers::GameSession.(updated_session, viewer: current_user)
     render json: { status: "success", content: { session: @rep_session } }
   end
 
   def show
-    @rep_session = Representers::GameSession.(@game_session, user: current_user)
+    @rep_session = Representers::GameSession.(@game_session, viewer: current_user)
     respond_to do |format|
       format.html
       format.json { render json: { status: "success", content: { session: @rep_session } } }

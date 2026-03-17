@@ -1,6 +1,11 @@
 class Play::Base
   include ServiceObject
 
+  PLAY_SEQUENCE = []
+  DECKS = []
+  TERMS = {}
+  CONFIG = {}
+
   def initialize(game_session = nil, active_user = nil)
     @session     = game_session || create_session!
     @active_user = active_user
@@ -75,16 +80,25 @@ class Play::Base
   end
 
   def player_end_turn(player)
-    player.update_column(:action_phase, "inactive")
+    player.update_column(:action_phase, "idle")
   end
 
   # --- Player attributes
 
   def player_action_prompt(player)
     return unless session.started? && session.current_player
-    return "#{session.current_player.user.name}'s turn..." if player.inactive?
     return special_game_phase_prompt if special_game_phase_prompt.present?
     player_action_prompts(player.action_phase)
+  end
+
+  # --- Action prompts
+
+  def player_action_prompts(action_phase)
+    prompts = {
+      active: "Your turn...",
+      idle: "#{session.current_player.user.name}'s turn..."
+    }
+    prompts[action_phase.to_sym]
   end
 
   # --- Card actions
@@ -153,6 +167,7 @@ class Play::Base
   # --- Session attributes
 
   def display_card_groups
+    # This is used for cards that are displayed to all players
     []
   end
 

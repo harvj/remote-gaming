@@ -4,9 +4,7 @@
   <%= raw json_escape({
     game: @rep_game,
     token: form_authenticity_token,
-    paths: {
-      gameSessionsPath: game_sessions_path
-    }
+    paths: Representers::Paths.()
   }.to_json) %>
 </script>
 

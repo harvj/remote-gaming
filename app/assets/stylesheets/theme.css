@@ -16,6 +16,13 @@
 
   --badge-bg: #eee;
   --badge-text: #111;
+
+  --active-bg: #fae9b3;
+  --active-header-bg: #a1811f;
+  --active-badge-bg: #ebd797;
+  --active-link: #6e5714;
+  --active-link-hover-bg: #b38d13;
+  --active-link-hover-text: #f1f1f1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,5 +42,18 @@
 
     --badge-bg: #333;
     --badge-text: #e6e6e6;
+
+    --active-bg: #3b3420;
+    --active-header-bg: #4a4128;
+
+    --active-badge-bg: #2a2a2a;
+
+    --active-link: #f0e2a6;
+    --active-link-hover-bg: #5a4e2e;
+    --active-link-hover-text: #fff;
   }
+}
+
+.muted {
+  color: var(--muted);
 }

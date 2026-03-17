@@ -37,3 +37,71 @@ a:hover {
   background: var(--link-hover-bg);
   color: var(--link-hover-text);
 }
+
+.auth-page {
+  padding-top: 120px; /* distance from navbar */
+  display: flex;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.auth-card {
+  width: 380px;
+  padding: 40px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e5e5e5;
+}
+
+.auth-title {
+  font-family: "Fraunces", serif;
+  font-size: 28px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.auth-field-group {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.auth-field-group input {
+  padding: 16px;
+  font-size: 22px;
+  border: none;
+  outline: none;
+}
+
+.auth-field-group input::placeholder {
+  letter-spacing: 0em;
+  font-size: 18px;
+}
+
+.auth-field-group input + input {
+  border-top: 1px solid #ddd;
+}
+
+.auth-username {
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.auth-submit {
+  margin-top: 18px;
+  width: 100%;
+  padding: 20px 14px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  background: var(--text);
+  color: var(--bg);
+  cursor: pointer;
+}
+
+.auth-submit:hover {
+  opacity: 0.9;
+}

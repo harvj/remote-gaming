@@ -7,3 +7,8 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+require File.join(Rails.root, "db", "build", "base")
+require File.join(Rails.root, "db", "build", "games", "modern_art")
+
+GameBuild::ModernArt.()

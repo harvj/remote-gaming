@@ -39,13 +39,10 @@ module Representers
           }
         end,
         game: Representers::Game.(session.game, scalar: true),
-        players: Representers::Player.(players)
+        players: Representers::Player.(players, viewer: viewer)
       )
 
       scalar.merge!(currentPlayerId: session.current_player.id, currentPlayerName: session.current_player.user.name) if session.current_player.present?
-
-      logged_in_player = session.players.find_by(user: user)
-      scalar.merge!(loggedInPlayer: Representers::Player.(logged_in_player)) if logged_in_player.present?
 
       scalar
     end
@@ -81,6 +78,7 @@ module Representers
         LEFT OUTER JOIN badges ON badges.game_id = #{session.game_id}
         LEFT OUTER JOIN user_badges ON users.id = user_badges.user_id AND badges.id = user_badges.badge_id AND user_badges.active = TRUE
         WHERE game_session_id = #{session.id}
+        AND removed_at IS NULL
         GROUP BY players.id
         ORDER BY players.turn_order
       SQL

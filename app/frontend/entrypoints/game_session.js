@@ -5,10 +5,10 @@ const target = document.getElementById("game-sessions-show");
 const dataEl = document.getElementById("game-sessions-show-data");
 
 if (target && dataEl) {
-  const session = JSON.parse(dataEl.textContent);
+  const props = JSON.parse(dataEl.textContent);
 
   mount(GameSessionPage, {
     target,
-    props: { session }
+    props
   })
 }
