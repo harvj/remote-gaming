@@ -85,8 +85,32 @@ jobs:
         with:
           bundler-cache: true
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build production assets
+        run: RAILS_ENV=production SECRET_KEY_BASE_DUMMY=1 bundle exec rails assets:precompile
+
       - name: Prepare test database
-        run: bundle exec rails db:prepare
+        run: bundle exec rails db:schema:load
 
       - name: Run RSpec
         run: bundle exec rspec --format progress
+
+      - name: Probe production Rails and compiled assets
+        shell: bash
+        run: |
+          export RAILS_ENV=production BIND_HOST=127.0.0.1 PORT=3012
+          export SECRET_KEY_BASE=$(openssl rand -hex 64)
+          bundle exec rails zeitwerk:check
+          bundle exec puma -C config/puma.rb &
+          puma_pid=$!
+          trap 'kill "$puma_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl -fsS -H 'Host: radioactivita.com' http://127.0.0.1:3012/up > /dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          PUMA_URL=http://127.0.0.1:3012 deploy/smoke

@@ -51,6 +51,10 @@ A session stores the current state of play, while game-specific engines define r
 
 ---
 
+## Production P1.0
+
+The public release includes the game directory, game status pages, and the link to the independent Arkham application. The [deployment runbook](deploy/README.md) covers the Hetzner cutover, historical database restore, smoke tests, and rollback. See the [repository audit](deploy/audit.md) for launch scope and P1.1 work.
+
 ## Architecture Overview
 
         Player Action

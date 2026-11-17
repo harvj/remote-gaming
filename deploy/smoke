@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Default is the public edge. Set PUMA_URL for the loopback preflight.
+request() {
+  local host=$1 path=$2
+  shift 2
+  if [[ -n ${PUMA_URL:-} ]]; then
+    curl -sS --max-time 15 -H "Host: $host" "$@" "$PUMA_URL$path"
+  else
+    curl -sS --max-time 15 "$@" "https://$host$path"
+  fi
+}
+
+for host in radioactivita.com gaming.harvj.com; do
+  page=$(request "$host" / -f)
+  grep -q '<h1>Remote Gaming</h1>' <<< "$page"
+  asset=$(sed -nE 's@.*src="(/vite/[^"]+\.js)".*@\1@p' <<< "$page" | head -n1)
+  [[ -n $asset ]]
+  request "$host" "$asset" -fo /dev/null
+  request "$host" /up -fo /dev/null
+  request "$host" /ready -fo /dev/null
+  [[ $(request "$host" /login -o /dev/null -w '%{http_code}') == 404 ]]
+done
+
+for game in pandemic modernart; do
+  page=$(request "$game.radioactivita.com" / -f)
+  grep -q 'Not yet available' <<< "$page"
+done
+
+if [[ -n ${PUMA_URL:-} ]]; then
+  for host in arkham.radioactivita.com unknown-game.radioactivita.com; do
+    [[ $(request "$host" / -o /dev/null -w '%{http_code}') == 404 ]]
+  done
+else
+  page=$(request arkham.radioactivita.com / -fL)
+  [[ $page != *'<h1>Remote Gaming</h1>'* ]]
+  if [[ ${WILDCARD_TLS:-0} == 1 ]]; then
+    [[ $(request p10-unregistered.radioactivita.com / -o /dev/null -w '%{http_code}') == 404 ]]
+  fi
+fi
+printf '%s\n' 'Remote Gaming smoke checks passed'

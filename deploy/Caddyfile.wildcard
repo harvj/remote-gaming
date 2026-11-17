@@ -1,0 +1,14 @@
+# Replaces Caddyfile.named when an independently renewed wildcard PEM is ready.
+# Preserve the existing exact Arkham block in the parent Caddyfile.
+radioactivita.com, gaming.harvj.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3012
+}
+
+*.radioactivita.com {
+	tls /etc/caddy/remote-gaming-tls/fullchain.pem /etc/caddy/remote-gaming-tls/privkey.pem
+	@arkham host arkham.radioactivita.com
+	respond @arkham 421
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3012
+}

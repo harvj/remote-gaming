@@ -1,0 +1,13 @@
+modernart:
+  title: Modern Art
+  description: Bid on paintings and build the most valuable collection in this auction game.
+  available: false
+pandemic:
+  title: Pandemic
+  description: Work together to contain outbreaks and discover cures.
+  available: false
+arkham:
+  title: Arkham
+  description: Investigate strange events in the independently hosted Arkham app.
+  available: true
+  destination: https://arkham.radioactivita.com/

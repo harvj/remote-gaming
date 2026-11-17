@@ -1,0 +1,19 @@
+<main id="game-directory">
+  <% if @game_page %><p><a href="https://radioactivita.com/">Remote Gaming directory</a></p><% end %>
+  <h1><%= @title %></h1>
+  <% unless @game_page %><p>What are we playing?</p><% end %>
+  <ul>
+    <% @games.each do |game| %>
+      <li>
+        <% unless @game_page %><h2><%= game.fetch(:title) %></h2><% end %>
+        <p><%= game.fetch(:description) %></p>
+        <% if game.fetch(:available) && !@game_page %>
+          <p>Available · <%= link_to "Open #{game.fetch(:title)}", game.fetch(:destination) %></p>
+        <% elsif !game.fetch(:available) %>
+          <p>Not yet available</p>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</main>
+<script id="directory-data" type="application/json"><%= raw json_escape({ title: @title, games: @games, gamePage: @game_page }.to_json) %></script>

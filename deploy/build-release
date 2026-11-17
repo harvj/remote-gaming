@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export PATH=/opt/remote-gaming/ruby/bin:/opt/remote-gaming/node/bin:/usr/bin:/bin
+export BUNDLE_FROZEN=true BUNDLE_WITHOUT=development:test
+bundle config set --local path vendor/bundle
+bundle install
+# The Vite Ruby precompile hook installs the locked Node dependencies and builds Vite.
+RAILS_ENV=production SECRET_KEY_BASE_DUMMY=1 bundle exec rails assets:precompile
