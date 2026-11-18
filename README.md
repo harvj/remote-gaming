@@ -55,7 +55,7 @@ A session stores the current state of play, while game-specific engines define r
 
 The public release includes the game directory, game status pages, and the link to the independent Arkham application. The [deployment runbook](deploy/README.md) covers the Hetzner cutover, historical database restore, smoke tests, and rollback. See the [repository audit](deploy/audit.md) for launch scope and P1.1 work.
 
-The [SessionFrame architecture notes](docs/session-frames.md) cover P1.1 replay, historical compatibility, and table captain reports.
+The [SessionFrame architecture notes](docs/session-frames.md) cover P1.1 replay, historical compatibility, and table captain reports. The [numbered roadmap](docs/roadmap.md) covers canonical identity, private experiments, and replay branching.
 
 ## Architecture Overview
 
