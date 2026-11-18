@@ -12,7 +12,7 @@ module Representers
         completedAt: session.completed_at&.strftime("%a %e %b %Y %k:%M:%S"),
         completedAtDate: session.completed_at&.strftime("%e %b %Y"),
         createdAt: session.created_at.iso8601,
-        playerCount: session.player_count,
+        playerCount: session.players.count,
         started: session.started_at.present?,
         startedAt: session.started_at&.strftime("%a %e %b %Y %k:%M:%S"),
         startedAtDate: session.started_at&.strftime("%e %b %Y"),
@@ -20,8 +20,8 @@ module Representers
         uid: session.uid,
         uri: game_session_path(session.uid),
         waiting: session.waiting?,
-        winnerImagePath: image_file_path(session.game_key, session.winner_role),
-        winnerInitials: initials(session.winner_name)
+        winnerImagePath: image_file_path(session.game.key, session.winner&.role&.name),
+        winnerInitials: initials(session.winner&.user&.name)
       }
     end
   end

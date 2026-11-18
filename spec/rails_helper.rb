@@ -29,8 +29,33 @@ rescue ActiveRecord::PendingMigrationError => e
   exit 1
 end
 
+require "capybara/selenium/driver"
+
+# Recent Chrome versions reject the wildcard origin used by Capybara 3.40's reset.
+# These isolated browser profiles only persist authentication cookies.
+module SystemBrowserCookieReset
+  private
+
+  def execute_cdp(command, parameters = {})
+    super
+  rescue Selenium::WebDriver::Error::InvalidArgumentError
+    raise unless command == "Storage.clearDataForOrigin" && parameters[:origin] == "*"
+
+    super("Network.clearBrowserCookies")
+  end
+end
+
+Capybara::Selenium::Driver::ChromeDriver.prepend(SystemBrowserCookieReset)
+
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+
+  config.before(:each, type: :system) do
+    Selenium::WebDriver::Chrome::Service.driver_path = ENV["CHROMEDRIVER"] if ENV["CHROMEDRIVER"]
+    driven_by :selenium, using: :headless_chrome do |options|
+      options.binary = ENV["CHROME_BINARY"] if ENV["CHROME_BINARY"]
+    end
+  end
 
   # If you're not using ActiveRecord, or you'd prefer not to run each of your
   # examples within a transaction, remove the following line or assign false

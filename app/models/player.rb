@@ -16,33 +16,39 @@ class Player < ApplicationRecord
   scope :joined, -> { where(removed_at: nil) }
   scope :removed, -> { where.not(removed_at: nil) }
 
-  after_commit :broadcast_session
-
   def play(action: nil, params: {})
-    Player.transaction do
-      SessionFrame::Create.(session,
-        action: "player_#{action}",
-        acting_player: self,
-        subject: self
-      )
+    SessionFrame::Record.call(session, action: "player_action") do
+      reload
       session.engine.player_action(self, action: action, params: params)
     end
   end
 
   def leave_session
-    update!(removed_at: Time.current)
-    SessionFrame::Create.(session,
-      action: "player_left",
-      acting_player: self,
-      subject: self
-    )
+    change_membership("player_left") do
+      raise SessionFrame::Record::InvalidAction, "Cannot leave after play starts" if removed_at || session.started?
+
+      was_captain = table_captain?
+      update!(removed_at: Time.current, table_captain: false)
+      session.players.reorder(:id).first&.update!(table_captain: true) if was_captain
+    end
+  end
+
+  def rejoin_session
+    change_membership("player_rejoined") do
+      unless removed_at && session.joinable?
+        raise SessionFrame::Record::InvalidAction, "Cannot rejoin this session"
+      end
+      update!(removed_at: nil, table_captain: !session.players.exists?(table_captain: true))
+    end
   end
 
   def start_turn
+    SessionFrame::Record.require_command!(session)
     session.engine.player_start_turn(self)
   end
 
   def end_turn
+    SessionFrame::Record.require_command!(session)
     session.engine.player_end_turn(self)
   end
 
@@ -51,7 +57,7 @@ class Player < ApplicationRecord
   end
 
   def possible_actions
-    return [] if session.completed?
+    return [] if removed_at || !session.started? || session.completed?
     session.engine.possible_player_actions(self)
   end
 
@@ -65,8 +71,12 @@ class Player < ApplicationRecord
 
   private
 
-  def broadcast_session
-    GameSession::Broadcast.(session)
+  def change_membership(action)
+    SessionFrame::Record.call(session, action: action) do
+      reload
+      yield
+      SessionFrame::Create.!(session, action: action, acting_player: self, subject: self)
+    end
   end
 
   def session_not_in_progress

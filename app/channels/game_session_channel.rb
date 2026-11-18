@@ -1,11 +1,10 @@
 class GameSessionChannel < ApplicationCable::Channel
   def subscribed
-    session = GameSession.find_by!(uid: params[:uid])
+    session = GameSession.find_by(uid: params[:uid])
+    return reject unless session&.can_view?(current_user)
 
-    if (player = session.players.find_by(user: current_user))
-      stream_for [ session.uid, player.user.username ]
-    else
-      stream_for [ session.uid, :public ]
+    stream_for session, coder: ActiveSupport::JSON do |payload|
+      transmit(payload) if session.reload.can_view?(current_user)
     end
   end
 end

@@ -8,6 +8,7 @@ module Representers
         actionPhase: player.action_phase,
         actionPrompt: player.action_prompt,
         moderator: player.moderator?,
+        captain: player.table_captain?,
         role: Representers::Role.(player.role),
         score: player.score,
         turnOrder: player.turn_order,
@@ -28,11 +29,10 @@ module Representers
       scalar.merge!(
         activeCards: Representers::SessionCard.(player.cards.active),
         inactiveCards: Representers::SessionCard.(player.cards.inactive),
-        playHistory: Representers::SessionFrame.(player.frames.card_played),
-        possibleActions: player.possible_actions,
-      ) if viewer&.id == player.user_id
+        playHistory: Representers::SessionFrame.(player.frames.card_played.order(:id)),
+        possibleActions: player.session.replayable? ? player.possible_actions : [],
+      ) if viewer&.id == player.user_id || options[:reveal]
 
-      log("viewer id: #{viewer&.id} | player user id: #{player.user_id}")
 
       scalar
     end

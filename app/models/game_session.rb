@@ -11,7 +11,7 @@ class GameSession < ApplicationRecord
 
   has_many :decks, class_name: "SessionDeck", dependent: :destroy
   has_many :cards, class_name: "SessionCard", dependent: :destroy
-  has_many :frames, class_name: "SessionFrame", dependent: :destroy
+  has_many :frames, class_name: "SessionFrame", dependent: :restrict_with_exception
 
   validates :uid, presence: true, uniqueness: true
   validates :state, presence: true
@@ -43,7 +43,7 @@ class GameSession < ApplicationRecord
   end
 
   def transition_frames
-    frames.where(subject: self).order(:id)
+    frames.engine_events.where(subject: self, action: play_sequence).order(:id)
   end
 
   def transition_actions
@@ -65,8 +65,7 @@ class GameSession < ApplicationRecord
   end
 
   def played_card_counts_by_state(state_name)
-    SessionCard.find_by_sql(
-      <<~SQL,
+    SessionCard.find_by_sql([ <<~SQL, id, state_name ])
         SELECT count(*), cards.name FROM session_cards
         INNER JOIN session_frames ON session_frames.subject_id = session_cards.id AND session_frames.subject_type = 'SessionCard'
         INNER JOIN cards ON cards.id = session_cards.card_id
@@ -74,10 +73,7 @@ class GameSession < ApplicationRecord
         AND session_frames."action" = 'card_played'
         AND session_frames."state" = ?
         GROUP BY cards.name
-      SQL
-      id,
-      state_name
-    )
+    SQL
   end
 
   def started?
@@ -89,8 +85,8 @@ class GameSession < ApplicationRecord
   end
 
   def next_action
-    next_index = play_sequence.index(state) + 1
-    play_sequence[next_index]
+    index = play_sequence.index(state)
+    play_sequence[index + 1] if index
   end
 
   def next_action_prompts
@@ -107,9 +103,13 @@ class GameSession < ApplicationRecord
   end
 
   def advance_turn
-    current_player.end_turn
-    update!(current_player: current_player.next_player)
+    SessionFrame::Record.require_command!(self)
+    previous_player = current_player
+    previous_player.end_turn
+    update!(current_player: previous_player.next_player)
     current_player.start_turn
+    SessionFrame::Create.!(self, action: "turn_advanced", subject: self,
+      acting_player: previous_player, affected_player: current_player)
   end
 
   def display_state
@@ -125,7 +125,7 @@ class GameSession < ApplicationRecord
   end
 
   def full?
-    players.count == max_players
+    players.count >= max_players
   end
 
   def joinable?
@@ -158,23 +158,15 @@ class GameSession < ApplicationRecord
     completed? || engine.show_inactive_cards?
   end
 
-  # --- Streaming session data
+  def replayable?
+    frames.checkpoints.where(sequence: 1, action: "session_created", format_version: 1).exists?
+  end
+
+  def can_view?(user)
+    user && (players.exists?(user_id: user.id) || (replayable? && waiting?))
+  end
 
   def broadcast_live!
-    return if completed?
-
-    # 1️⃣ Public broadcast (identical for all viewers)
-    GameSessionChannel.broadcast_to(
-      [ uid, :public ],
-      Representers::GameSession.(self, viewer: nil)
-    )
-
-    # 2️⃣ Per-player broadcast
-    players.includes(:user).find_each do |player|
-      GameSessionChannel.broadcast_to(
-        [ uid, player.user.username ],
-        Representers::GameSession.(self, viewer: player.user)
-      )
-    end
+    GameSessionChannel.broadcast_to(self, { event: "session_changed" })
   end
 end

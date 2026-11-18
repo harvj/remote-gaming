@@ -1,5 +1,4 @@
 <script>
-  import { createEventDispatcher } from "svelte"
   import RelativeTime from "../helpers/RelativeTime.svelte";
 
   export let session
@@ -9,19 +8,6 @@
   const showPlayerCount = session.playerCount > 0
   const showWinner = session.winnerImagePath && session.winnerInitials
 
-  const dispatch = createEventDispatcher()
-  const csrfToken = document.querySelector("meta[name='csrf-token']").content
-
-  async function destroySession() {
-    const res = await fetch(session.uri, {
-      method: "DELETE",
-      headers: { "X-CSRF-Token": csrfToken }
-    })
-
-    if (res.ok) {
-      dispatch("deleted", session.uid)
-    }
-  }
 </script>
 
 <div id={containerId} class="session-row">
@@ -37,7 +23,7 @@
       <img
         class="winner-icon"
         src={session.winnerImagePath}
-        height="20"
+        height="20" alt=""
       />
 
       <span class="badge gold">
@@ -69,16 +55,6 @@
       </div>
     {/if}
 
-    {#if !session.completed}
-      <a
-        href={session.uri}
-        data-method="delete"
-        class="btn-ghost danger"
-        on:click|preventDefault={() => destroySession()}
-      >
-        <i class="fa-solid fa-trash"></i>
-      </a>
-    {/if}
   </div>
 
 </div>

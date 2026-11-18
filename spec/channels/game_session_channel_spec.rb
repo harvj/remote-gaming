@@ -1,36 +1,38 @@
 require "rails_helper"
 
 RSpec.describe GameSessionChannel, type: :channel do
-  let(:game)  { create(:game) }
-  let(:user)  { create(:user) }
-
+  let(:game) { create(:game, :cards) }
+  let(:user) { create(:user) }
   let(:session) { new_session }
 
-  before do
+  it "rejects an unauthenticated cable connection" do
+    stub_connection current_user: nil
+    subscribe(uid: session.uid)
+    expect(subscription).to be_rejected
+  end
+
+  it "allows an authenticated invitee to receive waiting lobby invalidations" do
     stub_connection current_user: user
+    subscribe(uid: session.uid)
+    expect(subscription).to be_confirmed
+    expect(subscription).to have_stream_for(session)
   end
 
-  context "when user is not a player" do
-    it "subscribes to public stream" do
-      subscribe(uid: session.uid)
+  it "limits a started session subscription to its own members" do
+    add_player
+    session_proceed
+    stub_connection current_user: create(:user)
+    subscribe(uid: session.uid)
+    expect(subscription).to be_rejected
 
-      expect(subscription).to be_confirmed
-      expect(subscription).to have_stream_from(
-        "game_session:#{session.uid}:public"
-      )
-    end
+    stub_connection current_user: user
+    subscribe(uid: session.uid)
+    expect(subscription).to have_stream_for(session)
   end
 
-  context "when user is a player" do
-    let!(:player) { add_player }
-
-    it "subscribes to player stream" do
-      subscribe(uid: session.uid)
-
-      expect(subscription).to be_confirmed
-      expect(subscription).to have_stream_from(
-        "game_session:#{session.uid}:#{user.username}"
-      )
-    end
+  it "rejects a nonexistent session" do
+    stub_connection current_user: user
+    subscribe(uid: "missing")
+    expect(subscription).to be_rejected
   end
 end

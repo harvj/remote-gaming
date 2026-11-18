@@ -1,4 +1,5 @@
 class GamesController < ApplicationController
+  before_action :authenticate_user!, only: :show
   def index
     games = Game.all.order(:name)
 
@@ -10,7 +11,8 @@ class GamesController < ApplicationController
   end
 
   def show
-    @rep_game = Representers::Game.(@game)
+    @game ||= Game.find_by!(key: params[:game_key])
+    @rep_game = Representers::Game.(@game, viewer: current_user)
     respond_to do |format|
       format.html
       format.json { render json: { status: "success", content: { game: @rep_game } }.to_json }

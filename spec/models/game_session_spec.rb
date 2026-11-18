@@ -86,4 +86,11 @@ RSpec.describe 'GameSession' do
       expect(session.next_action).to eq nil
     end
   end
+
+  describe "#broadcast_live!" do
+    it "sends only a session-scoped invalidation" do
+      expect { session.broadcast_live! }.to have_broadcasted_to(GameSessionChannel.broadcasting_for(session))
+        .with(event: "session_changed")
+    end
+  end
 end

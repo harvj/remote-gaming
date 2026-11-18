@@ -15,11 +15,6 @@
     showArchived = !showArchived
   }
 
-  function handleDelete(event) {
-    const uid = event.detail
-
-    game.sessions = game.sessions.filter(s => s.uid !== uid)
-  }
 </script>
 
 <div id={`game-${game.key}`}>
@@ -44,7 +39,7 @@
       </h5>
 
       {#each waitingSessions as session (session.uid)}
-        <GameSessionRow {session} on:deleted={handleDelete}/>
+        <GameSessionRow {session}/>
       {/each}
     </section>
   {/if}
@@ -72,9 +67,9 @@
       {/each}
 
       <div class="archive-toggle">
-        <a href="#" on:click|preventDefault={toggleArchived}>
+        <button type="button" onclick={toggleArchived}>
           {showArchived ? "Hide" : "Show"} Archived
-        </a>
+        </button>
       </div>
     </section>
   {/if}

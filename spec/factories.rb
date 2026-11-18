@@ -6,6 +6,22 @@ FactoryBot.define do
     min_players { 1 }
     max_players { 3 }
 
+    trait :modern_art do
+      name { "Modern Art" }
+      key { "modern_art" }
+      slug { "modernart" }
+      min_players { 3 }
+      max_players { 5 }
+
+      after(:create) do |game|
+        Play::ModernArt::DECKS.first.each_with_index do |(artist, auctions), artist_index|
+          auctions.each_key.with_index do |auction, auction_index|
+            game.cards.create!(name: artist, value: auction, name_sort: artist_index, value_sort: auction_index)
+          end
+        end
+      end
+    end
+
     trait :cards do
       after(:create) do |game, evaluator|
         %w[one two three].each_with_index do |value, index|
@@ -19,9 +35,19 @@ FactoryBot.define do
   end
 
   factory :user do
-    username { 'prince' }
-    name { 'Prince Rogers Nelson' }
+    sequence(:username) { |index| "player-#{index}" }
+    sequence(:name) { |index| "Player #{index}" }
     password { 'purple' }
+
+    trait :mariah do
+      username { 'mariah' }
+      name { 'Mariah Carey' }
+    end
+
+    trait :quincy do
+      username { 'quincy' }
+      name { 'Quincy Jones' }
+    end
   end
 
   factory :card do

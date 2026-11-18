@@ -1,4 +1,5 @@
 class UsersController < ApplicationController
+  before_action :authenticate_user!
   before_action :load_user
 
   def show
@@ -14,6 +15,8 @@ class UsersController < ApplicationController
   private
 
   def load_user
-    @user = User.find_by(username: params[:id]) || not_found
+    raise ActiveRecord::RecordNotFound unless current_user.username == params[:id]
+
+    @user = current_user
   end
 end

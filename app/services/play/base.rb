@@ -6,6 +6,10 @@ class Play::Base
   TERMS = {}
   CONFIG = {}
 
+  def self.observation_schema
+    nil
+  end
+
   def initialize(game_session = nil, active_user = nil)
     @session     = game_session || create_session!
     @active_user = active_user
@@ -17,8 +21,12 @@ class Play::Base
     to: :session
 
   def call
-    Game.transaction { transition_state if session.playable? }
-    Services::Response.new(subject: session, errors: errors)
+    return Services::Response.new(subject: session, errors: []) unless session.playable?
+
+    SessionFrame::Record.call(session, action: "advance_phase") do
+      transition_state if session.playable?
+    end
+    Services::Response.new(subject: session, errors: [])
   end
 
   def create_session!
@@ -32,22 +40,27 @@ class Play::Base
   end
 
   def started
+    SessionFrame::Record.require_command!(session)
     session.update_column(:started_at, Time.zone.now)
     build_card_decks
     set_turn_order
   end
 
   def completed
+    SessionFrame::Record.require_command!(session)
     session.update_column(:completed_at, Time.zone.now)
   end
 
   def transition_state
+    SessionFrame::Record.require_command!(session)
     action = next_action
+    previous_phase = session.state
     session.update_column(:state, action)
-    SessionFrame::Create.(session,
+    SessionFrame::Create.!(session,
       action: action,
       acting_player: active_player,
-      subject: session
+      subject: session,
+      payload: { from: previous_phase, to: action }
     )
     public_send(action)
   end
@@ -66,8 +79,15 @@ class Play::Base
 
   # --- Player actions
 
+  def possible_player_actions(_player)
+    []
+  end
+
   def player_action(player, action: nil, params: {})
-    return if !player.possible_actions.include?(action)
+    unless player.possible_actions.include?(action)
+      raise SessionFrame::Record::InvalidAction, "Invalid player action"
+    end
+    SessionFrame::Create.!(session, action: "player_#{action}", acting_player: player, subject: player)
     if params.present?
       send("player_#{action}", player, params)
     else
@@ -86,7 +106,7 @@ class Play::Base
   # --- Player attributes
 
   def player_action_prompt(player)
-    return unless session.started? && session.current_player
+    return unless session.started? && session.current_player && player.action_phase.present?
     return special_game_phase_prompt if special_game_phase_prompt.present?
     player_action_prompts(player.action_phase)
   end
@@ -144,6 +164,7 @@ class Play::Base
   end
 
   def set_turn_order
+    SessionFrame::Record.require_command!(session)
     randomized_players = players.reload.shuffle
     first_player = randomized_players[0]
 
@@ -154,7 +175,9 @@ class Play::Base
       )
     end
     first_player.start_turn
-    session.update(current_player: first_player)
+    session.update!(current_player: first_player)
+    SessionFrame::Create.!(session, action: "turn_order_assigned", subject: session,
+      affected_player: first_player, payload: { player_ids: randomized_players.map(&:id) })
   end
 
   def special_game_phase?

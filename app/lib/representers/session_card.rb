@@ -23,7 +23,7 @@ module Representers
         playerId: session_card.player_id,
         status: session_card.status.titleize,
         tradeable: session_card.tradeable?,
-        validAction: session_card.valid_action,
+        validAction: session_card.player_id == session_card.session.current_player_id ? session_card.valid_action : nil,
         value: card.value.titleize,
         valueSort: card.value_sort,
         updatePath: session_card_path(session_card)

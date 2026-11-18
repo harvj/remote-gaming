@@ -12,11 +12,12 @@ RSpec.describe 'Player::Create' do
     expect(player.user).to eq user
     expect(player.session).to eq session
     expect(player).not_to be_moderator
+    expect(player).to be_table_captain
   end
 
   it 'add a session frame when a player joins' do
     player = player_create.subject
-    frame = session.frames.last
+    frame = session.frames.engine_events.last
     expect(frame.action).to eq 'player_created'
     expect(frame.acting_player).to eq player
     expect(frame.subject).to eq player
@@ -24,7 +25,7 @@ RSpec.describe 'Player::Create' do
 
   it 'does not create a player for session in progress' do
     player_create
-    session.engine.started
+    session.play_class.(session)
     attempt = Player::Create.(create(:user, username: 'mariah', name: "Mariah Carey"), session: session)
     expect(attempt.errors.first).to eq 'Session in progress'
     expect(Player.count).to eq 1

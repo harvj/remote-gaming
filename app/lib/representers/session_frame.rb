@@ -9,9 +9,14 @@ module Representers
         state: frame.state&.titleize
       }
 
-      result.merge!(
-        subject: Representers::SessionCard.(frame.subject)
-      ) if frame.subject_type == "SessionCard"
+      if frame.subject_type == "SessionCard"
+        card = frame.payload&.dig("card")
+        result[:subject] = if card
+          { name: card["name"].titleize, value: card["value"].titleize }
+        else
+          Representers::SessionCard.(frame.subject) if frame.subject
+        end
+      end
 
       result
     end

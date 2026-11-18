@@ -4,6 +4,8 @@ module Representers
 
     def build_object(session)
       @session = session
+      member = viewer && session.players.find_by(user: viewer)
+      replayable = session.replayable?
       scalar = {
         active: session.active?,
         allowDisplayPlayerSwitching: session.allow_display_player_switching?,
@@ -12,11 +14,14 @@ module Representers
         completedAt: session.completed_at&.strftime("%a %e %b %Y %k:%M:%S"),
         completedAtDate: session.completed_at&.strftime("%e %b %Y"),
         createdAt: session.created_at.to_i,
-        joinable: session.joinable?,
+        joinable: replayable && !member && session.joinable?,
         nextActionPrompt: session.next_action_prompt,
-        playable: session.playable?,
+        playable: replayable && session.playable?,
+        readOnly: !replayable,
+        revision: session.frames.maximum(:sequence) || 0,
+        canStart: replayable && member&.table_captain? && session.waiting? && session.playable?,
         playerCount: session.players.count,
-        promptForPlayerScore: session.prompt_for_player_score?,
+        promptForPlayerScore: replayable && session.prompt_for_player_score?,
         showInactiveCards: session.show_inactive_cards?,
         specialGamePhase: session.special_game_phase,
         started: session.started_at.present?,
@@ -39,12 +44,51 @@ module Representers
           }
         end,
         game: Representers::Game.(session.game, scalar: true),
-        players: Representers::Player.(players, viewer: viewer)
+        players: Representers::Player.(players, viewer: viewer, reveal: member && session.completed? && session.game.key == "modern_art")
       )
 
       scalar.merge!(currentPlayerId: session.current_player.id, currentPlayerName: session.current_player.user.name) if session.current_player.present?
 
+      if member && replayable && session.game.key == "modern_art"
+        scalar[:physical] = physical_history(member)
+      elsif member && !replayable
+        scalar[:physical] = { coverage: "unrecorded", observations: [] }
+      end
+
       scalar
+    end
+
+    def physical_history(member)
+      history = ::SessionFrame::Tabletop.call(session.frames.observations.order(:sequence))
+      history[:observations] = history.fetch(:observations).map do |frame|
+        { id: frame.id, type: frame.action, phase: frame.state, provenance: frame.kind, actorId: frame.acting_player_id,
+          recordedAt: frame.created_at.iso8601, occurredAt: frame.occurred_at&.iso8601, contextId: frame.context_frame_id,
+          correctsId: frame.corrects_frame_id, data: frame.payload,
+          cardLabel: observation_card_label(frame) }
+      end
+      return history unless member.table_captain?
+
+      history.merge(
+        path: session_observations_path(session.uid),
+        contexts: session.frames.checkpoints.where(state: Play::ModernArt::PLAY_SEQUENCE).order(:sequence).map do |frame|
+          state = frame.payload
+          { id: frame.id, label: "#{frame.state.titleize} · #{frame.sequence}",
+            cards: state.fetch("cards").filter_map do |card|
+              next unless card["played_at"]
+
+              definition = card.fetch("definition")
+              { id: card["id"], label: "#{definition.fetch('name').titleize} · #{definition.fetch('value').titleize}" }
+            end }
+        end
+      )
+    end
+
+    def observation_card_label(frame)
+      return unless frame.action == "auction_result"
+
+      card = frame.context_frame.payload.fetch("cards").find { |item| item["id"] == frame.payload["card_id"] }
+      definition = card.fetch("definition")
+      "#{definition.fetch('name').titleize} · #{definition.fetch('value').titleize}"
     end
 
     def players

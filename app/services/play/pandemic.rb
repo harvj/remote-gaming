@@ -273,7 +273,7 @@ class Play::Pandemic < Play::Base
   end
 
   def show_inactive_cards?
-    epidemic? && %w[infect discard].include?(current_player.action_phase)
+    epidemic? && %w[infect discard].include?(current_player&.action_phase)
   end
 
   def allow_display_player_switching?
@@ -299,8 +299,7 @@ class Play::Pandemic < Play::Base
   end
 
   def deck_cards(key)
-    SessionCard.find_by_sql(
-      <<~SQL,
+    SessionCard.find_by_sql([ <<~SQL, "#{key}%" ])
         select session_cards.* from session_cards
         inner join session_decks on session_decks.id = session_cards.session_deck_id
         where session_cards.game_session_id = #{session.id}
@@ -308,9 +307,7 @@ class Play::Pandemic < Play::Base
         and dealt_at is null
         and discarded_at is null
         order by session_decks.key DESC, random()
-      SQL
-      "#{key}%"
-    )
+    SQL
   end
 
   def epidemic_count

@@ -1,28 +1,15 @@
 class SessionCardsController < ApplicationController
-  before_action :load_session_card, only: %i[update]
-
-  VALID_ACTIONS = %w[discard play deal].freeze
+  before_action :authenticate_user!
 
   def update
-    action = params[:card_action].to_s
+    card = SessionCard.where(game_session_id: scoped_sessions.select(:id)).find(params[:id])
+    SessionFrame::Record.call(card.session, action: "play_card") do
+      card.reload
+      raise ActiveRecord::RecordNotFound unless card.player&.user == current_user && card.player.removed_at.nil?
+      raise SessionFrame::Record::InvalidAction, "Invalid card action" unless params[:card_action] == "play"
 
-    unless VALID_ACTIONS.include?(action)
-      render json: { status: "error", content: {}, errors: [ "Invalid card action" ] }, status: :unprocessable_entity
-      return
+      card.play
     end
-
-    @session_card.public_send(action)
-
-    @session_card.session.broadcast_live!
-
-    @rep_session = Representers::GameSession.(@session_card.session, viewer: current_user)
-
-    render json: { status: "success", content: { session: @rep_session }, errors: [] }
-  end
-
-  private
-
-  def load_session_card
-    @session_card = SessionCard.find(params[:id])
+    render_session(card.session)
   end
 end

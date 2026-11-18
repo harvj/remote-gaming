@@ -51,7 +51,7 @@ Rails.application.routes.draw do
 
   get "s/:uid" => "game_sessions#show", as: :game_session
   patch "s/:uid" => "game_sessions#update"
-  delete "s/:uid" => "game_sessions#destroy"
+  post "s/:uid/observations" => "game_sessions#observe", as: :session_observations
 
   get ":game_key" => "games#show", as: :game
 end

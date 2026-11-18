@@ -1,6 +1,10 @@
 class UserConfigsController < ApplicationController
+  before_action :authenticate_user!
+
   def update
-    user = User.find_by(username: params[:user_id]) || not_found
+    raise ActiveRecord::RecordNotFound unless current_user.username == params[:user_id]
+
+    user = current_user
     if user.config.update(config_params)
       render json: { status: "success", content: { user: Representers::User.(user.reload) }, errors: [] }
     end

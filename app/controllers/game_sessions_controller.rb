@@ -1,35 +1,47 @@
 class GameSessionsController < ApplicationController
-  before_action :load_game_session, only: %i[update show destroy]
+  before_action :authenticate_user!
+  before_action :load_game_session, except: :create
 
   def create
-    game_session = @game.play_class.().subject
-    redirect_to game_root_path(@game)
+    game = @game || Game.find_by!(key: params[:game_key])
+    session = GameSession::Create.!(game).subject
+    redirect_to game_session_path(session.uid)
   end
 
   def update
-    updated_session = @game.play_class.(@game_session, current_user).subject
-    updated_session.broadcast_live!
-
-    @rep_session = Representers::GameSession.(updated_session, viewer: current_user)
-    render json: { status: "success", content: { session: @rep_session } }
+    SessionFrame::Record.call(@game_session, action: "advance_phase") do
+      captain = @game_session.players.find_by!(user: current_user, table_captain: true)
+      unless captain && @game_session.waiting? && @game_session.playable?
+        raise SessionFrame::Record::InvalidAction, "The captain can start when enough players join"
+      end
+      @game_session.play_class.(@game_session, current_user)
+    end
+    render_session(@game_session)
   end
 
   def show
-    @rep_session = Representers::GameSession.(@game_session, viewer: current_user)
     respond_to do |format|
-      format.html
-      format.json { render json: { status: "success", content: { session: @rep_session } } }
+      format.html do
+        response.headers["Cache-Control"] = "no-store"
+        @rep_session = session_view(@game_session)
+      end
+      format.json { render_session(@game_session) }
     end
   end
 
-  def destroy
-    @game_session.destroy
-    head :ok
+  def observe
+    SessionFrame::Observe.call(@game_session, current_user,
+      params.require(:observation).permit(:type, :context_frame_id, :corrects_frame_id, :occurred_at,
+        data: {}).to_h)
+    render_session(@game_session)
   end
 
   private
 
   def load_game_session
-    @game_session = GameSession.find_by!(uid: params[:uid])
+    @game_session = scoped_sessions.find_by!(uid: params[:uid])
+    raise ActiveRecord::RecordNotFound unless @game_session.can_view?(current_user)
+
+    @game = @game_session.game
   end
 end

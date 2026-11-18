@@ -17,43 +17,33 @@ class SessionCard < ApplicationRecord
   # --- Actions
 
   def deal(player = nil)
-    SessionCard.transaction do
-      update(
-        dealt_at: Time.zone.now,
-        player: player
-      )
-      SessionFrame::Create.(session,
-        action: "card_dealt",
-        affected_player: player,
-        subject: self
-      )
+    SessionFrame::Record.call(session, action: "deal_card") do
+      reload
+      update!(dealt_at: Time.current, player: player)
+      SessionFrame::Create.!(session, action: "card_dealt", affected_player: player, subject: self)
       session.engine.card_dealt(self)
     end
   end
 
   def play(affected_player = nil)
-    SessionCard.transaction do
-      return unless playable?
-      update_column(:played_at, Time.zone.now)
-      SessionFrame::Create.(session,
-        action: "card_played",
-        acting_player: player,
-        affected_player: affected_player,
-        subject: self
-      )
+    SessionFrame::Record.call(session, action: "play_card") do
+      reload
+      unless playable? && !session.completed? && (player == session.current_player || playable_out_of_turn?)
+        raise SessionFrame::Record::InvalidAction, "Card cannot be played now"
+      end
+      update_column(:played_at, Time.current)
+      SessionFrame::Create.!(session, action: "card_played", acting_player: player, affected_player: affected_player, subject: self)
       session.engine.card_played(self)
     end
   end
 
   def discard(player = nil)
-    SessionCard.transaction do
-      return unless discardable?
-      update_column(:discarded_at, Time.zone.now)
-      SessionFrame::Create.(session,
-        action: "card_discarded",
-        acting_player: player,
-        subject: self
-      )
+    SessionFrame::Record.call(session, action: "discard_card") do
+      reload
+      raise SessionFrame::Record::InvalidAction, "Card cannot be discarded" unless discardable?
+
+      update_column(:discarded_at, Time.current)
+      SessionFrame::Create.!(session, action: "card_discarded", acting_player: player, subject: self)
       session.engine.card_discarded(self)
     end
   end

@@ -1,10 +1,13 @@
 class SessionFrame::Create < Services::Create
   def initialize(session, params = {})
-    super(session,
-      params.merge(
-        previous_frame: session.frames.last,
-        state: session.state
-      )
-    )
+    last = session.frames.reorder(:sequence).last
+    subject = params[:subject]
+    if subject.is_a?(SessionCard) && !params.key?(:payload)
+      params = params.merge(payload: { card: subject.card.slice(*SessionFrame::Snapshot::CATALOG_FIELDS) })
+    end
+    super(session, {
+      previous_frame: last, state: session.state, kind: "engine",
+      sequence: (last&.sequence || 0) + 1, game_key: session.game.key, format_version: 1
+    }.merge(params))
   end
 end

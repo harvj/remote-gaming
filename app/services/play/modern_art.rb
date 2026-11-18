@@ -29,6 +29,10 @@ class Play::ModernArt < Play::Base
     sortCardsBy: "status"
   }
 
+  def self.observation_schema
+    Games::ModernArt::Observations
+  end
+
   def deck
     @deck ||= session.decks.find_by(key: "default")
   end
@@ -66,7 +70,7 @@ class Play::ModernArt < Play::Base
     single_double_player = last_card_played_frame.acting_player
     session.advance_turn
     if single_double_player == player.next_player
-      SessionFrame::Create.(session,
+      SessionFrame::Create.!(session,
         action: "free_single_double",
         affected_player: single_double_player,
         subject: last_session_card_played
@@ -92,7 +96,7 @@ class Play::ModernArt < Play::Base
   def card_playable?(session_card)
     card = session_card.card
     return true if last_card_played_frame.blank?
-    last_card_played.value != "double" || (card.name == last_card_played.name && card.value != "double") || session.frames.last.action == "free_single_double"
+    last_card_played.value != "double" || (card.name == last_card_played.name && card.value != "double") || single_double_released?
   end
 
   # --- General game functions
@@ -121,10 +125,14 @@ class Play::ModernArt < Play::Base
 
   # --- Game specific functions
 
+  def single_double_released?
+    session.frames.engine_events.where(state: session.state, action: %w[card_played free_single_double]).last&.action == "free_single_double"
+  end
+
   def can_pass?(player)
     return false if player.idle?
     return false if last_card_played_frame.blank?
-    return false if session.frames.last&.action == "free_single_double"
-    last_card_played.value == "double" && session.frames.where(action: "player_passed", acting_player: player).where("created_at > ?", last_card_played_frame.created_at).blank?
+    return false if single_double_released?
+    last_card_played.value == "double" && session.frames.where(action: %w[player_pass player_passed], acting_player: player).where("id > ?", last_card_played_frame.id).blank?
   end
 end
