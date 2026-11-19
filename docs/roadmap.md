@@ -1,6 +1,6 @@
 # Remote Gaming roadmap
 
-P1.0 is live as the game directory. P1.1 restored Modern Art and introduced versioned SessionFrame history in local code. Modern Art and Pandemic are listed as unavailable in production.
+P1.0 is live as the game directory. P1.1 restored Modern Art and introduced versioned SessionFrame history. P1.2 verified private Modern Art staging over named HTTPS and rehearsed Capistrano rollback. Modern Art and Pandemic are listed as unavailable in production.
 
 ## P1.2 — Private Modern Art staging and multiplayer verification
 
@@ -23,6 +23,8 @@ P1.0 is live as the game directory. P1.1 restored Modern Art and introduced vers
 - Keep gameplay, authorized table-captain observations, and the resulting history available inside the experiment. Exclude experiments from ordinary leaderboards and aggregates by default.
 
 ### Verification
+
+The P1.3 consumer and private sessions are verified locally. Live OIDC cutover requires a reviewed Auth registration and verified profile links. See the [identity and experiments runbook](../deploy/identity-and-experiments.md).
 
 Test identity linking and conflicts, historical memberships, Remote Gaming-only and multi-application users, voluntary MFA, cross-application assurance, dummy credential expiry and revocation, hidden hands, isolated multi-browser gameplay, and statistical separation.
 

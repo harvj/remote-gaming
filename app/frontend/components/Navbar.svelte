@@ -3,7 +3,6 @@
 
   export let currentUser = null;
   export let currentGame = null;
-  export let rootPath = "/";
   export let loginPath = "/login";
   export let csrfToken = null;
 
@@ -72,9 +71,11 @@
 
         {#if menuOpen}
           <div class="dropdown-menu">
-            <a href={currentUser.profilePath} class="dropdown-item" on:click={closeMenu}>
-              Profile
-            </a>
+            {#if currentUser.profilePath}
+              <a href={currentUser.profilePath} class="dropdown-item" on:click={closeMenu}>
+                Profile
+              </a>
+            {/if}
 
             <form method="post" action={currentUser.logoutPath} class="dropdown-form">
               <input type="hidden" name="_method" value="delete" />

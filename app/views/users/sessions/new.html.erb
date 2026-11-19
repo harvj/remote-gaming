@@ -3,26 +3,31 @@
 
     <h1 class="auth-title">Log In</h1>
 
-    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "auth-form" }) do |f| %>
+    <% if CanonicalAuth.enabled? %>
+      <%= button_to "Continue to Auth", auth_start_path, class: "auth-submit" %>
+      <p><%= link_to "Join as a dummy player", dummy_login_path %></p>
+    <% else %>
+      <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "auth-form" }) do |f| %>
 
-      <div class="auth-field-group">
+        <div class="auth-field-group">
 
-        <%= f.text_field :username,
-          autofocus: true,
-          autocomplete: "username",
-          placeholder: "Username",
-          class: "auth-username"
-        %>
+          <%= f.text_field :username,
+            autofocus: true,
+            autocomplete: "username",
+            placeholder: "Username",
+            class: "auth-username"
+          %>
 
-        <%= f.password_field :password,
-          autocomplete: "current-password",
-          placeholder: "Password"
-        %>
+          <%= f.password_field :password,
+            autocomplete: "current-password",
+            placeholder: "Password"
+          %>
 
-      </div>
+        </div>
 
-      <%= f.submit "Log In", class: "auth-submit" %>
+        <%= f.submit "Log In", class: "auth-submit" %>
 
+      <% end %>
     <% end %>
 
   </div>

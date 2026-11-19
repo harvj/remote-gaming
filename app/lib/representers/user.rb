@@ -4,9 +4,9 @@ module Representers
       config = user.config
       {
         name: user.name,
-        uri: user_path(user),
+        uri: user.dummy? ? nil : user_path(user),
         username: user.username,
-        configPath: user_config_path(user),
+        configPath: user.dummy? ? nil : user_config_path(user),
         config: {
           showAllBadges: config ? config.show_all_badges? : true,
           showBadgeValues: config ? config.show_badge_values? : true

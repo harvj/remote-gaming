@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   devise :database_authenticatable, authentication_keys: [ :username ]
 
+  has_one :auth_identity, dependent: :restrict_with_exception
   has_many :players
   has_one :user_config, dependent: :destroy
   alias_method :config, :user_config
@@ -15,7 +16,7 @@ class User < ApplicationRecord
   after_create :ensure_config!
 
   def active_for_authentication?
-    super && (!ModernArtStaging.enabled? || ModernArtStaging::ACCOUNTS.include?(username))
+    super && !dummy? && !CanonicalAuth.enabled? && (!ModernArtStaging.enabled? || ModernArtStaging::ACCOUNTS.include?(username))
   end
 
   def to_param

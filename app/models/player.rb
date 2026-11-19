@@ -4,6 +4,8 @@ class Player < ApplicationRecord
   belongs_to :next_player, class_name: "Player", optional: true
   belongs_to :role, optional: true
 
+  has_one :dummy_access, dependent: :restrict_with_exception
+
   has_many :cards, class_name: "SessionCard"
   has_many :frames, class_name: "SessionFrame", foreign_key: "acting_player_id"
 

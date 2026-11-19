@@ -1,3 +1,18 @@
+<% if @game_session.experimental? %>
+  <section class="panel">
+    <h2>Private experiment</h2>
+    <% if @game_session.experiment_owner_id == current_user.id %>
+      <% if @game_session.joinable? %>
+        <%= button_to "Add dummy player", session_dummies_path(@game_session.uid) %>
+      <% end %>
+      <% @game_session.all_players.joins(:dummy_access).includes(:user).each do |seat| %>
+        <p><%= seat.user.name %></p>
+        <%= button_to "Issue new code", rotate_session_dummy_path(@game_session.uid, seat.id) %>
+        <%= button_to "Revoke access", session_dummy_path(@game_session.uid, seat.id), method: :delete %>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>
 <div id="game-sessions-show"></div>
 
 <script id="game-sessions-show-data" type="application/json">

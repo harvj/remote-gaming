@@ -2,7 +2,7 @@ module Query
   class Players < Query::Base
     def score_stats
       Player.find_by_sql(
-        <<~SQL,
+        [ <<~SQL,
           SELECT
             avg(players.score)::INTEGER,
             stddev(players.score)::INTEGER,
@@ -10,17 +10,17 @@ module Query
             (SELECT count(*) FROM players p WHERE p.game_session_id = players.game_session_id) as player_count
           FROM players
           JOIN game_sessions ON game_sessions.id = game_session_id
-          WHERE game_sessions.game_id = ?
+          WHERE game_sessions.experimental = FALSE AND game_sessions.game_id = ?
           AND players.score IS NOT NULL
           GROUP BY player_count
         SQL
-        params[:game_id]
+        params[:game_id] ]
       )
     end
 
     def user_stats
       Player.find_by_sql(
-        <<~SQL,
+        [ <<~SQL,
           SELECT * FROM ( SELECT
             username,
             player_count,
@@ -40,7 +40,7 @@ module Query
             FROM players
             JOIN users ON players.user_id = users.id
             JOIN game_sessions ON players.game_session_id = game_sessions.id
-            WHERE players.score IS NOT NULL
+            WHERE game_sessions.experimental = FALSE AND players.score IS NOT NULL
             AND game_sessions.game_id = :game_id
           ) AS x
           JOIN (
@@ -52,7 +52,7 @@ module Query
             JOIN cards on cards.id = session_cards.card_id
             JOIN players on session_cards.player_id = players.id and players.score IS NOT NULL
             JOIN users on players.user_id = users.id
-            WHERE game_sessions.game_id = :game_id
+            WHERE game_sessions.experimental = FALSE AND game_sessions.game_id = :game_id
             AND cards.value = 'double'
             GROUP BY cards_username, cards_player_count
           ) AS cards_table ON cards_table.cards_username = x.username AND cards_table.cards_player_count = x.player_count
@@ -60,7 +60,7 @@ module Query
           ORDER BY player_count DESC, average DESC
         ) AS y WHERE y.games_played > 1
         SQL
-        { game_id: params[:game_id] }
+        { game_id: params[:game_id] } ]
       )
     end
 
@@ -94,7 +94,7 @@ module Query
           left outer join cards on session_cards.card_id = cards.id
           where session_frames.action = 'card_played'
         ) as single_double on session_frames.previous_frame_id = single_double.id
-        where game_sessions.game_id = 1
+        where game_sessions.experimental = FALSE AND game_sessions.game_id = 1
         and session_frames.action = 'player_pass' )
 
         select id, username, sd_played_on_count, sd_played_count, games,
@@ -103,7 +103,7 @@ module Query
           round(round(sd_played_count::decimal / NULLIF(games, 0), 2) / round(sd_played_on_count::decimal / NULLIF(games, 0), 2), 2) as sd_ratio
         FROM (
           select users.id, users.username, a.sd_played_on_count, b.sd_played_count,
-          (select count(*) from players where players.game_session_id >= 60 and players.user_id = users.id and players.game_id = 1) as games
+          (select count(*) from players join game_sessions on game_sessions.id = players.game_session_id where game_sessions.experimental = FALSE and players.game_session_id >= 60 and players.user_id = users.id and players.game_id = 1) as games
           from users
           join (
             select users.id, count(single_doubles.auid) as sd_played_on_count from users
@@ -139,7 +139,7 @@ module Query
           FROM players
           JOIN users ON players.user_id = users.id
           JOIN game_sessions ON players.game_session_id = game_sessions.id
-          WHERE players.score IS NOT NULL
+          WHERE game_sessions.experimental = FALSE AND players.score IS NOT NULL
           AND game_sessions.game_id = 1
         ) AS x
         GROUP BY x.turn_order, player_count
@@ -151,7 +151,7 @@ module Query
 
     def non_winners_from_date
       Player.find_by_sql(
-        <<~SQL,
+        [ <<~SQL,
           SELECT
             users.username,
             players.score,
@@ -159,11 +159,11 @@ module Query
           FROM game_sessions
           JOIN players ON players.game_session_id = game_sessions.id
           JOIN users ON players.user_id = users.id
-          WHERE timezone('US/Pacific', completed_at AT TIME ZONE 'utc')::DATE = :date
-          AND users.id NOT IN
+          WHERE game_sessions.experimental = FALSE AND timezone('US/Pacific', completed_at AT TIME ZONE 'utc')::DATE = :date
+          AND players.user_id NOT IN
             ( SELECT DISTINCT user_id FROM game_sessions
               JOIN players ON players.game_session_id = game_sessions.id
-              WHERE timezone('US/Pacific', completed_at AT TIME ZONE 'utc')::DATE = :date
+              WHERE game_sessions.experimental = FALSE AND timezone('US/Pacific', completed_at AT TIME ZONE 'utc')::DATE = :date
               AND winner IS TRUE
             )
           AND players.game_id = :game_id
@@ -171,7 +171,7 @@ module Query
         {
           date: params[:date].strftime("%Y-%m-%d"),
           game_id: params[:game_id]
-        }
+        } ]
       )
     end
 
@@ -198,7 +198,7 @@ module Query
         JOIN games ON game_sessions.game_id = games.id
         JOIN session_cards ON session_frames.subject_id = session_cards.id AND session_frames.acting_player_id = players.id
         JOIN cards ON cards.id = session_cards.card_id
-        WHERE games.id = 1
+        WHERE game_sessions.experimental = FALSE AND games.id = 1
         AND game_sessions.completed_at > '2021-01-02'
         GROUP BY users.id ) AS x
         WHERE x.games_played > 5
@@ -208,6 +208,7 @@ module Query
 
     def current_win_streak
       Player.find_by_sql(<<~SQL
+        WITH players AS (SELECT players.* FROM public.players JOIN game_sessions ON game_sessions.id = players.game_session_id WHERE NOT game_sessions.experimental)
         select count(*) as streak from players
         join ( select x.user_id, players.id
           from ( select user_id from players where winner is true and game_id = 1 order by id desc limit 1 ) as x

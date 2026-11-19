@@ -7,6 +7,7 @@ gem "puma", ">= 5.0"
 gem "vite_rails"
 
 gem "devise"
+gem "jwt", "~> 3.1"
 gem "immutable-struct"
 gem "passphrase"
 

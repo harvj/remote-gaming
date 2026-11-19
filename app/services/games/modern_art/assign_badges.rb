@@ -4,7 +4,7 @@ module Games
 
     def initialize
       @game = Game.find_by(key: "modern_art")
-      @last_session = game.sessions.completed.last
+      @last_session = game.sessions.ordinary.completed.last
     end
 
     def call

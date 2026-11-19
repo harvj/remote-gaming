@@ -1,6 +1,7 @@
 class Player::Create < Services::Create
   def initialize(user, params)
     @session = params.fetch(:session)
+    @recorded_by = params.delete(:recorded_by)
     super(user, params.merge(action_phase: "idle", game_id: @session.game_id))
   end
 
@@ -10,7 +11,7 @@ class Player::Create < Services::Create
   end
 
   def apply_post_processing
-    SessionFrame::Create.!(@session, action: "player_created", acting_player: subject, subject: subject)
+    SessionFrame::Create.!(@session, action: "player_created", acting_player: @recorded_by || subject, subject: subject)
   end
 
   private

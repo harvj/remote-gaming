@@ -12,16 +12,23 @@ module Representers
       return scalar if scalar_only?
 
       scalar.merge(
-        sessions: Representers::GameSessionRow.(game_sessions)
+        sessions: Representers::GameSessionRow.(game_sessions),
+        experiments: CanonicalAuth.enabled? ? Representers::GameSessionRow.(experiments) : nil
       )
     end
 
     attr_reader :game
 
+    def experiments
+      return [] unless viewer && !viewer.dummy?
+
+      game.sessions.where(experimental: true, experiment_owner: viewer).order(id: :desc)
+    end
+
     def game_sessions
       return [] unless viewer
 
-      ::GameSession.where(id: ::Player.joined.where(user_id: viewer.id).select(:game_session_id))
+      ::GameSession.ordinary.where(id: ::Player.joined.where(user_id: viewer.id).select(:game_session_id))
         .where(game: game).order(id: :desc).includes(:game, winner: %i[role user])
     end
   end

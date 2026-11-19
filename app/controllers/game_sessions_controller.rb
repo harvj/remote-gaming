@@ -4,8 +4,20 @@ class GameSessionsController < ApplicationController
 
   def create
     game = @game || Game.find_by!(key: params[:game_key])
-    session = GameSession::Create.!(game).subject
-    redirect_to game_session_path(session.uid)
+    experimental = params[:experimental] == "1"
+    return head :forbidden if experimental && !(CanonicalAuth.enabled? && BrowserIdentity.oidc_user(session))
+    return head :not_found if experimental && game.key != "modern_art"
+
+    if experimental
+      table = GameSession.transaction do
+        table = GameSession::Create.!(game, experimental: true, experiment_owner: current_user).subject
+        Player::Create.!(current_user, session: table)
+        table
+      end
+    else
+      table = GameSession::Create.!(game).subject
+    end
+    redirect_to game_session_path(table.uid)
   end
 
   def update

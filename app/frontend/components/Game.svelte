@@ -29,8 +29,20 @@
       <button type="submit" class="btn btn-primary">
         Create New +
       </button>
+      {#if game.experiments}
+        <button type="submit" name="experimental" value="1" class="btn">Create private experiment</button>
+      {/if}
     </form>
   </header>
+
+  {#if game.experiments?.length}
+    <section class="panel">
+      <h2>My private experiments</h2>
+      {#each game.experiments as session (session.uid)}
+        <GameSessionRow {session}/>
+      {/each}
+    </section>
+  {/if}
 
   {#if waitingSessions.length > 0}
     <section class="panel waiting">

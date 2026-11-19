@@ -12,7 +12,7 @@ module Representers
         role: Representers::Role.(player.role),
         score: player.score,
         turnOrder: player.turn_order,
-        user: Representers::User.(player.user),
+        user: player.session.experimental? && viewer&.id != player.user_id ? player.user.slice("name", "username") : Representers::User.(player.user),
         winner: player.winner,
         playPath: play_player_path(player),
         playerPath: player_path(player)

@@ -92,6 +92,8 @@ module Representers
     end
 
     def players
+      return session.players.includes(:user, :role) if session.experimental?
+
       ::Player.find_by_sql(<<~SQL
         SELECT players.*,
           min(last_win.date) as last_win_date,
@@ -113,6 +115,7 @@ module Representers
               join game_sessions on game_sessions.id = players.game_session_id
               where players.user_id = users.id
               and winner is true
+              and game_sessions.experimental = FALSE
               and game_sessions.game_id = #{session.game_id}
               order by players.created_at desc limit 1
             )

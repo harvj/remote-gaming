@@ -1,0 +1,11 @@
+<h1><%= @user.name %></h1>
+<p><%= @user.username %></p>
+<section class="panel">
+  <h2>Ordinary game history</h2>
+  <dl>
+    <% @game_stats.each do |game| %>
+      <dt><%= game.name %></dt>
+      <dd><%= pluralize(game.play_count, "game") %></dd>
+    <% end %>
+  </dl>
+</section>

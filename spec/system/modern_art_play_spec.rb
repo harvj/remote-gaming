@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Modern Art multiplayer", type: :system do
   let(:game) { create(:game, :modern_art) }
   let(:table) { GameSession::Create.!(game).subject }
-  let(:members) { Array.new(3) { create(:user) } }
+
 
   def play_next(table)
     player = table.current_player
@@ -24,6 +24,7 @@ RSpec.describe "Modern Art multiplayer", type: :system do
   end
 
   it "joins three players, plays four seasons, reports a physical payment and replays the result" do
+    members = Array.new(3) { create(:user) }
     members.each_with_index do |member, index|
       using_session(member.id) do
         visit login_path
@@ -38,6 +39,47 @@ RSpec.describe "Modern Art multiplayer", type: :system do
       end
     end
 
+    play_game(table, members)
+  end
+
+  it "plays and replays a private experiment from one real browser and two separately redeemed dummy browsers" do
+    owner = create(:user)
+    issuer = "https://auth.fixture.test"
+    allow(ENV).to receive(:[]).and_call_original
+    allow(ENV).to receive(:[]).with("REMOTE_GAMING_OIDC_ISSUER").and_return(issuer)
+    allow(CanonicalAuth).to receive(:enabled?).and_return(true)
+    identity = AuthIdentity.create!(user: owner, issuer: issuer, subject: "owner", evidence_reference: "fixture")
+    provider = instance_double(CanonicalAuth)
+    allow(CanonicalAuth).to receive(:new).and_return(provider)
+    allow(provider).to receive(:authenticate).with(nil, state: "fixture", code: "fixture").and_return([ identity, CanonicalAuth::MFA ])
+
+    experiment = nil
+    seats = []
+    using_session(owner.id) do
+      visit "/auth/callback?state=fixture&code=fixture"
+      visit game_path(game.key)
+      click_button "Create private experiment"
+      expect(page).to have_text("Private experiment")
+      experiment = GameSession.find_by!(experiment_owner: owner)
+      2.times do
+        click_button "Add dummy player"
+        secret = find("#dummy-credential").text
+        seats << experiment.players.joins(:dummy_access).order(:id).last.user
+        using_session(seats.last.id) do
+          visit dummy_login_path
+          fill_in "One-time access code", with: secret
+          click_button "Open private table"
+          expect(page).to have_text("Private experiment")
+        end
+        click_link "Return to the private table"
+      end
+    end
+    play_game(experiment, [ owner, *seats ])
+    expect(experiment.frames.where(actor_kind: "dummy", action: "card_played")).to exist
+    expect(experiment.frames.observations.pluck(:actor_kind)).to eq([ "person", "person" ])
+  end
+
+  def play_game(table, members)
     using_session(members.first.id) do
       expect(page).to have_text("3 players")
       click_button "Start with 3 players"
@@ -47,7 +89,7 @@ RSpec.describe "Modern Art multiplayer", type: :system do
 
     starting_player = table.reload.current_player
     reconnecting = members.find { |member| member.id != starting_player.user_id }
-    using_session(reconnecting.id) { visit root_path }
+    using_session(reconnecting.id) { visit(reconnecting.dummy? ? dummy_login_path : root_path) }
     play_next(table.reload)
     using_session(reconnecting.id) do
       visit game_session_path(table.uid)

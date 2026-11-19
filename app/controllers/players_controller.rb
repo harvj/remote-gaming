@@ -4,6 +4,8 @@ class PlayersController < ApplicationController
 
   def create
     session = scoped_sessions.find_by!(uid: params[:uid])
+    raise ActiveRecord::RecordNotFound unless session.can_view?(current_user)
+
     SessionFrame::Record.call(session, action: "join") do
       if (player = session.all_players.find_by(user: current_user))
         player.rejoin_session if player.removed_at
@@ -16,7 +18,10 @@ class PlayersController < ApplicationController
 
   def update
     case params[:player_action]
-    when "leave_session" then @player.leave_session
+    when "leave_session"
+      raise SessionFrame::Record::InvalidAction, "Experiment seats stay with the table" if @player.session.experimental?
+
+      @player.leave_session
     when nil
       score = Integer(params.require(:player).fetch(:score).to_s, 10, exception: false)
       raise SessionFrame::Record::InvalidAction, "Enter a whole-number score" unless score&.between?(-2_147_483_648, 2_147_483_647)

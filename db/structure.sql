@@ -39,6 +39,73 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: auth_identities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_identities (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    issuer character varying NOT NULL,
+    subject character varying NOT NULL,
+    evidence_reference character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: auth_identities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.auth_identities_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: auth_identities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.auth_identities_id_seq OWNED BY public.auth_identities.id;
+
+
+--
+-- Name: auth_logins; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_logins (
+    id bigint NOT NULL,
+    auth_identity_id bigint NOT NULL,
+    assurance character varying NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: auth_logins_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.auth_logins_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: auth_logins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.auth_logins_id_seq OWNED BY public.auth_logins.id;
+
+
+--
 -- Name: badges; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -115,6 +182,40 @@ ALTER SEQUENCE public.cards_id_seq OWNED BY public.cards.id;
 
 
 --
+-- Name: dummy_accesses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dummy_accesses (
+    id bigint NOT NULL,
+    player_id bigint NOT NULL,
+    credential_digest character varying,
+    browser_digest character varying,
+    expires_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: dummy_accesses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dummy_accesses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dummy_accesses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dummy_accesses_id_seq OWNED BY public.dummy_accesses.id;
+
+
+--
 -- Name: game_sessions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -129,7 +230,10 @@ CREATE TABLE public.game_sessions (
     started_at timestamp(6) without time zone,
     state character varying,
     uid character varying,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    experimental boolean DEFAULT false NOT NULL,
+    experiment_owner_id bigint,
+    CONSTRAINT game_sessions_experiment_owner CHECK ((experimental = (experiment_owner_id IS NOT NULL)))
 );
 
 
@@ -367,7 +471,8 @@ CREATE TABLE public.session_frames (
     payload jsonb,
     occurred_at timestamp(6) without time zone,
     context_frame_id bigint,
-    corrects_frame_id bigint
+    corrects_frame_id bigint,
+    actor_kind character varying
 );
 
 
@@ -471,7 +576,8 @@ CREATE TABLE public.users (
     reset_password_sent_at timestamp(6) without time zone,
     reset_password_token character varying,
     updated_at timestamp(6) without time zone NOT NULL,
-    username character varying DEFAULT ''::character varying NOT NULL
+    username character varying DEFAULT ''::character varying NOT NULL,
+    dummy boolean DEFAULT false NOT NULL
 );
 
 
@@ -495,6 +601,20 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
+-- Name: auth_identities id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_identities ALTER COLUMN id SET DEFAULT nextval('public.auth_identities_id_seq'::regclass);
+
+
+--
+-- Name: auth_logins id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_logins ALTER COLUMN id SET DEFAULT nextval('public.auth_logins_id_seq'::regclass);
+
+
+--
 -- Name: badges id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -506,6 +626,13 @@ ALTER TABLE ONLY public.badges ALTER COLUMN id SET DEFAULT nextval('public.badge
 --
 
 ALTER TABLE ONLY public.cards ALTER COLUMN id SET DEFAULT nextval('public.cards_id_seq'::regclass);
+
+
+--
+-- Name: dummy_accesses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dummy_accesses ALTER COLUMN id SET DEFAULT nextval('public.dummy_accesses_id_seq'::regclass);
 
 
 --
@@ -587,6 +714,22 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
+-- Name: auth_identities auth_identities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_identities
+    ADD CONSTRAINT auth_identities_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_logins auth_logins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_logins
+    ADD CONSTRAINT auth_logins_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: badges badges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -600,6 +743,14 @@ ALTER TABLE ONLY public.badges
 
 ALTER TABLE ONLY public.cards
     ADD CONSTRAINT cards_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dummy_accesses dummy_accesses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dummy_accesses
+    ADD CONSTRAINT dummy_accesses_pkey PRIMARY KEY (id);
 
 
 --
@@ -691,6 +842,27 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: index_auth_identities_on_issuer_and_subject; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_auth_identities_on_issuer_and_subject ON public.auth_identities USING btree (issuer, subject);
+
+
+--
+-- Name: index_auth_identities_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_auth_identities_on_user_id ON public.auth_identities USING btree (user_id);
+
+
+--
+-- Name: index_auth_logins_on_auth_identity_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_auth_logins_on_auth_identity_id ON public.auth_logins USING btree (auth_identity_id);
+
+
+--
 -- Name: index_badges_on_game_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -705,10 +877,31 @@ CREATE INDEX index_cards_on_game_id ON public.cards USING btree (game_id);
 
 
 --
+-- Name: index_dummy_accesses_on_credential_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_dummy_accesses_on_credential_digest ON public.dummy_accesses USING btree (credential_digest);
+
+
+--
+-- Name: index_dummy_accesses_on_player_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_dummy_accesses_on_player_id ON public.dummy_accesses USING btree (player_id);
+
+
+--
 -- Name: index_game_sessions_on_current_player_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_game_sessions_on_current_player_id ON public.game_sessions USING btree (current_player_id);
+
+
+--
+-- Name: index_game_sessions_on_experiment_owner_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_game_sessions_on_experiment_owner_id ON public.game_sessions USING btree (experiment_owner_id);
 
 
 --
@@ -992,12 +1185,46 @@ CREATE TRIGGER immutable_session_frames BEFORE DELETE OR UPDATE ON public.sessio
 
 
 --
+-- Name: game_sessions fk_rails_13247b6d37; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.game_sessions
+    ADD CONSTRAINT fk_rails_13247b6d37 FOREIGN KEY (experiment_owner_id) REFERENCES public.users(id);
+
+
+--
+-- Name: dummy_accesses fk_rails_3f5b8a6547; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dummy_accesses
+    ADD CONSTRAINT fk_rails_3f5b8a6547 FOREIGN KEY (player_id) REFERENCES public.players(id);
+
+
+--
+-- Name: auth_logins fk_rails_5d881b1336; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_logins
+    ADD CONSTRAINT fk_rails_5d881b1336 FOREIGN KEY (auth_identity_id) REFERENCES public.auth_identities(id) ON DELETE CASCADE;
+
+
+--
+-- Name: auth_identities fk_rails_fe3bac40a1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_identities
+    ADD CONSTRAINT fk_rails_fe3bac40a1 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261119000002'),
+('20261119000001'),
 ('20260312000000'),
 ('20260311205209'),
 ('20260311205208'),

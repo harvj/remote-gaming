@@ -81,6 +81,7 @@ Rails.application.configure do
 
   if ModernArtStaging.enabled?
     ModernArtStaging.validate!
+    config.after_initialize { CanonicalAuth.new if CanonicalAuth.enabled? }
     config.hosts = ModernArtStaging::HOSTS
     config.action_cable.mount_path = "/cable"
     config.action_cable.allowed_request_origins = [ "https://#{ModernArtStaging::GAME_HOST}" ]

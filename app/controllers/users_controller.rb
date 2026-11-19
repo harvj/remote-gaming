@@ -4,7 +4,7 @@ class UsersController < ApplicationController
 
   def show
     game = Game.find_by(key: "modern_art")
-    @active_sessions = @user.sessions.incomplete
+    @active_sessions = @user.sessions.ordinary.incomplete
     @game_stats = Query::Users.(:game_stats, user_id: @user.id)
     @score_stats = Query::Players.(:score_stats, game_id: game.id)
     @single_double_stats = Query::Players.(:single_double_stats)

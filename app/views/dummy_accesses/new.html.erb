@@ -1,0 +1,6 @@
+<h1>Join as a dummy player</h1>
+<%= form_with url: dummy_login_path, method: :post do |form| %>
+  <%= form.label :dummy_credential, "One-time access code" %>
+  <%= form.password_field :dummy_credential, autocomplete: "off", required: true %>
+  <%= form.submit "Open private table" %>
+<% end %>

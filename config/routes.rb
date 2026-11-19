@@ -54,6 +54,16 @@ Rails.application.routes.draw do
         sign_out: "logout"
       }
 
+    get "dummy/login", to: "dummy_accesses#new", as: :dummy_login
+    post "dummy/login", to: "dummy_accesses#redeem"
+    delete "dummy/logout", to: "dummy_accesses#logout", as: :dummy_logout
+    post "s/:uid/dummies", to: "dummy_accesses#create", as: :session_dummies
+    post "s/:uid/dummies/:player_id/rotate", to: "dummy_accesses#rotate", as: :rotate_session_dummy
+    delete "s/:uid/dummies/:player_id", to: "dummy_accesses#revoke", as: :session_dummy
+
+    post "auth/start", to: "auth#start", as: :auth_start
+    get "auth/callback", to: "auth#callback", as: :auth_callback
+
     devise_scope :user do
       get "/login", to: "users/sessions#new", as: :login
       delete "/logout", to: "users/sessions#destroy", as: :logout

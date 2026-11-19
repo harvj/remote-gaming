@@ -3,6 +3,7 @@ class GameSession < ApplicationRecord
   END_STATES   = %w[completed]
 
   belongs_to :game
+  belongs_to :experiment_owner, class_name: "User", optional: true
   belongs_to :current_player, class_name: "Player", optional: true
 
   has_many :players, -> { joined.order(:turn_order) }
@@ -15,7 +16,9 @@ class GameSession < ApplicationRecord
 
   validates :uid, presence: true, uniqueness: true
   validates :state, presence: true
+  validate { errors.add(:experiment_owner, "must be a real profile") if experiment_owner&.dummy? }
 
+  scope :ordinary, -> { where(experimental: false) }
   scope :completed, -> { where("completed_at IS NOT NULL") }
   scope :active, -> { where("completed_at IS NULL and state <> ?", "waiting") }
   scope :incomplete, -> { where("completed_at IS NULL") }
@@ -163,7 +166,11 @@ class GameSession < ApplicationRecord
   end
 
   def can_view?(user)
-    user && (players.exists?(user_id: user.id) || (replayable? && waiting?))
+    return false unless user
+    return experimental? && players.exists?(user_id: user.id) if user.dummy?
+    return experiment_owner_id == user.id if experimental?
+
+    (players.exists?(user_id: user.id) || (replayable? && waiting?))
   end
 
   def broadcast_live!
