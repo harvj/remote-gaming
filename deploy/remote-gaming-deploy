@@ -167,6 +167,7 @@ deploy_release() {
   chown -hR "$role:$role" "$build/app/tmp"
   ln -s "$base/shared/storage" "$build/app/storage"
   check_database "$build/app"
+  rails_task "$build/app" runner deploy/check-reference-data.rb
   if [[ $environment == production ]]; then
     rails_task "$build/app" routes > "$build/production-routes"
     if grep -Eq 'game_sessions#|players#|session_cards#|/cable|/login|observations' "$build/production-routes"; then

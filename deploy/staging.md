@@ -149,4 +149,25 @@ Keep the original recovery files, staging database and previous release for inve
 
 The PostgreSQL 16 migration matched all historical table and sequence fingerprints. The Rails suite completed a full three-player Modern Art game, including a captain report and correction, final scores and deterministic replay. A separate local production-mode rehearsal verified authenticated HTTPS through Caddy 2.11.1 and live Action Cable updates, joining, starting and reconnecting across three browser profiles. The local proxy used an internal certificate and a loopback port.
 
-The candidate adapted against a live Hetzner Caddyfile read, preserving the existing Remote Gaming and Arkham routes. The production Remote Gaming database grants connect and other database privileges only to its own role. Named public certificate issuance, systemd activation on Hetzner, and the hosted browser playthrough are pending the authorized staging deployment.
+The candidate adapted against a live Hetzner Caddyfile read, preserving the existing Remote Gaming and Arkham routes. The production Remote Gaming database grants connect and other database privileges only to its own role. The P1.2b activation results follow.
+
+## P1.2b recovery inventory and activation
+
+The original archive restored 16 users and 104 sessions. The production and staging catalogs matched row-by-row by ID after migrations. They contain:
+
+| Game | Database ID | Seats | Card definitions | Roles | Badges | Historical sessions |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| Modern Art | 1 | 3–5 | 25 | 5 | 20 | 95 |
+| Pandemic | 2 | 2–4 | 102 | 5 | 0 | 9 |
+
+Modern Art has one definition for each of the 25 artist and auction-type pairs. Its engine supplies quantities and creates 70 per-session cards. Pandemic has 48 player city definitions, five player special definitions, 48 infection definitions, and one epidemic definition. Its engine creates 106 per-session cards, including five epidemic instances. Both games initialized on the recovered catalog. Modern Art dealt 30 cards to three players. Pandemic's initial deal and infection setup marked 17 cards dealt for two players. Pandemic gameplay stays outside the approved Modern Art staging routes.
+
+The Rails associations use the recovered `games`, `cards`, and `roles` rows as the canonical runtime catalog. The historical badges, users, sessions, and frames keep their original identities and associations. The legacy source and build recipes establish the expected names and shapes. The directory registry supplies presentation, destinations, and availability. Environment configuration supplies separate database and session credentials. The three disposable staging players were added after the integrity check. No reference rows needed insertion or reseeding. The legacy seed task also creates accounts and is unsuitable for an archive restore.
+
+The deploy-time `bin/rails runner deploy/check-reference-data.rb` check detects missing, duplicate or incompatible game definitions, player bounds, roles, and historical sessions with unresolved game IDs. It reads the catalog without reseeding and runs ahead of migration in the updated helper.
+
+Capistrano deployed the approved initial staging release `c78489c1f12a17689e1575cf996c4dbee7041d2c` to the loopback staging service, verified a separate pre-migration backup, and passed its migration and HTTP checks. Capistrano rejected the rollback probe because the first staging release has no predecessor. A full rollback and redeployment rehearsal needs a second reviewed, schema-compatible release.
+
+At activation, both requested game subdomains resolved to the Hetzner address. The staging apex `staging.radioactivita.com` had no A or AAAA answer. The approved release also only accepts the staging apex and serves the Modern Art lobby there. Public named TLS and the three-host layout require an explicit apex DNS record and a separately reviewed application and edge configuration. Keep the public Caddyfile untouched until these prerequisites are verified.
+
+Three browser profiles connected to the hosted staging service through an SSH tunnel and a local HTTPS proxy. They verified joining, reconnection, live updates, private hands, rejection of another player's mutation, seven passes, all four seasons, captain reporting and correction, and final scores. A fresh Rails process verified the persisted game and reconstructed its final state from 198 ordered frames. The 104 historical sessions remain readable and lack the initial checkpoint required for deterministic replay.
