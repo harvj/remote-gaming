@@ -31,6 +31,9 @@ threads threads_count, threads_count
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 port ENV.fetch("PORT", 3000), ENV.fetch("BIND_HOST", "0.0.0.0")
 
+# Keep staging Cable broadcasts in the same process as gameplay writes.
+workers 0 if ENV["REMOTE_GAMING_PRIVATE_STAGING"] == "1"
+
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 

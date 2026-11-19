@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+host=staging.radioactivita.com
+if [[ -n ${PUMA_URL:-} ]]; then
+  origin=$PUMA_URL
+  args=(-H "Host: $host")
+  [[ $(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -H 'Host: radioactivita.com' "$origin/") == 403 ]]
+else
+  origin="https://$host"
+  : "${STAGING_NETRC:?Set STAGING_NETRC to a mode-0600 curl netrc file with staging edge credentials}"
+  args=(--netrc-file "$STAGING_NETRC")
+  for path in / /login /ready /cable; do
+    [[ $(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "$origin$path") == 401 ]]
+  done
+fi
+
+request() { curl -sS --max-time 10 "${args[@]}" "$@"; }
+request -fo /dev/null "$origin/up"
+request -fo /dev/null "$origin/ready"
+[[ $(request -o /dev/null -w '%{http_code}' "$origin/") == 302 ]]
+[[ $(request -o /dev/null -w '%{http_code}' "$origin/pandemic") == 404 ]]
+[[ $(request -H 'Accept: application/json' -o /dev/null -w '%{http_code}' "$origin/s/staging-probe") == 401 ]]
+page=$(request -f "$origin/login")
+grep -q 'Private staging' <<< "$page"
+asset=$(sed -nE 's@.*src="(/vite/[^"]+\.js)".*@\1@p' <<< "$page" | head -n1)
+[[ -n $asset ]]
+request -fo /dev/null "$origin$asset"
+printf '%s\n' 'Private staging HTTP smoke checks passed'

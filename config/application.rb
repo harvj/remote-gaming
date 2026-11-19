@@ -1,4 +1,5 @@
 require_relative "boot"
+require_relative "modern_art_staging"
 
 require "rails/all"
 

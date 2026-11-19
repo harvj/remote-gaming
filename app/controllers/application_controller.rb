@@ -28,6 +28,10 @@ class ApplicationController < ActionController::Base
   end
 
   def load_game
-    @game = Game.find_by(slug: request.subdomain)
+    @game = if ModernArtStaging.enabled?
+      Game.find_by!(key: ModernArtStaging::GAME_KEY)
+    else
+      Game.find_by(slug: request.subdomain)
+    end
   end
 end

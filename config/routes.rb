@@ -2,24 +2,30 @@ Rails.application.routes.draw do
   get "/up", to: "rails/health#show"
   get "/ready", to: "directory#ready"
 
-  if Rails.env.production?
+  private_staging = Rails.env.production? && ModernArtStaging.enabled?
+
+  if Rails.env.production? && !private_staging
     root "directory#show"
     next
   end
 
-  constraints ->(request) {
-    GameDirectory::DIRECTORY_HOSTS.include?(request.host) ||
-      request.host.end_with?(".#{GameDirectory::DOMAIN}")
-  } do
-    root "directory#show", as: :directory_root
-  end
+  if private_staging
+    root "games#show", defaults: { game_key: ModernArtStaging::GAME_KEY }
+  else
+    constraints ->(request) {
+      GameDirectory::DIRECTORY_HOSTS.include?(request.host) ||
+        request.host.end_with?(".#{GameDirectory::DOMAIN}")
+    } do
+      root "directory#show", as: :directory_root
+    end
 
-  constraints ->(req) { req.subdomain.present? } do
-    root "games#show", as: :game_root
-  end
+    constraints ->(req) { req.subdomain.present? } do
+      root "games#show", as: :game_root
+    end
 
-  get "/", to: "games#index", constraints: ->(request) { request.format.json? }
-  root "directory#show"
+    get "/", to: "games#index", constraints: ->(request) { request.format.json? }
+    root "directory#show"
+  end
 
   resources :game_sessions, only: %i[create]
 
@@ -53,5 +59,6 @@ Rails.application.routes.draw do
   patch "s/:uid" => "game_sessions#update"
   post "s/:uid/observations" => "game_sessions#observe", as: :session_observations
 
-  get ":game_key" => "games#show", as: :game
+  game_constraints = private_staging ? { game_key: ModernArtStaging::GAME_KEY } : {}
+  get ":game_key" => "games#show", as: :game, constraints: game_constraints
 end

@@ -1,0 +1,27 @@
+[Unit]
+Description=Remote Gaming private Modern Art staging
+After=network.target postgresql@16-main.service
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=remote_gaming_staging
+Group=remote_gaming_staging
+WorkingDirectory=/var/www/remote-gaming-staging/current
+EnvironmentFile=/etc/remote-gaming-staging/application.env
+ExecStart=/opt/remote-gaming/ruby/bin/bundle exec puma -C config/puma.rb
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/remote-gaming-staging/current/tmp /var/www/remote-gaming-staging/shared/storage
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

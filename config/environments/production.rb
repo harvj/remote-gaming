@@ -78,4 +78,13 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   config.hosts = [ "radioactivita.com", "gaming.harvj.com", /[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.radioactivita\.com/ ]
+
+  if ModernArtStaging.enabled?
+    ModernArtStaging.validate!
+    config.hosts = [ ModernArtStaging::HOST ]
+    config.action_cable.mount_path = "/cable"
+    config.action_cable.allowed_request_origins = [ "https://#{ModernArtStaging::HOST}" ]
+    config.action_cable.allow_same_origin_as_host = false
+    config.session_store :cookie_store, key: "__Host-remote_gaming_staging", secure: true, same_site: :lax
+  end
 end

@@ -1,0 +1,9 @@
+staging.radioactivita.com {
+	basic_auth {
+		import /etc/caddy/remote-gaming-staging/credentials.caddy
+	}
+	header >Cache-Control "private, no-store"
+	reverse_proxy 127.0.0.1:3013 {
+		header_up -Authorization
+	}
+}

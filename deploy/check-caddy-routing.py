@@ -24,14 +24,14 @@ def upstreams(node):
             yield from upstreams(value)
 
 
-def upstream_for(host):
+def route_for(host):
     for route in routes:
         for matcher in route.get("match", []):
             for pattern in matcher.get("host", []):
                 wildcard = pattern.startswith("*.") and host.partition(".")[2] == pattern[2:]
                 if pattern == host or wildcard:
-                    return list(upstreams(route))
-    return []
+                    return route
+    return {}
 
 
 expected = {
@@ -43,8 +43,22 @@ expected = {
 }
 if "--wildcard" in sys.argv:
     expected["p10-unregistered.radioactivita.com"] = ["127.0.0.1:3012"]
+if "--staging" in sys.argv:
+    staging = "staging.radioactivita.com"
+    expected[staging] = ["127.0.0.1:3013"]
+    route = route_for(staging)
+    exact = any(matcher.get("host") == [staging] for matcher in route.get("match", []))
+    guarded = any(
+        candidate.get("match") is None
+        and [handler.get("handler") for handler in candidate["handle"]][-2:] == ["authentication", "reverse_proxy"]
+        for outer in route.get("handle", [])
+        for candidate in outer.get("routes", [])
+    )
+    if not (exact and guarded):
+        raise SystemExit("Staging must use the exact hostname and require edge authentication before proxying")
+    print("Private staging Caddy route verified")
 for host, upstream in expected.items():
-    actual = upstream_for(host)
+    actual = list(upstreams(route_for(host)))
     if actual != upstream:
         raise SystemExit(f"{host}: expected {upstream}, got {actual}")
 print("Remote Gaming and Arkham Caddy routes verified")

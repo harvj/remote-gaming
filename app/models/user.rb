@@ -14,6 +14,10 @@ class User < ApplicationRecord
 
   after_create :ensure_config!
 
+  def active_for_authentication?
+    super && (!ModernArtStaging.enabled? || ModernArtStaging::ACCOUNTS.include?(username))
+  end
+
   def to_param
     username
   end

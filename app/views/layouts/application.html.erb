@@ -35,7 +35,7 @@
             logoutPath: logout_path
           } : nil,
           currentGame: @game ? {
-            uri: game_root_path(@game),
+            uri: game_path(@game.key),
             name: @game.name
           } : nil,
           rootPath: root_path,
@@ -48,6 +48,9 @@
     </header>
 
     <main class="page">
+      <% if ModernArtStaging.enabled? %>
+        <p class="panel ghost"><strong>Private staging</strong> · Use staging accounts and test data.</p>
+      <% end %>
       <%= yield %>
     </main>
   </body>
