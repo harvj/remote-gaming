@@ -63,7 +63,7 @@ class CanonicalAuth
     raise InvalidLogin unless jwks["keys"].is_a?(Array) && jwks["keys"].all?(Hash)
 
     claims = verify(token, jwks, attempt)
-    identity = AuthIdentity.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
+    identity = AuthIdentity.active.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
     [ identity, claims.fetch("acr") ]
   rescue JWT::DecodeError, KeyError, JSON::ParserError, ActiveRecord::RecordNotFound,
       IOError, SocketError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError

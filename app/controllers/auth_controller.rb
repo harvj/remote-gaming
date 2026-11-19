@@ -15,7 +15,11 @@ class AuthController < ApplicationController
     destination = session.delete(:user_return_to)
     identity, assurance = CanonicalAuth.new.authenticate(session.delete(:oidc_attempt), state: params[:state], code: params[:code])
     AuthLogin.authorized(session[:oidc_login])&.destroy!
-    login = AuthLogin.create!(auth_identity: identity, assurance: assurance, expires_at: CanonicalAuth::SESSION_SECONDS.seconds.from_now)
+    login = identity.with_lock do
+      raise CanonicalAuth::InvalidLogin if identity.revoked_at?
+
+      AuthLogin.create!(auth_identity: identity, assurance: assurance, expires_at: CanonicalAuth::SESSION_SECONDS.seconds.from_now)
+    end
     reset_session
     session[:oidc_login] = login.id
     redirect_to url_from(destination) || root_path

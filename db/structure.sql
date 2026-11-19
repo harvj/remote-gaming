@@ -49,7 +49,8 @@ CREATE TABLE public.auth_identities (
     subject character varying NOT NULL,
     evidence_reference character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    revoked_at timestamp(6) without time zone
 );
 
 
@@ -70,6 +71,38 @@ CREATE SEQUENCE public.auth_identities_id_seq
 --
 
 ALTER SEQUENCE public.auth_identities_id_seq OWNED BY public.auth_identities.id;
+
+
+--
+-- Name: auth_identity_decisions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_identity_decisions (
+    id bigint NOT NULL,
+    auth_identity_id bigint NOT NULL,
+    action character varying NOT NULL,
+    evidence_reference character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: auth_identity_decisions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.auth_identity_decisions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: auth_identity_decisions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.auth_identity_decisions_id_seq OWNED BY public.auth_identity_decisions.id;
 
 
 --
@@ -608,6 +641,13 @@ ALTER TABLE ONLY public.auth_identities ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: auth_identity_decisions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_identity_decisions ALTER COLUMN id SET DEFAULT nextval('public.auth_identity_decisions_id_seq'::regclass);
+
+
+--
 -- Name: auth_logins id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -719,6 +759,14 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 ALTER TABLE ONLY public.auth_identities
     ADD CONSTRAINT auth_identities_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_identity_decisions auth_identity_decisions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_identity_decisions
+    ADD CONSTRAINT auth_identity_decisions_pkey PRIMARY KEY (id);
 
 
 --
@@ -853,6 +901,13 @@ CREATE UNIQUE INDEX index_auth_identities_on_issuer_and_subject ON public.auth_i
 --
 
 CREATE UNIQUE INDEX index_auth_identities_on_user_id ON public.auth_identities USING btree (user_id);
+
+
+--
+-- Name: index_auth_identity_decisions_on_auth_identity_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_auth_identity_decisions_on_auth_identity_id ON public.auth_identity_decisions USING btree (auth_identity_id);
 
 
 --
@@ -1193,6 +1248,14 @@ ALTER TABLE ONLY public.game_sessions
 
 
 --
+-- Name: auth_identity_decisions fk_rails_1c69998cb0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_identity_decisions
+    ADD CONSTRAINT fk_rails_1c69998cb0 FOREIGN KEY (auth_identity_id) REFERENCES public.auth_identities(id);
+
+
+--
 -- Name: dummy_accesses fk_rails_3f5b8a6547; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1223,6 +1286,7 @@ ALTER TABLE ONLY public.auth_identities
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261119000003'),
 ('20261119000002'),
 ('20261119000001'),
 ('20260312000000'),

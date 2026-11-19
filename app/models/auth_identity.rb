@@ -1,6 +1,8 @@
 class AuthIdentity < ApplicationRecord
   belongs_to :user
 
+  scope :active, -> { where(revoked_at: nil) }
+
   validate { errors.add(:user, "must be a real profile") if user&.dummy? }
 
   validates :issuer, :subject, :evidence_reference, presence: true

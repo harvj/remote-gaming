@@ -100,4 +100,37 @@ RSpec.describe "Canonical Auth", type: :request do
     expect(response).to have_http_status(:unauthorized)
     expect(response.headers["Cache-Control"]).to eq("no-store")
   end
+  it "links and revokes the original jim profile without touching its player associations" do
+    jim = create(:user, username: "jim")
+    game = create(:game, :modern_art)
+    table = GameSession::Create.!(game).subject
+    player = Player::Create.!(jim, session: table).subject
+    original = [ jim.id, player.id, player.game_session_id, player.created_at ]
+    options = { profile: jim, issuer: issuer, subject: "canonical-subject", evidence: "owner-confirmed-auth-receipt" }
+
+    identity = ReconcileAuthIdentity.call(**options, operation: "link")
+    expect(ReconcileAuthIdentity.call(**options, operation: "link")).to eq(identity)
+    callback(start)
+    expect(response).to have_http_status(:redirect)
+    expect(AuthLogin.last.auth_identity.user_id).to eq(jim.id)
+    get game_session_path(table.uid), as: :json
+    expect(response).to have_http_status(:ok)
+
+    2.times { ReconcileAuthIdentity.call(**options.merge(evidence: "owner-revoked"), operation: "revoke") }
+    expect(AuthLogin.where(auth_identity: identity)).to be_empty
+    get game_session_path(table.uid), as: :json
+    expect(response).to have_http_status(:unauthorized)
+    callback(start)
+    expect(response).to have_http_status(:unauthorized)
+
+    ReconcileAuthIdentity.call(**options, operation: "link")
+    callback(start)
+    expect(response).to have_http_status(:redirect)
+    expect(AuthIdentityDecision.where(auth_identity: identity).order(:id).pluck(:action)).to eq(%w[linked revoked linked])
+    expect([ jim.reload.id, player.reload.id, player.game_session_id, player.created_at ]).to eq(original)
+    expect(User.where(username: "jim").count).to eq(1)
+    expect do
+      ReconcileAuthIdentity.call(**options.merge(subject: "different-subject"), operation: "link")
+    end.to raise_error(ReconcileAuthIdentity::Conflict)
+  end
 end
