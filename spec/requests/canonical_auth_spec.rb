@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe "Canonical Auth", type: :request do
   let(:key) { OpenSSL::PKey::RSA.generate(2048) }
-  let(:jwks) { { keys: [ JWT::JWK.new(key.public_key, "auth-key").export ] } }
+  let(:jwks) { { "keys" => [ JWT::JWK.new(key.public_key, "auth-key").export ] } }
   let(:profile) { create(:user, username: "radio") }
   let(:issuer) { "https://auth.example.test" }
 
@@ -29,7 +29,21 @@ RSpec.describe "Canonical Auth", type: :request do
     attributes = { iss: issuer, aud: "gaming", sub: "canonical-subject", nonce: authorization.fetch("nonce"),
       iat: Time.current.to_i, exp: 5.minutes.from_now.to_i, acr: CanonicalAuth::PASSWORD }.merge(claims)
     token = JWT.encode(attributes, key, "RS256", kid: "auth-key")
-    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json).and_return({ "id_token" => token }, jwks)
+    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json) do |_provider, uri, request|
+      expect(uri.host).to eq("auth.example.test")
+      if request.is_a?(Net::HTTP::Post)
+        expect(uri.path).to eq("/token")
+        expect(request["Authorization"]).to eq("Basic #{Base64.strict_encode64('gaming:fixture')}")
+        form = URI.decode_www_form(request.body).to_h
+        challenge = Base64.urlsafe_encode64(Digest::SHA256.digest(form.fetch("code_verifier")), padding: false)
+        expect(challenge).to eq(authorization.fetch("code_challenge"))
+        expect(form.fetch("redirect_uri")).to eq(authorization.fetch("redirect_uri"))
+        { "id_token" => token }
+      else
+        expect(uri.path).to eq("/jwks")
+        jwks
+      end
+    end
     get "/auth/callback", params: { state: authorization.fetch("state"), code: "fixture-code" }
   end
 
@@ -58,6 +72,10 @@ RSpec.describe "Canonical Auth", type: :request do
     expect(response).to have_http_status(:unauthorized)
     callback(start, aud: "other-client")
     expect(response).to have_http_status(:unauthorized)
+    callback(start, exp: 1.minute.ago.to_i)
+    expect(response).to have_http_status(:unauthorized)
+    callback(start, exp: 5.minutes.from_now.to_i + 0.5)
+    expect(response).to have_http_status(:unauthorized)
     callback(start, nonce: "wrong")
     expect(response).to have_http_status(:unauthorized)
     callback(start, acr: CanonicalAuth::MFA)
@@ -71,5 +89,15 @@ RSpec.describe "Canonical Auth", type: :request do
     expect(response).to have_http_status(:unauthorized)
     post "/login", params: { user: { username: "radio", password: "fixture" } }
     expect(response).to have_http_status(:not_found)
+  end
+  it "rejects an incomplete token response without opening a local login" do
+    authorization = start
+    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json).and_return({ "id_token" => [] })
+
+    expect do
+      get "/auth/callback", params: { state: authorization.fetch("state"), code: "fixture-code" }
+    end.not_to change(AuthLogin, :count)
+    expect(response).to have_http_status(:unauthorized)
+    expect(response.headers["Cache-Control"]).to eq("no-store")
   end
 end

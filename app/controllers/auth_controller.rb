@@ -1,5 +1,6 @@
 class AuthController < ApplicationController
   before_action :require_provider
+  before_action :private_response
 
   def start
     provider = CanonicalAuth.new
@@ -11,8 +12,6 @@ class AuthController < ApplicationController
   end
 
   def callback
-    response.headers["Cache-Control"] = "no-store"
-    response.headers["Referrer-Policy"] = "no-referrer"
     destination = session.delete(:user_return_to)
     identity, assurance = CanonicalAuth.new.authenticate(session.delete(:oidc_attempt), state: params[:state], code: params[:code])
     AuthLogin.authorized(session[:oidc_login])&.destroy!
@@ -25,6 +24,11 @@ class AuthController < ApplicationController
   end
 
   private
+
+  def private_response
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+  end
 
   def require_provider
     head :not_found unless CanonicalAuth.enabled?

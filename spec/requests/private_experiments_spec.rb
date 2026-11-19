@@ -72,6 +72,12 @@ RSpec.describe "Private experiments", type: :request do
     expect(first.response).to have_http_status(:not_found)
     first.patch(game_session_path(table.uid), as: :json)
     expect(first.response).to have_http_status(:not_found)
+    first.post(session_observations_path(table.uid), params: { observation: { type: "payment" } }, as: :json)
+    expect(first.response).to have_http_status(:not_found)
+    first.post("/auth/start")
+    expect(first.response).to have_http_status(:not_found)
+    first.patch user_config_path(owner), params: { config: { show_all_badges: true } }, as: :json
+    expect(first.response).to have_http_status(:not_found)
 
     dummy = table.players.joins(:dummy_access).order(:id).first
     patch game_session_path(table.uid), as: :json

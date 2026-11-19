@@ -1,4 +1,11 @@
 class ApplicationController < ActionController::Base
+  DUMMY_ACTIONS = {
+    "dummy_accesses" => %w[new redeem logout].freeze,
+    "game_sessions" => %w[show].freeze,
+    "players" => %w[play update].freeze,
+    "session_cards" => %w[update].freeze
+  }.freeze
+
   protect_from_forgery
 
   before_action :restrict_dummy_browser
@@ -26,9 +33,8 @@ class ApplicationController < ActionController::Base
 
   def restrict_dummy_browser
     return unless CanonicalAuth.enabled? && session.key?(:dummy_browser)
-    return if controller_path == "dummy_accesses" && %w[new redeem logout].include?(action_name)
-    return if dummy_access && %w[game_sessions players session_cards].include?(controller_path) &&
-      !(controller_path != "session_cards" && action_name == "create")
+    permitted = DUMMY_ACTIONS.fetch(controller_path, []).include?(action_name)
+    return if permitted && (controller_path == "dummy_accesses" || dummy_access)
 
     head :not_found
   end

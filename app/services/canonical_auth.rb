@@ -19,6 +19,9 @@ class CanonicalAuth
     @redirect_uri = ENV.fetch("REMOTE_GAMING_OIDC_REDIRECT_URI")
     issuer_uri = https_uri(@issuer)
     callback_uri = https_uri(@redirect_uri)
+    if ModernArtStaging.enabled? && @redirect_uri != "https://#{ModernArtStaging::GAME_HOST}/auth/callback"
+      raise InvalidLogin
+    end
     unless issuer_uri.path.empty? && callback_uri.path == "/auth/callback" &&
         @client_id.present? && @client_secret.present?
       raise InvalidLogin
@@ -52,9 +55,14 @@ class CanonicalAuth
     request.basic_auth(URI.encode_www_form_component(@client_id), URI.encode_www_form_component(@client_secret))
     request.set_form_data(grant_type: "authorization_code", code: code, redirect_uri: @redirect_uri,
       code_verifier: attempt.fetch("verifier"))
-    token = fetch_json(uri, request).fetch("id_token")
+    token = fetch_json(uri, request)["id_token"]
+    raise InvalidLogin unless token.is_a?(String) && token.present?
+
     jwks_uri = URI("#{@issuer}/jwks")
-    claims = verify(token, fetch_json(jwks_uri, Net::HTTP::Get.new(jwks_uri)), attempt)
+    jwks = fetch_json(jwks_uri, Net::HTTP::Get.new(jwks_uri))
+    raise InvalidLogin unless jwks["keys"].is_a?(Array) && jwks["keys"].all?(Hash)
+
+    claims = verify(token, jwks, attempt)
     identity = AuthIdentity.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
     [ identity, claims.fetch("acr") ]
   rescue JWT::DecodeError, KeyError, JSON::ParserError, ActiveRecord::RecordNotFound,
@@ -77,6 +85,7 @@ class CanonicalAuth
       required_claims: %w[iss sub aud exp iat nonce acr])
     unless claims["nonce"] == attempt.fetch("nonce") && claims["sub"].is_a?(String) && claims["sub"].present? &&
         Array(claims["aud"]) == [ @client_id ] && claims.fetch("azp", @client_id) == @client_id &&
+        claims["exp"].is_a?(Integer) && claims["exp"] > Time.current.to_i &&
         claims["iat"].is_a?(Integer) && claims["iat"].between?(Time.current.to_i - LOGIN_SECONDS, Time.current.to_i + 30) &&
         [ PASSWORD, MFA ].include?(claims["acr"])
       raise InvalidLogin
@@ -91,6 +100,9 @@ class CanonicalAuth
     end
     raise InvalidLogin unless response.is_a?(Net::HTTPSuccess)
 
-    JSON.parse(response.body)
+    data = JSON.parse(response.body)
+    raise InvalidLogin unless data.is_a?(Hash)
+
+    data
   end
 end
