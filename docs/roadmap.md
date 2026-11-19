@@ -1,5 +1,12 @@
 # Remote Gaming roadmap
 
+P1.0 is live as the game directory. P1.1 restored Modern Art and introduced versioned SessionFrame history in local code. Modern Art and Pandemic are listed as unavailable in production.
+
+## P1.2 — Private Modern Art staging and multiplayer verification
+
+- Rehearse on Hetzner behind authenticated HTTPS with a dedicated service, database, and disposable staging accounts. Keep gameplay and Action Cable confined to the staging hostname.
+- Test a full Modern Art game in separate browser profiles over HTTPS, including live updates, reconnect, authorization boundaries, captain corrections, and replay. Verify restore integrity and isolated rollback before an approved cutover.
+
 ## P1.3 — Canonical identity reconciliation and private dummy-player sessions
 
 ### Auth and reconciliation
@@ -26,4 +33,18 @@ Test identity linking and conflicts, historical memberships, Remote Gaming-only 
 - Show branch lineage and classify branches as experiments in queries, projections, and statistics. Clearly mark legacy sessions with incomplete replay data.
 - Test cursor stability, deterministic reconstruction, fork isolation, independent continuation, hidden-information boundaries, and ordinary-statistics exclusion.
 
-Production activation and any reconciliation involving real accounts require separate authorization. Preserve the existing recovery artifacts and historical records.
+## P1.5 — Public Modern Art activation
+
+- Release only after private staging gameplay, Auth integration, recovery and rollback, and authorization across HTTP, Action Cable, replay, and hidden information have been reviewed and verified.
+- Obtain explicit release authorization before changing production availability or routes.
+
+## P1.6 — Pandemic restoration
+
+- Audit the archived rules and player interactions, restore a complete game on the SessionFrame foundation, and verify its private information and multiplayer behavior independently.
+
+## P1.7 — SessionFrame analysis
+
+- Build analytical projections from durable frames. Distinguish engine events, reported physical events, corrections, and incomplete histories.
+- Exclude experiments and branch sessions from ordinary statistics. Validate aggregates against preserved histories before publishing them.
+
+Preserve the existing recovery artifacts and historical records. Reconciliation involving real accounts requires separate authorization.
