@@ -180,3 +180,7 @@ This repository is the **modern rebuild** of an earlier prototype.
 The previous implementation lives in `remote-gaming-v1`
 
 The new version modernizes the stack and simplifies the frontend while preserving the core game session engine architecture.
+
+## Releases
+
+See the [release history and versioning conventions](docs/releases.md).
