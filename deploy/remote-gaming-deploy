@@ -1,0 +1,257 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+export PATH=/opt/remote-gaming/ruby/bin:/usr/bin:/bin:/usr/sbin
+umask 022
+
+fail() { echo "$*" >&2; exit 1; }
+revision() { [[ $1 =~ ^[a-f0-9]{40}$ ]]; }
+
+target() {
+  case "$1" in
+    production)
+      app=remote-gaming role=remote_gaming database=remote_gaming_production port=3012 smoke=smoke ;;
+    staging)
+      app=remote-gaming-staging role=remote_gaming_staging database=remote_gaming_staging port=3013 smoke=staging-smoke ;;
+    *) fail "Unknown deployment environment" ;;
+  esac
+  environment=$1
+  base="/var/www/$app"
+  unit="$app.service"
+  env_file="/etc/$app/application.env"
+  backups="/srv/backups/$app/releases"
+}
+
+root_directory() {
+  local mode
+  [[ -d $1 && ! -L $1 && $(stat -c %u "$1") == 0 ]] || return 1
+  mode=$(stat -c %a "$1") || return 1
+  (( (8#$mode & 022) == 0 ))
+}
+
+current_revision() {
+  local path sha
+  path=$(readlink "$base/current") || return 1
+  sha=${path##*/}
+  revision "$sha" && [[ $path == "$base/releases/$sha" ]] && root_directory "$path" || return 1
+  printf '%s\n' "$sha"
+}
+
+preflight() {
+  [[ $EUID == 0 ]] || fail "Use the reviewed root-owned deployment helper"
+  root_directory "$base" && root_directory "$base/releases" && root_directory "$base/shared" ||
+    fail "Provision the isolated release directories first"
+  [[ -f $env_file && ! -L $env_file && $(stat -c '%u:%a' "$env_file") == 0:600 ]] ||
+    fail "The application environment must be root-owned and mode 0600"
+  id "$role" >/dev/null
+  [[ $(systemctl show -p FragmentPath --value "$unit") == "/etc/systemd/system/$unit" ]] ||
+    fail "Install the dedicated systemd service first"
+  [[ $(systemctl show -p User --value "$unit") == "$role" ]] || fail "Unexpected systemd service account"
+  [[ $(systemctl show -p WorkingDirectory --value "$unit") == "$base/current" &&
+     $(systemctl show -p EnvironmentFiles --value "$unit") == "$env_file (ignore_errors=no)" ]] ||
+    fail "Unexpected service working directory or environment file"
+  test -x /opt/remote-gaming/ruby/bin/bundle && test -x /opt/remote-gaming/node/bin/node
+  if [[ -e $base/current || -L $base/current || $environment == production ]]; then
+    current_revision >/dev/null || fail "Current release must use the existing absolute SHA symlink"
+  elif systemctl is-active --quiet "$unit"; then
+    fail "Staging already has an active service without a current release"
+  fi
+}
+
+db() { runuser -u postgres -- psql -XqAt -v ON_ERROR_STOP=1 -h /var/run/postgresql -p 5432 -U postgres -d "$database" "$@"; }
+schema_signature() {
+  db -c "SELECT md5(COALESCE(string_agg(version, ',' ORDER BY version), '')) FROM schema_migrations"
+}
+compatible() { [[ $1 =~ ^[a-f0-9]{32}$ && $1 == "$2" ]]; }
+
+rails_task() {
+  local directory=$1
+  shift
+  systemd-run --quiet --wait --collect --pipe -p "User=$role" -p "Group=$role" \
+    -p "WorkingDirectory=$directory" -p "EnvironmentFile=$env_file" \
+    /opt/remote-gaming/ruby/bin/bundle exec rails "$@"
+}
+
+check_database() {
+  local actual
+  actual=$(rails_task "$1" runner '
+    connection = ActiveRecord::Base.connection
+    row = connection.select_rows("SELECT current_database(), current_user, host(inet_server_addr()), inet_server_port()").first
+    puts [*row, ENV.fetch("REMOTE_GAMING_PRIVATE_STAGING", "0"), Rails.env].join("|")
+  ')
+  local staging=0
+  [[ $environment != staging ]] || staging=1
+  [[ $actual == "$database|$role|127.0.0.1|5432|$staging|production" ]] ||
+    fail "Rails database, role, listener, or staging mode differs from the deployment target"
+}
+
+fingerprint() {
+  rails_task "$1" runner '
+    config = ActiveRecord::Base.connection_db_config.configuration_hash
+    exec({ "PGPASSWORD" => config.fetch(:password) }, "/usr/bin/psql",
+      "-XqAt", "-v", "ON_ERROR_STOP=1", "-h", config.fetch(:host),
+      "-p", config.fetch(:port, 5432).to_s, "-U", config.fetch(:username),
+      "-d", config.fetch(:database), "-f", "deploy/recovery-integrity.sql")
+  '
+}
+
+backup_database() (
+  umask 077
+  install -d -m 0700 "$backups"
+  local name
+  name=$(mktemp --suffix=.dump.partial "$backups/$database-$1-XXXXXXXX")
+  runuser -u postgres -- pg_dump --format=custom --host=/var/run/postgresql --port=5432 --username=postgres --dbname="$database" > "$name"
+  pg_restore --list "$name" >/dev/null
+  pg_restore --exit-on-error --file=/dev/null "$name"
+  mv -- "$name" "${name%.partial}"
+  sha256sum "${name%.partial}" > "${name%.partial}.sha256"
+  sha256sum -c "${name%.partial}.sha256"
+)
+
+switch_release() {
+  local link
+  link=$(mktemp -d "$base/.publish.XXXXXXXX")
+  ln -s "$base/releases/$1" "$link/current"
+  mv -Tf "$link/current" "$base/current"
+  rmdir "$link"
+}
+
+health() {
+  local release=$1 attempt host
+  host=radioactivita.com
+  [[ $environment != staging ]] || host=staging.radioactivita.com
+  for attempt in {1..20}; do
+    if curl -fsS --max-time 2 -H "Host: $host" "http://127.0.0.1:$port/up" >/dev/null 2>&1; then break; fi
+    sleep 1
+  done
+  runuser -u "$role" -- env PUMA_URL="http://127.0.0.1:$port" "$base/releases/$release/deploy/$smoke"
+}
+
+cleanup() {
+  local status=$? live_schema
+  trap - EXIT
+  set +e
+  if [[ $status != 0 && ${transition:-0} == 1 ]]; then
+    live_schema=$(schema_signature)
+    if [[ ! -e $base/.migration-in-progress && -n ${previous:-} ]] && compatible "$before" "$live_schema"; then
+      echo "Deployment failed. Restoring the previous compatible application release." >&2
+      if ! (switch_release "$previous" && systemctl restart "$unit" && health "$previous"); then
+        echo "Previous release health could not be verified. Inspect $unit." >&2
+      fi
+    else
+      systemctl stop "$unit"
+      echo "Deployment failed without a verified compatible release. $unit is stopped. Retain the database and use forward recovery." >&2
+    fi
+  fi
+  if [[ -n ${build:-} ]]; then rm -rf -- "$build"; fi
+  exit "$status"
+}
+
+deploy_release() {
+  local sha=$1 digest=$2 migrations=$3 archive=$4 pending old_count
+  revision "$sha" && [[ $digest =~ ^[a-f0-9]{64}$ && $migrations =~ ^[01]$ ]] ||
+    fail "Invalid deployment arguments"
+  [[ $archive =~ ^/tmp/remote-gaming-cap\.[a-zA-Z0-9]{8}/release\.tar\.gz$ && -f $archive && ! -L $archive ]] ||
+    fail "Expected the verified uploaded archive"
+  [[ ! -e $base/releases/$sha && ! -L $base/releases/$sha ]] || fail "Release already exists; retain or archive it before retrying"
+  previous=$(current_revision || true)
+  build=$(mktemp -d "$base/releases/.build.XXXXXXXX")
+  install -d -m 0755 -o "$role" -g "$role" "$build/app"
+  chmod 0755 "$build"
+  install -m 0600 "$archive" "$build/release.tar.gz"
+  printf '%s  %s\n' "$digest" "$build/release.tar.gz" | sha256sum -c
+  runuser -u "$role" -- tar -xzf - --no-same-owner -C "$build/app" < "$build/release.tar.gz"
+  runuser -u "$role" -- "$build/app/deploy/build-release"
+  test -s "$build/app/public/vite/.vite/manifest.json"
+  chown -hR root:root "$build/app"
+  install -d -m 0750 -o "$role" -g "$role" "$build/app/tmp" "$build/app/log"
+  chown -hR "$role:$role" "$build/app/tmp"
+  ln -s "$base/shared/storage" "$build/app/storage"
+  check_database "$build/app"
+  if [[ $environment == production ]]; then
+    rails_task "$build/app" routes > "$build/production-routes"
+    if grep -Eq 'game_sessions#|players#|session_cards#|/cable|/login|observations' "$build/production-routes"; then
+      fail "Public gameplay and login routes must stay disabled"
+    fi
+  fi
+  before=$(schema_signature)
+  compatible "$before" "$before" || fail "Unable to verify the current database migration ledger"
+  pending=$(rails_task "$build/app" runner 'puts ActiveRecord::Base.connection_pool.migration_context.needs_migration?')
+  [[ $pending == true || $pending == false ]] || fail "Unable to determine migration status"
+  if [[ $pending == true && $migrations != 1 ]]; then
+    fail "Pending migrations require a reviewed maintenance run with ALLOW_MIGRATIONS=1"
+  fi
+  old_count=$(db -c 'SELECT count(*) FROM game_sessions')
+  [[ $old_count =~ ^[0-9]+$ && $old_count -ge 104 ]] || fail "Recovered game sessions are missing"
+  move_to="$base/releases/$sha"
+  mv -T -- "$build/app" "$move_to"
+  if [[ $pending == true ]]; then
+    transition=1
+    systemctl stop "$unit"
+  fi
+  backup_database "$sha"
+  if [[ $pending == true ]]; then
+    fingerprint "$move_to" > "$build/before"
+    printf '%s\n' "$sha" > "$base/.migration-in-progress"
+    rails_task "$move_to" db:migrate
+    fingerprint "$move_to" > "$build/after"
+    cmp "$build/before" "$build/after" || fail "Historical row or sequence fingerprints differ"
+  fi
+  printf '%s %s\n' "${previous:--}" "$before" > "$move_to/.remote-gaming-previous"
+  transition=1
+  switch_release "$sha"
+  systemctl restart "$unit"
+  health "$sha"
+  if [[ $pending == true ]]; then rm -- "$base/.migration-in-progress"; fi
+  transition=0
+  printf 'Deployed %s to %s\n' "$sha" "$environment"
+}
+
+require_completed_migration() {
+  [[ ! -e $base/.migration-in-progress ]] ||
+    fail "An earlier migration attempt needs database review before changing releases"
+}
+
+rollback_release() {
+  local approved=$1 target_sha target_schema
+  revision "$approved" || fail "A full approved rollback SHA is required"
+  require_completed_migration
+  previous=$(current_revision) || fail "No current release"
+  [[ -f $base/releases/$previous/.remote-gaming-previous ]] || fail "Current release has no rollback receipt"
+  read -r target_sha target_schema < "$base/releases/$previous/.remote-gaming-previous"
+  [[ $approved == "$target_sha" ]] && root_directory "$base/releases/$approved" ||
+    fail "Approved SHA must be the immediately previous release"
+  before=$(schema_signature)
+  compatible "$target_schema" "$before" || fail "Schema changed since the prior release. Review a forward recovery. Database rollback is manual."
+  check_database "$base/releases/$approved"
+  transition=1
+  switch_release "$approved"
+  systemctl restart "$unit"
+  health "$approved"
+  transition=0
+  printf 'Rolled back %s to %s\n' "$environment" "$approved"
+}
+
+main() {
+  if [[ ${1:-} == version && $# == 1 ]]; then sha256sum "$0" | cut -d ' ' -f1; return; fi
+  case "${1:-}:$#" in
+    check:2|deploy:6|rollback:3) ;;
+    *) fail "Usage: $0 {check|deploy|rollback} {production|staging} [...]" ;;
+  esac
+  target "$2"
+  preflight
+  if [[ $1 == check ]]; then printf 'Ready: %s\n' "$environment"; return; fi
+  exec 9>"$base/.deployment.lock"
+  flock -n 9 || fail "A deployment is already running for $environment"
+  preflight
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  if [[ $1 == deploy ]]; then
+    require_completed_migration
+    deploy_release "$3" "$4" "$5" "$6"
+  else
+    rollback_release "$3"
+  fi
+}
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then main "$@"; fi

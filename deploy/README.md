@@ -1,5 +1,7 @@
 # Remote Gaming P1.0 deployment
 
+For routine production and staging releases, see the [Capistrano runbook](capistrano.md). This document records the P1.0 installation and manual recovery procedure.
+
 P1.0 serves the same public directory at `radioactivita.com` and `gaming.harvj.com`. Modern Art and Pandemic have status pages and are listed as **Not yet available**. Arkham is an external link to the running independent application. Production serves no legacy login, session, player, or Action Cable routes. Development and test still load those routes.
 
 ## Verified Hetzner baseline
