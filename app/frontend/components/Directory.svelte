@@ -1,10 +1,10 @@
 <script>
-  let { title, games, gamePage } = $props()
+  let { title, games, gamePage, directoryUrl } = $props()
 </script>
 
 <div class="directory">
   {#if gamePage}
-    <a href="https://radioactivita.com/">Remote Gaming directory</a>
+    <a href={directoryUrl ?? "https://radioactivita.com/"}>Remote Gaming directory</a>
   {/if}
   <h1>{title}</h1>
   {#if !gamePage}<p>What are we playing?</p>{/if}

@@ -1,28 +1,50 @@
 #!/usr/bin/env bash
 set -euo pipefail
-host=staging.radioactivita.com
+directory=staging.radioactivita.com
+modern=modern-art.$directory
+pandemic=pandemic.$directory
+
+request() {
+  local host=$1 path=$2
+  shift 2
+  if [[ -n ${PUMA_URL:-} ]]; then
+    curl -sS --max-time 10 -H "Host: $host" "$@" "$PUMA_URL$path"
+  else
+    curl -sS --max-time 10 --netrc-file "$STAGING_NETRC" "$@" "https://$host$path"
+  fi
+}
+
+status() { request "$@" -o /dev/null -w '%{http_code}'; }
 if [[ -n ${PUMA_URL:-} ]]; then
-  origin=$PUMA_URL
-  args=(-H "Host: $host")
-  [[ $(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -H 'Host: radioactivita.com' "$origin/") == 403 ]]
+  [[ $(status radioactivita.com /) == 403 ]]
 else
-  origin="https://$host"
-  : "${STAGING_NETRC:?Set STAGING_NETRC to a mode-0600 curl netrc file with staging edge credentials}"
-  args=(--netrc-file "$STAGING_NETRC")
-  for path in / /login /ready /cable; do
-    [[ $(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "$origin$path") == 401 ]]
+  : "${STAGING_NETRC:?Set STAGING_NETRC to a mode-0600 curl netrc file for all three hosts}"
+  for host in "$directory" "$modern" "$pandemic"; do
+    for path in / /login /ready /cable; do
+      [[ $(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' "https://$host$path") == 401 ]]
+    done
   done
 fi
 
-request() { curl -sS --max-time 10 "${args[@]}" "$@"; }
-request -fo /dev/null "$origin/up"
-request -fo /dev/null "$origin/ready"
-[[ $(request -o /dev/null -w '%{http_code}' "$origin/") == 302 ]]
-[[ $(request -o /dev/null -w '%{http_code}' "$origin/pandemic") == 404 ]]
-[[ $(request -H 'Accept: application/json' -o /dev/null -w '%{http_code}' "$origin/s/staging-probe") == 401 ]]
-page=$(request -f "$origin/login")
+for host in "$directory" "$modern" "$pandemic"; do
+  request "$host" /up -fo /dev/null
+  request "$host" /ready -fo /dev/null
+done
+page=$(request "$directory" / -f)
+grep -q 'Remote Gaming staging' <<< "$page"
+grep -q "https://$modern/" <<< "$page"
+page=$(request "$pandemic" / -f)
+grep -q 'Not yet available' <<< "$page"
+for host in "$directory" "$pandemic"; do
+  [[ $(status "$host" /login) == 404 ]]
+  [[ $(status "$host" /s/staging-probe -H 'Accept: application/json') == 404 ]]
+done
+[[ $(status "$modern" /) == 302 ]]
+[[ $(status "$modern" /pandemic) == 404 ]]
+[[ $(status "$modern" /s/staging-probe -H 'Accept: application/json') == 401 ]]
+page=$(request "$modern" /login -f)
 grep -q 'Private staging' <<< "$page"
 asset=$(sed -nE 's@.*src="(/vite/[^"]+\.js)".*@\1@p' <<< "$page" | head -n1)
 [[ -n $asset ]]
-request -fo /dev/null "$origin$asset"
-printf '%s\n' 'Private staging HTTP smoke checks passed'
+request "$modern" "$asset" -fo /dev/null
+printf '%s\n' 'Private staging HTTP smoke checks passed for all three hostnames'

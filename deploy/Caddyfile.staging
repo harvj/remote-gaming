@@ -1,4 +1,4 @@
-staging.radioactivita.com {
+staging.radioactivita.com, modern-art.staging.radioactivita.com, pandemic.staging.radioactivita.com {
 	basic_auth {
 		import /etc/caddy/remote-gaming-staging/credentials.caddy
 	}

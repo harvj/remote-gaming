@@ -98,7 +98,7 @@ The verified original archive is the pre-migration recovery source. The copied d
 
 ## Review and activate the HTTPS edge
 
-Verify current DNS, live Caddy configuration versus the on-disk config, and baseline responses and service start identities for existing sites including Arkham. Inspect active upstream connections and wait for a quiet window. A Caddy reload can close existing WebSockets. The reviewed change is one additional import and a dedicated staging site with Basic authentication on every path, including assets and `/cable`. The site obtains its own named certificate through Caddy's normal HTTPS configuration.
+Verify current DNS, live Caddy configuration versus the on-disk config, and baseline responses and service start identities for existing sites including Arkham. Inspect active upstream connections and wait for a quiet window. A Caddy reload can close existing WebSockets. The reviewed change is one additional import and a dedicated staging site with Basic authentication on every path, including assets and `/cable`. The site obtains certificates covering all three named hostnames through Caddy's normal HTTPS configuration. The apex serves the directory, the Modern Art host serves authenticated gameplay and Action Cable, and the Pandemic host serves its availability page.
 
 Use `/usr/bin/caddy hash-password` interactively for a new, high-entropy edge password and record the bcrypt output. Populate a single line `staging_operator BCRYPT_HASH` via `sudoedit`. Caddy strips the Basic authorization header before proxying. Separate browser profiles should sign in to the edge first, then use different Rails staging accounts.
 
@@ -123,11 +123,11 @@ sudo cp -a /etc/caddy/Caddyfile.rg-staging.candidate /etc/caddy/.Caddyfile.rg-st
 sudo mv -Tf /etc/caddy/.Caddyfile.rg-staging.next /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 
-# Point to a private netrc containing: machine staging.radioactivita.com login staging_operator password EDGE_PASSWORD
+# Point to a mode-0600 netrc with the edge credential for each of the three staging hostnames.
 STAGING_NETRC="$audit/edge.netrc" "$stage/deploy/staging-smoke"
 ```
 
-The edge smoke checks every required auth boundary over trusted HTTPS before any gameplay. In three independent profiles, reach `https://staging.radioactivita.com/`, sign in with the distinct staging accounts, create and share a private staging game URL and complete all four seasons. Verify the waiting roster and turn changes without manual refresh, same-origin WSS connection and reconnect, rejected wrong-player actions, captain notes and corrections, final scores, and server-side replay equality. Confirm the existing application responses and PIDs against the baseline.
+The edge smoke checks every required auth boundary over trusted HTTPS before any gameplay. In three independent profiles, reach `https://modern-art.staging.radioactivita.com/`, sign in with the distinct staging accounts, create and share a private staging game URL and complete all four seasons. Verify the waiting roster and turn changes without manual refresh, same-origin WSS connection and reconnect, rejected wrong-player actions, captain notes and corrections, final scores, and server-side replay equality. Confirm the existing application responses and PIDs against the baseline.
 
 ## Rollback and subsequent releases
 
@@ -171,3 +171,9 @@ Capistrano deployed the approved initial staging release `c78489c1f12a17689e1575
 At activation, both requested game subdomains resolved to the Hetzner address. The staging apex `staging.radioactivita.com` had no A or AAAA answer. The approved release also only accepts the staging apex and serves the Modern Art lobby there. Public named TLS and the three-host layout require an explicit apex DNS record and a separately reviewed application and edge configuration. Keep the public Caddyfile untouched until these prerequisites are verified.
 
 Three browser profiles connected to the hosted staging service through an SSH tunnel and a local HTTPS proxy. They verified joining, reconnection, live updates, private hands, rejection of another player's mutation, seven passes, all four seasons, captain reporting and correction, and final scores. A fresh Rails process verified the persisted game and reconstructed its final state from 198 ordered frames. The 104 historical sessions remain readable and lack the initial checkpoint required for deterministic replay.
+
+## P1.2c release rehearsal
+
+For the initial three-host rollout, run the current release’s loopback smoke on its first deployment. Then use Capistrano to roll back to the recorded, schema-compatible P1.2b release and verify its own loopback smoke. The predecessor serves Modern Art on the staging apex, so complete this rehearsal before exposing the new Caddy site.
+
+To deploy the three-host release again, follow the Capistrano runbook’s inactive-candidate procedure. Verify the predecessor is active and the candidate is not named in the active release’s rollback receipt. Move only that inactive candidate out of the releases directory to a retained location on the same filesystem, then run `cap staging deploy` with the exact same published SHA and migrations disabled. The helper will build a fresh release, verify another backup, and record the predecessor again.

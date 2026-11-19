@@ -10,7 +10,9 @@ Rails.application.routes.draw do
   end
 
   if private_staging
-    root "games#show", defaults: { game_key: ModernArtStaging::GAME_KEY }
+    root "directory#staging", constraints: ->(request) { ModernArtStaging::HOSTS.include?(request.host) && request.host != ModernArtStaging::GAME_HOST }, as: :staging_directory
+    root "games#show", defaults: { game_key: ModernArtStaging::GAME_KEY },
+      constraints: ->(request) { request.host == ModernArtStaging::GAME_HOST }
   else
     constraints ->(request) {
       GameDirectory::DIRECTORY_HOSTS.include?(request.host) ||
@@ -27,38 +29,41 @@ Rails.application.routes.draw do
     root "directory#show"
   end
 
-  resources :game_sessions, only: %i[create]
+  gameplay_host = ->(request) { !private_staging || request.host == ModernArtStaging::GAME_HOST }
+  constraints gameplay_host do
+    resources :game_sessions, only: %i[create]
 
-  resources :players, only: %i[create update] do
-    member do
-      patch :play
+    resources :players, only: %i[create update] do
+      member do
+        patch :play
+      end
     end
+
+    resources :session_cards, only: %i[update] do
+    end
+
+    resources :users, only: %i[show] do
+      resource :user_config, only: %i[update], as: :config, path: :config
+    end
+
+    devise_for :users,
+      controllers: { sessions: "users/sessions" },
+      path: "",
+      path_names: {
+        sign_in: "login",
+        sign_out: "logout"
+      }
+
+    devise_scope :user do
+      get "/login", to: "users/sessions#new", as: :login
+      delete "/logout", to: "users/sessions#destroy", as: :logout
+    end
+
+    get "s/:uid" => "game_sessions#show", as: :game_session
+    patch "s/:uid" => "game_sessions#update"
+    post "s/:uid/observations" => "game_sessions#observe", as: :session_observations
+
+    game_constraints = private_staging ? { game_key: ModernArtStaging::GAME_KEY } : {}
+    get ":game_key" => "games#show", as: :game, constraints: game_constraints
   end
-
-  resources :session_cards, only: %i[update] do
-  end
-
-  resources :users, only: %i[show] do
-    resource :user_config, only: %i[update], as: :config, path: :config
-  end
-
-  devise_for :users,
-    controllers: { sessions: "users/sessions" },
-    path: "",
-    path_names: {
-      sign_in: "login",
-      sign_out: "logout"
-    }
-
-  devise_scope :user do
-    get "/login", to: "users/sessions#new", as: :login
-    delete "/logout", to: "users/sessions#destroy", as: :logout
-  end
-
-  get "s/:uid" => "game_sessions#show", as: :game_session
-  patch "s/:uid" => "game_sessions#update"
-  post "s/:uid/observations" => "game_sessions#observe", as: :session_observations
-
-  game_constraints = private_staging ? { game_key: ModernArtStaging::GAME_KEY } : {}
-  get ":game_key" => "games#show", as: :game, constraints: game_constraints
 end

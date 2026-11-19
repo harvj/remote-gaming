@@ -1,7 +1,10 @@
 require "uri"
 
 module ModernArtStaging
-  HOST = "staging.radioactivita.com"
+  DIRECTORY_HOST = "staging.radioactivita.com"
+  GAME_HOST = "modern-art.#{DIRECTORY_HOST}"
+  PANDEMIC_HOST = "pandemic.#{DIRECTORY_HOST}"
+  HOSTS = [ DIRECTORY_HOST, GAME_HOST, PANDEMIC_HOST ].freeze
   DATABASE = "remote_gaming_staging"
   GAME_KEY = "modern_art"
   ACCOUNTS = %w[staging_player_1 staging_player_2 staging_player_3].freeze

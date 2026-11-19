@@ -81,9 +81,9 @@ Rails.application.configure do
 
   if ModernArtStaging.enabled?
     ModernArtStaging.validate!
-    config.hosts = [ ModernArtStaging::HOST ]
+    config.hosts = ModernArtStaging::HOSTS
     config.action_cable.mount_path = "/cable"
-    config.action_cable.allowed_request_origins = [ "https://#{ModernArtStaging::HOST}" ]
+    config.action_cable.allowed_request_origins = [ "https://#{ModernArtStaging::GAME_HOST}" ]
     config.action_cable.allow_same_origin_as_host = false
     config.session_store :cookie_store, key: "__Host-remote_gaming_staging", secure: true, same_site: :lax
   end

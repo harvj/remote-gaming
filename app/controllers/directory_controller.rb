@@ -16,6 +16,22 @@ class DirectoryController < ActionController::Base
     end
   end
 
+  def staging
+    directory = GameDirectory.new
+    @directory_url = "https://#{ModernArtStaging::DIRECTORY_HOST}/"
+    @game_page = request.host == ModernArtStaging::PANDEMIC_HOST
+    @title = @game_page ? "Pandemic" : "Remote Gaming staging"
+    @games = directory.games.filter_map do |game|
+      case game.fetch(:slug)
+      when "modernart"
+        game.merge(available: true, destination: "https://#{ModernArtStaging::GAME_HOST}/") unless @game_page
+      when "pandemic"
+        game.merge(available: false, destination: "https://#{ModernArtStaging::PANDEMIC_HOST}/")
+      end
+    end
+    render :show
+  end
+
   def ready
     Game.connection_pool.with_connection { |connection| connection.select_value("SELECT 1 FROM games LIMIT 1") }
     head :ok

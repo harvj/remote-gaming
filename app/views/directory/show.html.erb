@@ -1,5 +1,5 @@
 <main id="game-directory">
-  <% if @game_page %><p><a href="https://radioactivita.com/">Remote Gaming directory</a></p><% end %>
+  <% if @game_page %><p><a href="<%= @directory_url || "https://radioactivita.com/" %>">Remote Gaming directory</a></p><% end %>
   <h1><%= @title %></h1>
   <% unless @game_page %><p>What are we playing?</p><% end %>
   <ul>
@@ -16,4 +16,4 @@
     <% end %>
   </ul>
 </main>
-<script id="directory-data" type="application/json"><%= raw json_escape({ title: @title, games: @games, gamePage: @game_page }.to_json) %></script>
+<script id="directory-data" type="application/json"><%= raw json_escape({ title: @title, games: @games, gamePage: @game_page, directoryUrl: @directory_url }.to_json) %></script>

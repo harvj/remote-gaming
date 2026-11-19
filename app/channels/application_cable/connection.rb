@@ -3,6 +3,10 @@ module ApplicationCable
     identified_by :current_user
 
     def connect
+      if ModernArtStaging.enabled? && request.host != ModernArtStaging::GAME_HOST
+        reject_unauthorized_connection
+      end
+
       self.current_user = find_verified_user
     end
 
