@@ -10,6 +10,7 @@ module NavigationLogin
   end
 
   def self.entry(host)
+    return "/admin/historical-users" if HistoricalUserAdministration.enabled?
     return "/" unless ModernArtStaging.enabled?
 
     case host

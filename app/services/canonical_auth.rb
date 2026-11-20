@@ -98,6 +98,8 @@ class CanonicalAuth
 
     identity = if ModernArtStaging.enabled?
       staging_identity(claims.fetch("sub"))
+    elsif ProductionOwnerBootstrap.enabled?
+      ProductionOwnerBootstrap.link!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
     else
       AuthIdentity.active.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
     end

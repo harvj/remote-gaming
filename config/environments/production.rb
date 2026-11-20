@@ -83,6 +83,7 @@ Rails.application.configure do
   config.session_store :cookie_store, key: "__Host-remote_gaming", secure: true, httponly: true, same_site: :lax
 
   config.after_initialize { ProductionReplay.validate_oidc! if ProductionReplay.enabled? }
+  config.after_initialize { ProductionOwnerBootstrap.validate! if ProductionOwnerBootstrap.enabled? }
   if ENV["REMOTE_GAMING_PRODUCTION_REPLAY"] == "1" && !ModernArtStaging.enabled?
     config.session_store :cookie_store, key: "__Host-remote_gaming_replay", secure: true, same_site: :lax
   end

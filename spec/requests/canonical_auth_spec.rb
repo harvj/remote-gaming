@@ -231,6 +231,44 @@ RSpec.describe "Canonical Auth", type: :request do
     end.to raise_error(ReconcileAuthIdentity::Conflict)
   end
 
+  context "with approved production owner reconciliation" do
+    let(:issuer) { "https://auth.harvj.com" }
+    let(:redirect_uri) { "https://gaming.harvj.com/auth/callback" }
+    let(:subject) { "11111111-2222-4333-8444-555555555555" }
+    let(:evidence) { "RG-P15-PROD-AUTH-OWNER-136-2" }
+    let!(:owner) { create(:user, id: 1, username: "jim") }
+
+    before do
+      allow(ProductionOwnerBootstrap).to receive(:enabled?).and_return(true)
+      allow(HistoricalUserAdministration).to receive_messages(owner_subject: subject, owner_evidence: evidence)
+      Player.insert_all!(Array.new(83) { { user_id: owner.id } })
+    end
+
+    it "links only after signed owner verification without changing the historical profile or associations" do
+      seats = owner.players.order(:id).pluck(:id)
+      callback(start, sub: subject, nonce: "incorrect")
+      expect(response).to have_http_status(:unauthorized)
+      callback(start, sub: "different-subject")
+      expect(response).to have_http_status(:unauthorized)
+      expect(owner.reload.auth_identity).to be_nil
+
+      expect { callback(start, sub: subject) }.not_to change(User, :count)
+      expect(response).to have_http_status(:redirect)
+      identity = owner.reload.auth_identity
+      expect(identity).to have_attributes(issuer: issuer, subject: subject)
+      expect(AuthIdentityDecision.where(auth_identity: identity).sole).to have_attributes(action: "linked", evidence_reference: evidence)
+      expect(owner.players.order(:id).pluck(:id)).to eq(seats)
+      expect(AuthLogin.last.auth_identity).to eq(identity)
+    end
+
+    it "preserves a revoked production link" do
+      AuthIdentity.create!(user: owner, issuer: issuer, subject: subject, evidence_reference: evidence, revoked_at: 1.minute.ago)
+      expect { callback(start, sub: subject) }.not_to change(AuthLogin, :count)
+      expect(response).to have_http_status(:unauthorized)
+      expect(owner.reload.auth_identity.revoked_at).to be_present
+    end
+  end
+
   context "with the protected staging owner approval" do
     let(:issuer) { "https://auth.harvj.com" }
     let(:redirect_uri) { "https://#{ModernArtStaging::GAME_HOST}/auth/callback" }

@@ -16,3 +16,9 @@ Login attempts are stored in PostgreSQL and bound to a random browser-session va
 Public replay, gameplay and invitation sending retain their existing gates. Administrative access still requires the separate approved production owner attestation and local audit record. See the [Auth handoff](auth-p15-handoff.md).
 
 This release adds the claim table and the login-attempt and grant-storage migration. Pre-migration backups and historical fingerprint verification remain required. Sessions from earlier releases require a fresh sign-in after deployment. Ordinary Capistrano rollback across the changed ledger is blocked.
+
+## Production owner activation
+
+An already attested production owner can complete the first production login with `REMOTE_GAMING_PRODUCTION_OWNER_BOOTSTRAP=1` and the approved production subject and evidence configured. Keep the administration and replay switches off. After signed-token and active-grant verification, the callback checks the subject against the production attestation and reconciles only the existing `jim` profile with 83 player associations. A conflicting or revoked identity blocks reconciliation. The callback records the existing identity audit decision in the same transaction as the link.
+
+Verify the browser callback and recorded decision before removing the bootstrap switch and enabling historical administration. Production setup never uses the staging attestation. Routine sign-in uses the audited existing link.
