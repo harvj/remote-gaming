@@ -19,8 +19,12 @@ class CanonicalAuth
     @redirect_uri = ENV.fetch("REMOTE_GAMING_OIDC_REDIRECT_URI")
     issuer_uri = https_uri(@issuer)
     callback_uri = https_uri(@redirect_uri)
-    if ModernArtStaging.enabled? && @redirect_uri != "https://#{ModernArtStaging::GAME_HOST}/auth/callback"
-      raise InvalidLogin
+    if ModernArtStaging.enabled?
+      unless @issuer == "https://auth.harvj.com" && @redirect_uri == "https://#{ModernArtStaging::GAME_HOST}/auth/callback" &&
+          ModernArtStaging.owner_subject.to_s.match?(/\A[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\z/) &&
+          ModernArtStaging::OWNER_EVIDENCE_FORMAT.match?(ModernArtStaging.owner_evidence.to_s)
+        raise InvalidLogin
+      end
     end
     unless issuer_uri.path.empty? && callback_uri.path == "/auth/callback" &&
         @client_id.present? && @client_secret.present?
@@ -63,14 +67,40 @@ class CanonicalAuth
     raise InvalidLogin unless jwks["keys"].is_a?(Array) && jwks["keys"].all?(Hash)
 
     claims = verify(token, jwks, attempt)
-    identity = AuthIdentity.active.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
+    identity = if ModernArtStaging.enabled?
+      staging_identity(claims.fetch("sub"))
+    else
+      AuthIdentity.active.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
+    end
     [ identity, claims.fetch("acr") ]
   rescue JWT::DecodeError, KeyError, JSON::ParserError, ActiveRecord::RecordNotFound,
       IOError, SocketError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError
     raise InvalidLogin, cause: nil
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique, ReconcileAuthIdentity::Conflict
+    raise InvalidLogin, cause: nil
   end
 
   private
+
+  def staging_identity(subject)
+    raise InvalidLogin unless subject == ModernArtStaging.owner_subject
+
+    owner = User.find(ModernArtStaging::OWNER_PROFILE_ID)
+    owner.with_lock do
+      raise InvalidLogin unless owner.username == "jim" && !owner.dummy?
+
+      identity = AuthIdentity.find_by(user: owner)
+      if identity
+        raise InvalidLogin unless identity.issuer == @issuer && identity.subject == subject && !identity.revoked_at?
+        return identity
+      end
+
+      raise InvalidLogin unless owner.players.count == 83
+
+      ReconcileAuthIdentity.call(profile: owner, issuer: @issuer, subject: subject,
+        evidence: ModernArtStaging.owner_evidence, operation: "link")
+    end
+  end
 
   def https_uri(url)
     uri = URI.parse(url)

@@ -7,10 +7,20 @@ module ModernArtStaging
   HOSTS = [ DIRECTORY_HOST, GAME_HOST, PANDEMIC_HOST ].freeze
   DATABASE = "remote_gaming_staging"
   GAME_KEY = "modern_art"
+  OWNER_PROFILE_ID = 1
+  OWNER_EVIDENCE_FORMAT = /\ARG-STAGING-AUTH-OWNER-\d+-\d+\z/
   ACCOUNTS = %w[staging_player_1 staging_player_2 staging_player_3].freeze
 
   def self.enabled?
     ENV["REMOTE_GAMING_PRIVATE_STAGING"] == "1"
+  end
+
+  def self.owner_subject
+    ENV["REMOTE_GAMING_OIDC_OWNER_SUBJECT"]
+  end
+
+  def self.owner_evidence
+    ENV["REMOTE_GAMING_OIDC_OWNER_EVIDENCE"]
   end
 
   def self.validate!

@@ -11,6 +11,10 @@ class AuthController < ApplicationController
     head :service_unavailable
   end
 
+  def signed_out
+    render :signed_out
+  end
+
   def callback
     destination = session.delete(:user_return_to)
     identity, assurance = CanonicalAuth.new.authenticate(session.delete(:oidc_attempt), state: params[:state], code: params[:code])

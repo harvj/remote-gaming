@@ -49,3 +49,11 @@ For a later authorized staging rollout, run `cap staging deploy:check` and then 
 The Capistrano compatibility gate blocks rollback to a release recorded before the new migrations. Keep the pre-migration backup and exact historical fingerprint receipts. Use a compatible forward fix if needed. Do not run an older app against experimental data since its visibility rules predate experiments.
 
 P1.4 should build viewer-specific replay projections from immutable snapshots, preserving the experimental flag and dummy attribution. Branch from explicitly supported checkpoints and provision fresh seat credentials independently from the parent.
+
+## Owner-only staging cutover
+
+Import the matching root-only client handoff and owner attestation into the staging service environment. Set `REMOTE_GAMING_OIDC_OWNER_SUBJECT` to the protected subject and `REMOTE_GAMING_OIDC_OWNER_EVIDENCE` to the attestation reference. The first successful signed owner callback links the approved subject to `jim` ID 1 after checking the historical player count. A revoked or conflicting link requires the operator reconciliation procedure. Staging also validates the owner allowlist on use of each local OIDC session.
+
+The staging directory and Pandemic host redirect to protected paths on the Modern Art host. This lets the three entry points use the exact registered callback and a single host-only Secure, HttpOnly, SameSite=Lax cookie. Dummy access remains on the Modern Art host and works only for the issued seat. Local logout ends the Remote Gaming session and offers a link to sign in again through Auth.
+
+Keep edge Basic Auth during verification. Run `deploy/staging-smoke` from loopback with `PUMA_URL` or through the protected edge with `STAGING_NETRC`. After a verified owner browser callback and access-control checks, use the shared Caddy lock for the staging-only edge cutover. Then run the same smoke script against public HTTPS with neither variable. If restoring a release with legacy staging access, restore the Basic Auth gate first.

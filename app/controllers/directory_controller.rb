@@ -1,7 +1,7 @@
 class DirectoryController < ActionController::Base
   layout "directory"
   helper_method :directory_signed_in?
-  before_action :keep_signed_in_navigation_private, only: %i[show staging]
+  before_action :keep_signed_in_navigation_private, only: %i[show staging staging_content]
 
   def show
     directory = GameDirectory.new
@@ -19,19 +19,28 @@ class DirectoryController < ActionController::Base
   end
 
   def staging
-    directory = GameDirectory.new
-    @directory_url = "https://#{ModernArtStaging::DIRECTORY_HOST}/"
-    @game_page = request.host == ModernArtStaging::PANDEMIC_HOST
-    @title = @game_page ? "Pandemic" : "Remote Gaming staging"
-    @games = directory.games.filter_map do |game|
-      case game.fetch(:slug)
-      when "modernart"
-        game.merge(available: true, destination: "https://#{ModernArtStaging::GAME_HOST}/") unless @game_page
-      when "pandemic"
-        game.merge(available: false, destination: "https://#{ModernArtStaging::PANDEMIC_HOST}/")
-      end
+    pandemic = request.host == ModernArtStaging::PANDEMIC_HOST
+    if CanonicalAuth.enabled?
+      response.headers["Cache-Control"] = "no-store"
+      page = pandemic ? "pandemic" : "directory"
+      redirect_to "https://#{ModernArtStaging::GAME_HOST}/staging/#{page}", allow_other_host: true
+    else
+      render_staging(pandemic:)
     end
-    render :show
+  end
+
+  def staging_content
+    response.headers["Cache-Control"] = "no-store"
+    return head :not_found if session.key?(:dummy_browser)
+
+    unless directory_signed_in?
+      return head :unauthorized unless request.format.html?
+
+      session[:user_return_to] = request.path
+      return redirect_to "/login"
+    end
+
+    render_staging(pandemic: request.path_parameters[:staging_page] == "pandemic")
   end
 
   def ready
@@ -43,6 +52,22 @@ class DirectoryController < ActionController::Base
   end
 
   private
+
+  def render_staging(pandemic:)
+    directory = GameDirectory.new
+    @directory_url = "https://#{ModernArtStaging::DIRECTORY_HOST}/"
+    @game_page = pandemic
+    @title = @game_page ? "Pandemic" : "Remote Gaming staging"
+    @games = directory.games.filter_map do |game|
+      case game.fetch(:slug)
+      when "modernart"
+        game.merge(available: true, destination: "https://#{ModernArtStaging::GAME_HOST}/") unless @game_page
+      when "pandemic"
+        game.merge(available: false, destination: "https://#{ModernArtStaging::PANDEMIC_HOST}/")
+      end
+    end
+    render :show
+  end
 
   def directory_signed_in?
     return @directory_signed_in if defined?(@directory_signed_in)

@@ -5,11 +5,12 @@ RSpec.describe "Canonical Auth", type: :request do
   let(:jwks) { { "keys" => [ JWT::JWK.new(key.public_key, "auth-key").export ] } }
   let(:profile) { create(:user, username: "radio") }
   let(:issuer) { "https://auth.example.test" }
+  let(:redirect_uri) { "https://www.example.com/auth/callback" }
 
   around do |example|
     config = {
-      "REMOTE_GAMING_OIDC_ISSUER" => "https://auth.example.test", "REMOTE_GAMING_OIDC_CLIENT_ID" => "gaming",
-      "REMOTE_GAMING_OIDC_CLIENT_SECRET" => "fixture", "REMOTE_GAMING_OIDC_REDIRECT_URI" => "https://www.example.com/auth/callback"
+      "REMOTE_GAMING_OIDC_ISSUER" => issuer, "REMOTE_GAMING_OIDC_CLIENT_ID" => "gaming",
+      "REMOTE_GAMING_OIDC_CLIENT_SECRET" => "fixture", "REMOTE_GAMING_OIDC_REDIRECT_URI" => redirect_uri
     }
     previous = ENV.to_h.slice(*config.keys)
     ENV.update(config)
@@ -30,7 +31,7 @@ RSpec.describe "Canonical Auth", type: :request do
       iat: Time.current.to_i, exp: 5.minutes.from_now.to_i, acr: CanonicalAuth::PASSWORD }.merge(claims)
     token = JWT.encode(attributes, key, "RS256", kid: "auth-key")
     allow_any_instance_of(CanonicalAuth).to receive(:fetch_json) do |_provider, uri, request|
-      expect(uri.host).to eq("auth.example.test")
+      expect(uri.host).to eq(URI(issuer).host)
       if request.is_a?(Net::HTTP::Post)
         expect(uri.path).to eq("/token")
         expect(request["Authorization"]).to eq("Basic #{Base64.strict_encode64('gaming:fixture')}")
@@ -140,5 +141,58 @@ RSpec.describe "Canonical Auth", type: :request do
     expect do
       ReconcileAuthIdentity.call(**options.merge(subject: "different-subject"), operation: "link")
     end.to raise_error(ReconcileAuthIdentity::Conflict)
+  end
+
+  context "with the protected staging owner approval" do
+    let(:issuer) { "https://auth.harvj.com" }
+    let(:redirect_uri) { "https://#{ModernArtStaging::GAME_HOST}/auth/callback" }
+    let(:subject_id) { "11111111-2222-4333-8444-555555555555" }
+    let(:evidence) { "RG-STAGING-AUTH-OWNER-118-2" }
+    let(:owner) { create(:user, username: "jim") }
+
+    before do
+      allow(ModernArtStaging).to receive(:enabled?).and_return(true)
+      allow(ModernArtStaging).to receive(:owner_subject).and_return(subject_id)
+      allow(ModernArtStaging).to receive(:owner_evidence).and_return(evidence)
+      stub_const("ModernArtStaging::OWNER_PROFILE_ID", owner.id)
+      create(:game, key: ModernArtStaging::GAME_KEY)
+      Player.insert_all!(Array.new(83) { { user_id: owner.id } })
+    end
+
+    it "creates the owner link only after a verified signed callback and preserves the historical associations" do
+      historical_players = owner.players.order(:id).pluck(:id)
+      callback(start, sub: subject_id, nonce: "incorrect")
+      expect(response).to have_http_status(:unauthorized)
+      expect(owner.reload.auth_identity).to be_nil
+
+      callback(start, sub: subject_id)
+      expect(response).to have_http_status(:redirect)
+      expect(AuthLogin.last.auth_identity.user_id).to eq(owner.id)
+      expect(owner.reload.auth_identity.evidence_reference).to eq(evidence)
+      expect(AuthIdentityDecision.where(auth_identity: owner.auth_identity).pluck(:action)).to eq([ "linked" ])
+      expect(owner.players.order(:id).pluck(:id)).to eq(historical_players)
+
+      login = AuthLogin.last
+      login.update!(expires_at: 1.second.ago)
+      expect(AuthLogin.authorized(login.id)).to be_nil
+    end
+
+    it "denies a different, validly signed and locally linked subject" do
+      other = AuthIdentity.create!(issuer: issuer, subject: "not-the-approved-owner",
+        user: profile, evidence_reference: "fixture-link")
+      login = AuthLogin.create!(auth_identity: other, assurance: CanonicalAuth::PASSWORD, expires_at: 5.minutes.from_now)
+      expect(AuthLogin.authorized(login.id)).to be_nil
+      callback(start, sub: other.subject)
+      expect(response).to have_http_status(:unauthorized)
+      expect(owner.reload.auth_identity).to be_nil
+    end
+
+    it "never reactivates a revoked owner link on callback" do
+      AuthIdentity.create!(user: owner, issuer: issuer, subject: subject_id,
+        evidence_reference: evidence, revoked_at: 1.minute.ago)
+      expect { callback(start, sub: subject_id) }.not_to change(AuthLogin, :count)
+      expect(response).to have_http_status(:unauthorized)
+      expect(owner.reload.auth_identity.revoked_at).to be_present
+    end
   end
 end

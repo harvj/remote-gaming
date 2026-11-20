@@ -14,7 +14,8 @@ class Users::SessionsController < Devise::SessionsController
     if CanonicalAuth.enabled?
       AuthLogin.authorized(session[:oidc_login])&.destroy!
       reset_session
-      return redirect_to login_path, status: :see_other
+      destination = ModernArtStaging.enabled? ? staging_signed_out_path : login_path
+      return redirect_to destination, status: :see_other
     end
 
     signed_out = (Devise.sign_out_all_scopes ? sign_out : sign_out(resource_name))
