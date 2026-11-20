@@ -329,6 +329,50 @@ ALTER SEQUENCE public.games_id_seq OWNED BY public.games.id;
 
 
 --
+-- Name: historical_user_claims; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.historical_user_claims (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    proposed_by_id bigint NOT NULL,
+    proposed_email character varying(254) NOT NULL,
+    confirmed_by_id bigint,
+    confirmed_at timestamp(6) without time zone,
+    auth_invitation_reference character varying,
+    issued_at timestamp(6) without time zone,
+    expires_at timestamp(6) without time zone,
+    accepted_at timestamp(6) without time zone,
+    auth_identity_decision_id bigint,
+    lock_version integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT historical_claim_confirmation CHECK (((confirmed_at IS NULL) = (confirmed_by_id IS NULL))),
+    CONSTRAINT historical_claim_lifecycle CHECK ((((issued_at IS NULL) AND (expires_at IS NULL) AND (auth_invitation_reference IS NULL) AND (accepted_at IS NULL)) OR ((issued_at IS NOT NULL) AND (expires_at IS NOT NULL) AND (auth_invitation_reference IS NOT NULL) AND (confirmed_at IS NOT NULL) AND (issued_at >= confirmed_at) AND (expires_at > issued_at) AND ((accepted_at IS NULL) OR ((accepted_at >= issued_at) AND (accepted_at < expires_at)))))),
+    CONSTRAINT historical_claim_link_after_acceptance CHECK (((auth_identity_decision_id IS NULL) OR (accepted_at IS NOT NULL)))
+);
+
+
+--
+-- Name: historical_user_claims_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.historical_user_claims_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: historical_user_claims_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.historical_user_claims_id_seq OWNED BY public.historical_user_claims.id;
+
+
+--
 -- Name: players; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -694,6 +738,13 @@ ALTER TABLE ONLY public.games ALTER COLUMN id SET DEFAULT nextval('public.games_
 
 
 --
+-- Name: historical_user_claims id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.historical_user_claims ALTER COLUMN id SET DEFAULT nextval('public.historical_user_claims_id_seq'::regclass);
+
+
+--
 -- Name: players id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -819,6 +870,14 @@ ALTER TABLE ONLY public.game_sessions
 
 ALTER TABLE ONLY public.games
     ADD CONSTRAINT games_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: historical_user_claims historical_user_claims_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.historical_user_claims
+    ADD CONSTRAINT historical_user_claims_pkey PRIMARY KEY (id);
 
 
 --
@@ -1003,6 +1062,41 @@ CREATE UNIQUE INDEX index_games_on_key ON public.games USING btree (key);
 --
 
 CREATE UNIQUE INDEX index_games_on_slug ON public.games USING btree (slug);
+
+
+--
+-- Name: index_historical_user_claims_on_auth_identity_decision_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_historical_user_claims_on_auth_identity_decision_id ON public.historical_user_claims USING btree (auth_identity_decision_id);
+
+
+--
+-- Name: index_historical_user_claims_on_auth_invitation_reference; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_historical_user_claims_on_auth_invitation_reference ON public.historical_user_claims USING btree (auth_invitation_reference);
+
+
+--
+-- Name: index_historical_user_claims_on_confirmed_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_historical_user_claims_on_confirmed_by_id ON public.historical_user_claims USING btree (confirmed_by_id);
+
+
+--
+-- Name: index_historical_user_claims_on_proposed_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_historical_user_claims_on_proposed_by_id ON public.historical_user_claims USING btree (proposed_by_id);
+
+
+--
+-- Name: index_historical_user_claims_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_historical_user_claims_on_user_id ON public.historical_user_claims USING btree (user_id);
 
 
 --
@@ -1258,6 +1352,14 @@ CREATE TRIGGER immutable_session_frames BEFORE DELETE OR UPDATE ON public.sessio
 
 
 --
+-- Name: historical_user_claims fk_rails_10fb6962db; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.historical_user_claims
+    ADD CONSTRAINT fk_rails_10fb6962db FOREIGN KEY (proposed_by_id) REFERENCES public.users(id);
+
+
+--
 -- Name: game_sessions fk_rails_13247b6d37; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1282,6 +1384,14 @@ ALTER TABLE ONLY public.game_sessions
 
 
 --
+-- Name: historical_user_claims fk_rails_38558d3890; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.historical_user_claims
+    ADD CONSTRAINT fk_rails_38558d3890 FOREIGN KEY (confirmed_by_id) REFERENCES public.users(id);
+
+
+--
 -- Name: dummy_accesses fk_rails_3f5b8a6547; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1298,11 +1408,27 @@ ALTER TABLE ONLY public.auth_logins
 
 
 --
+-- Name: historical_user_claims fk_rails_91a7721138; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.historical_user_claims
+    ADD CONSTRAINT fk_rails_91a7721138 FOREIGN KEY (auth_identity_decision_id) REFERENCES public.auth_identity_decisions(id);
+
+
+--
 -- Name: game_sessions fk_rails_cd41ca6570; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.game_sessions
     ADD CONSTRAINT fk_rails_cd41ca6570 FOREIGN KEY (parent_session_id) REFERENCES public.game_sessions(id);
+
+
+--
+-- Name: historical_user_claims fk_rails_e7faceab5c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.historical_user_claims
+    ADD CONSTRAINT fk_rails_e7faceab5c FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -1320,6 +1446,7 @@ ALTER TABLE ONLY public.auth_identities
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261120000002'),
 ('20261120000001'),
 ('20261119000003'),
 ('20261119000002'),

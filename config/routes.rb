@@ -4,15 +4,29 @@ Rails.application.routes.draw do
 
   private_staging = Rails.env.production? && ModernArtStaging.enabled?
 
+  if HistoricalUserAdministration.enabled? || Rails.env.test?
+    constraints ->(request) { HistoricalUserAdministration.available_on?(request.host) } do
+      get "admin/auth", to: "auth#start_admin", as: :historical_admin_auth
+      delete "admin/logout", to: "auth#end_session", as: :historical_admin_logout
+      resources :historical_users, path: "admin/historical-users", only: %i[index show update] do
+        post :prepare, on: :member
+      end
+    end
+  end
+
   if Rails.env.production? && !private_staging
     root "directory#show"
     if ProductionReplay.enabled?
       constraints host: ProductionReplay::HOST do
         get "replay", to: "session_replays#index", as: :replays
         get "replay/auth", to: "auth#start", as: :login
-        get "auth/callback", to: "auth#callback", as: :auth_callback
         delete "replay/logout", to: "auth#end_session", as: :logout
         get "s/:uid/replay", to: "session_replays#show", as: :session_replay
+      end
+    end
+    if ProductionReplay.enabled? || HistoricalUserAdministration.enabled?
+      constraints host: ProductionReplay::HOST do
+        get "auth/callback", to: "auth#callback", as: :auth_callback
       end
     end
     next

@@ -3,13 +3,27 @@ class AuthController < ApplicationController
   before_action :private_response
 
   def start
+    start_login
+  end
+
+  def start_admin
+    return head :not_found unless HistoricalUserAdministration.available_on?(request.host)
+
+    session[:user_return_to] = historical_users_path
+    start_login(historical_admin: true)
+  end
+
+  def start_login(historical_admin: false)
     provider = CanonicalAuth.new
     attempt = provider.start
+    attempt["historical_admin"] = true if historical_admin
     session[:oidc_attempt] = attempt
     redirect_to provider.authorization_url(attempt), allow_other_host: true
   rescue CanonicalAuth::InvalidLogin
     head :service_unavailable
   end
+
+  private :start_login
 
   def signed_out
     render :signed_out
@@ -23,7 +37,12 @@ class AuthController < ApplicationController
 
   def callback
     destination = session.delete(:user_return_to)
-    identity, assurance = CanonicalAuth.new.authenticate(session.delete(:oidc_attempt), state: params[:state], code: params[:code])
+    attempt = session.delete(:oidc_attempt)
+    identity, assurance = CanonicalAuth.new.authenticate(attempt, state: params[:state], code: params[:code])
+    admin_only = HistoricalUserAdministration.available_on?(request.host) && !ProductionReplay.enabled?
+    if (admin_only || attempt&.fetch("historical_admin", false)) && !HistoricalUserAdministration.owner_identity?(identity)
+      raise CanonicalAuth::InvalidLogin
+    end
     AuthLogin.authorized(session[:oidc_login])&.destroy!
     login = identity.with_lock do
       raise CanonicalAuth::InvalidLogin if identity.revoked_at?

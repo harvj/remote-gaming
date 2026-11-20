@@ -1,0 +1,20 @@
+.historical-table,
+.historical-detail {
+  padding: 1rem;
+  border: 1px solid #a9b2ae;
+  border-radius: .65rem;
+  background: #fff;
+  color: #243b44;
+  text-shadow: none;
+}
+
+.historical-table { overflow-x: auto; }
+.historical-table table { border-collapse: collapse; width: 100%; min-width: 40rem; }
+.historical-table th, .historical-table td { text-align: left; padding: .55rem .75rem; vertical-align: top; }
+.historical-table tr + tr, .historical-table tbody { border-top: 1px solid #dce1de; }
+.historical-detail { max-width: 42rem; }
+.historical-detail form { display: grid; justify-items: start; gap: .4rem; padding: .7rem 0; }
+.historical-detail dd { margin: 0 0 .4rem; }
+.historical-detail dt { font-weight: 600; }
+.historical-detail input { font: inherit; }
+.historical-detail input[type=email] { width: min(100%, 25rem); box-sizing: border-box; }

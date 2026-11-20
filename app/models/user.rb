@@ -2,6 +2,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, authentication_keys: [ :username ]
 
   has_one :auth_identity, dependent: :restrict_with_exception
+  has_one :historical_user_claim, dependent: :restrict_with_exception
   has_many :players
   has_one :user_config, dependent: :destroy
   alias_method :config, :user_config

@@ -2,12 +2,15 @@ require "rails_helper"
 require "open3"
 
 RSpec.describe "Production replay route boundaries", type: :request do
-  def production_routes(enable_replay)
+  def production_routes(enable_replay, admin: false)
     environment = {
       "RAILS_ENV" => "production",
       "DATABASE_URL" => nil,
       "SECRET_KEY_BASE_DUMMY" => "1",
       "REMOTE_GAMING_PRIVATE_STAGING" => nil,
+      "REMOTE_GAMING_HISTORICAL_ADMIN" => admin ? "1" : nil,
+      "REMOTE_GAMING_HISTORICAL_ADMIN_OWNER_EVIDENCE" => admin ? "RG-PRODUCTION-HISTORICAL-OWNER-FIXTURE" : nil,
+      "REMOTE_GAMING_HISTORICAL_ADMIN_OWNER_SUBJECT" => admin ? "11111111-2222-4333-8444-555555555555" : nil,
       "REMOTE_GAMING_PRODUCTION_REPLAY" => enable_replay ? "1" : nil,
       "REMOTE_GAMING_OIDC_ISSUER" => "https://auth.harvj.com",
       "REMOTE_GAMING_OIDC_CLIENT_ID" => "fixture",
@@ -23,11 +26,17 @@ RSpec.describe "Production replay route boundaries", type: :request do
     routes = production_routes(true)
     expect(routes).to match(/GET +\/s\/:uid\/replay.*session_replays#show/)
     expect(routes).to match(/GET +\/replay.*session_replays#index/)
-    expect(routes).not_to match(/session_branches#|dummy_accesses#|game_sessions#|session_cards#|players#|\/cable/)
+    expect(routes).not_to match(/session_branches#|dummy_accesses#|game_sessions#|session_cards#|players#|historical_users#|\/cable/)
   end
 
   it "leaves the public directory's production routes alone by default" do
-    expect(production_routes(false)).not_to match(/session_replays#|session_branches#|dummy_accesses#|game_sessions#/)
+    expect(production_routes(false)).not_to match(/session_replays#|session_branches#|dummy_accesses#|game_sessions#|historical_users#/)
+  end
+
+  it "mounts owner administration independently of replay and gameplay" do
+    routes = production_routes(false, admin: true)
+    expect(routes).to include("historical_users#index", "historical_users#prepare", "auth#start_admin", "auth#callback")
+    expect(routes).not_to match(/session_replays#|session_branches#|dummy_accesses#|game_sessions#|\/cable/)
   end
 
   it "rejects direct experiment, dummy-management, and active-branch requests outside staging" do

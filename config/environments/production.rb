@@ -80,13 +80,22 @@ Rails.application.configure do
 
   config.hosts = [ "radioactivita.com", "gaming.harvj.com", /[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.radioactivita\.com/ ]
 
-  config.after_initialize { ProductionReplay.validate! if ProductionReplay.enabled? }
+  config.after_initialize { ProductionReplay.validate_oidc! if ProductionReplay.enabled? }
   if ENV["REMOTE_GAMING_PRODUCTION_REPLAY"] == "1" && !ModernArtStaging.enabled?
     config.session_store :cookie_store, key: "__Host-remote_gaming_replay", secure: true, same_site: :lax
   end
 
+  if ENV["REMOTE_GAMING_HISTORICAL_ADMIN"] == "1" && !ModernArtStaging.enabled?
+    config.after_initialize { HistoricalUserAdministration.validate! }
+    unless ENV["REMOTE_GAMING_PRODUCTION_REPLAY"] == "1"
+      config.session_store :cookie_store, key: "__Host-remote_gaming_admin", secure: true, same_site: :lax
+    end
+  end
+
   if ModernArtStaging.enabled?
     ModernArtStaging.validate!
+    config.action_mailer.delivery_method = :test
+    config.action_mailer.perform_deliveries = false
     config.after_initialize { CanonicalAuth.new }
     config.hosts = ModernArtStaging::HOSTS
     config.action_cable.mount_path = "/cable"

@@ -1,0 +1,39 @@
+<% content_for :head do %><%= stylesheet_link_tag "historical_users" %><% end %>
+<main id="game-directory" class="directory-content" tabindex="-1">
+  <p><%= link_to "Game directory", root_path %></p>
+  <%= button_to "Sign out of administration", historical_admin_logout_path, method: :delete %>
+  <h2>Historical users</h2>
+  <p><%= pluralize(@profiles.size, "recovered profile") %> · Owner access</p>
+
+  <div class="historical-table" role="region" aria-label="Historical user roster" tabindex="0">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Profile ID</th>
+          <th scope="col">Name and username</th>
+          <th scope="col">Recorded player associations</th>
+          <th scope="col">Auth identity</th>
+          <th scope="col">Invitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @profiles.each do |profile| %>
+          <% identity = profile.auth_identity %>
+          <% games = @associations.fetch(profile.id, []) %>
+          <tr>
+            <td><%= profile.id %></td>
+            <th scope="row"><%= link_to profile.name, historical_user_path(profile.id) %><br><%= profile.username %></th>
+            <td>
+              <%= games.sum(&:last) %>
+              <% games.each do |(_id, game), count| %>
+                <br><%= game %> · <%= count %>
+              <% end %>
+            </td>
+            <td><%= identity ? (identity.revoked_at? ? "Revoked" : "Verified link") : "Unlinked" %></td>
+            <td><%= profile.historical_user_claim&.status&.to_s&.humanize || "None" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</main>

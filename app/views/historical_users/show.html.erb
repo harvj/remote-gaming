@@ -1,0 +1,61 @@
+<% content_for :head do %><%= stylesheet_link_tag "historical_users" %><% end %>
+<main id="game-directory" class="directory-content" tabindex="-1">
+  <p><%= link_to "Historical users", historical_users_path %></p>
+  <article class="historical-detail">
+    <h2><%= @profile.name %></h2>
+    <p>Profile <%= @profile.id %> · <%= @profile.username %></p>
+    <h3>Auth identity</h3>
+    <% if @identity %>
+      <p><%= @identity.revoked_at? ? "Revoked" : "Verified link" %> · <%= @identity.issuer %></p>
+      <p>Evidence reference <%= @identity.evidence_reference %></p>
+      <% @decisions.each do |decision| %>
+        <p><%= decision.action.humanize %> · <%= time_tag decision.created_at %> · <%= decision.evidence_reference %></p>
+      <% end %>
+    <% else %>
+      <p>Unlinked</p>
+    <% end %>
+
+    <h3>Invitation</h3>
+    <p>Sending is disabled while the Auth invitation integration is pending.</p>
+    <p>Status <strong><%= @claim&.status&.to_s&.humanize || "None" %></strong></p>
+    <% if @form_error %><p role="alert"><%= @form_error %></p><% end %>
+    <% if @claim %>
+      <dl>
+        <dt>Proposed email</dt><dd><%= @claim.proposed_email %></dd>
+        <% if @claim.confirmed_at %>
+          <dt>Confirmed by owner</dt><dd><%= time_tag @claim.confirmed_at %></dd>
+        <% end %>
+        <% if @claim.issued_at %>
+          <dt>Issued</dt><dd><%= time_tag @claim.issued_at %></dd>
+          <dt>Expires</dt><dd><%= time_tag @claim.expires_at %></dd>
+        <% end %>
+        <% if @claim.accepted_at %>
+          <dt>Accepted</dt><dd><%= time_tag @claim.accepted_at %></dd>
+        <% end %>
+        <% if @claim.auth_identity_decision %>
+          <dt>Invitation link evidence</dt><dd><%= @claim.auth_identity_decision.evidence_reference %></dd>
+        <% end %>
+      </dl>
+    <% end %>
+
+    <% unless @identity || @claim&.issued_at? %>
+      <%= form_with url: historical_user_path(@profile.id), method: :patch do |form| %>
+        <%= form.hidden_field :revision, value: @claim ? @claim.lock_version : "new" %>
+        <%= form.label :proposed_email, "Proposed email address" %>
+        <%= form.email_field :proposed_email, value: @claim&.proposed_email, required: true, maxlength: 254 %>
+        <%= form.submit "Save proposal" %>
+      <% end %>
+
+      <% if @claim&.status == :proposed %>
+        <%= form_with url: prepare_historical_user_path(@profile.id), method: :post do |form| %>
+          <%= form.hidden_field :revision, value: @claim.lock_version %>
+          <div>
+            <%= form.check_box :confirm, { required: true, include_hidden: false }, "1" %>
+            <%= form.label :confirm, "Confirm this address for a future invitation" %>
+          </div>
+          <%= form.submit "Prepare invitation" %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </article>
+</main>
