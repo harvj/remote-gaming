@@ -19,14 +19,9 @@ class DirectoryController < ActionController::Base
   end
 
   def staging
-    pandemic = request.host == ModernArtStaging::PANDEMIC_HOST
-    if CanonicalAuth.enabled?
-      response.headers["Cache-Control"] = "no-store"
-      page = pandemic ? "pandemic" : "directory"
-      redirect_to "https://#{ModernArtStaging::GAME_HOST}/staging/#{page}", allow_other_host: true
-    else
-      render_staging(pandemic:)
-    end
+    response.headers["Cache-Control"] = "no-store"
+    page = request.host == ModernArtStaging::PANDEMIC_HOST ? "pandemic" : "directory"
+    redirect_to "https://#{ModernArtStaging::GAME_HOST}/staging/#{page}", allow_other_host: true
   end
 
   def staging_content

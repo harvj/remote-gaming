@@ -9,8 +9,6 @@ Rails.application.routes.draw do
     next
   end
 
-  staging_oidc = private_staging && CanonicalAuth.enabled?
-
   if private_staging
     root "directory#staging", constraints: ->(request) { ModernArtStaging::HOSTS.include?(request.host) && request.host != ModernArtStaging::GAME_HOST }, as: :staging_directory
     root "games#show", defaults: { game_key: ModernArtStaging::GAME_KEY },
@@ -33,7 +31,7 @@ Rails.application.routes.draw do
 
   gameplay_host = ->(request) { !private_staging || request.host == ModernArtStaging::GAME_HOST }
   constraints gameplay_host do
-    if staging_oidc
+    if private_staging
       get "staging/directory", to: "directory#staging_content", defaults: { staging_page: "directory" }
       get "staging/pandemic", to: "directory#staging_content", defaults: { staging_page: "pandemic" }
       get "login", to: "auth#start"

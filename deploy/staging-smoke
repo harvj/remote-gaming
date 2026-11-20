@@ -40,32 +40,18 @@ done
 [[ $(status "$modern" /pandemic) == 404 ]]
 [[ $(status "$modern" /s/staging-probe -H 'Accept: application/json') == 401 ]]
 
-if [[ $(status "$modern" /login) == 302 ]]; then
-  [[ $(location "$modern" /login) == https://auth.harvj.com/authorize\?* ]]
-  [[ $(location "$directory" /) == "https://$modern/staging/directory" ]]
-  [[ $(location "$pandemic" /) == "https://$modern/staging/pandemic" ]]
-  for path in /staging/directory /staging/pandemic; do
-    [[ $(status "$modern" "$path") == 302 ]]
-    [[ $(location "$modern" "$path") == */login ]]
-    [[ $(status "$modern" "$path" -H 'Accept: application/json') == 401 ]]
-  done
-  [[ $(status "$modern" /auth/callback) == 401 ]]
-  [[ $(status "$modern" /login -X POST) != 200 ]]
-  page=$(request "$modern" /dummy/login -f)
-  grep -q 'dummy_credential' <<< "$page"
-else
-  # The legacy branch remains available while the candidate is behind Basic Auth.
-  [[ -n ${PUMA_URL:-} || -n ${STAGING_NETRC:-} ]]
-  page=$(request "$directory" / -f)
-  grep -q 'Remote Gaming staging' <<< "$page"
-  grep -q "https://$modern/" <<< "$page"
-  page=$(request "$pandemic" / -f)
-  grep -q 'Not yet available' <<< "$page"
-  page=$(request "$modern" /login -f)
-  grep -q 'Private staging' <<< "$page"
-  asset=$(sed -nE 's@.*src="(/vite/[^"]+\.js)".*@\1@p' <<< "$page" | head -n1)
-  [[ -n $asset ]]
-  request "$modern" "$asset" -fo /dev/null
-fi
+[[ $(status "$modern" /login) == 302 ]]
+[[ $(location "$modern" /login) == https://auth.harvj.com/authorize\?* ]]
+[[ $(location "$directory" /) == "https://$modern/staging/directory" ]]
+[[ $(location "$pandemic" /) == "https://$modern/staging/pandemic" ]]
+for path in /staging/directory /staging/pandemic; do
+  [[ $(status "$modern" "$path") == 302 ]]
+  [[ $(location "$modern" "$path") == */login ]]
+  [[ $(status "$modern" "$path" -H 'Accept: application/json') == 401 ]]
+done
+[[ $(status "$modern" /auth/callback) == 401 ]]
+[[ $(status "$modern" /login -X POST) != 200 ]]
+page=$(request "$modern" /dummy/login -f)
+grep -q 'dummy_credential' <<< "$page"
 
 printf '%s\n' 'Private staging HTTP smoke checks passed for all three hostnames'
