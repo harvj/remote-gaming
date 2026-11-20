@@ -33,6 +33,7 @@
 
     <span class="session-link">
       <a href={session.uri}>{session.uid}</a>
+      {#if session.branch} <span>· Branch</span>{/if}
     </span>
   </div>
 

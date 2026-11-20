@@ -9,7 +9,7 @@ SELECT format(
   'SELECT %L AS relation, count(*), md5(coalesce(string_agg(md5((to_jsonb(row) - %L::text[])::text), '''' ORDER BY id), '''')) FROM public.%I AS row',
   tablename,
   CASE tablename WHEN 'games' THEN '{slug}'
-    WHEN 'game_sessions' THEN '{experimental,experiment_owner_id}' WHEN 'users' THEN '{dummy}' WHEN 'players' THEN '{removed_at,table_captain}'
+    WHEN 'game_sessions' THEN '{experimental,experiment_owner_id,parent_session_id,fork_frame_id,branch_rules_version}' WHEN 'users' THEN '{dummy}' WHEN 'players' THEN '{removed_at,table_captain}'
     WHEN 'session_frames' THEN '{sequence,format_version,kind,game_key,payload,occurred_at,context_frame_id,corrects_frame_id,actor_kind}'
     ELSE '{}' END,
   tablename

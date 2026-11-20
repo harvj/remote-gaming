@@ -3,11 +3,27 @@
 
   export let initial
   export let replayPath
+  export let branchPath = null
+  export let branchToken = null
+  export let lineage = null
   let frame = initial
   let jump = initial.cursor
   let pending = false
   let error = ""
   let request
+  let original = null
+  let comparisonError = ""
+
+  async function compare() {
+    comparisonError = ""
+    try {
+      const response = await fetch(lineage.path, { headers: { Accept: "application/json" } })
+      if (!response.ok) throw new Error()
+      original = await response.json()
+    } catch {
+      comparisonError = "Could not load the original fork."
+    }
+  }
 
   function label(value) {
     return value?.replaceAll("_", " ") ?? "—"
@@ -46,6 +62,13 @@
   onDestroy(() => request?.abort())
 </script>
 
+{#if lineage}
+  <p>Private experimental branch · Forked at frame {lineage.fork} · Rules v{lineage.rulesVersion}</p>
+  {#if lineage.path}
+    <a href={lineage.path}>Original timeline</a>
+    <button type="button" onclick={compare}>Compare with original fork</button>
+  {/if}
+{/if}
 <nav aria-label="Replay controls">
   <button type="button" onclick={() => seek(1)} disabled={pending || frame.cursor === 1}>Beginning</button>
   <button type="button" onclick={() => seek(frame.cursor - 1)} disabled={pending || frame.cursor === 1}>Previous</button>
@@ -59,6 +82,25 @@
 </nav>
 <p aria-live="polite">Frame {frame.cursor} of {frame.last}{pending ? " · Loading" : ""}</p>
 {#if error}<p role="alert">{error}</p>{/if}
+{#if branchPath && frame.branchable}
+  <form method="post" action={branchPath}>
+    <input type="hidden" name="authenticity_token" value={branchToken}>
+    <input type="hidden" name="frame" value={frame.cursor}>
+    <button type="submit" disabled={pending}>Create private branch</button>
+  </form>
+{/if}
+{#if comparisonError}<p role="alert">{comparisonError}</p>{/if}
+{#if original}
+  <section aria-label="Timeline comparison" class="comparison">
+    {#each [{ title: "Original fork", state: original }, { title: "Branch frame", state: frame }] as timeline (timeline.title)}
+      <div>
+        <h3>{timeline.title} {timeline.state.cursor}</h3>
+        <p>{label(timeline.state.phase)} · {timeline.state.played.length} {timeline.state.played.length === 1 ? "painting" : "paintings"} played</p>
+        <ul>{#each timeline.state.played as card (card.id)}<li>{card.label}</li>{/each}</ul>
+      </div>
+    {/each}
+  </section>
+{/if}
 
 <dl class="event">
   <dt>Action</dt><dd>{label(frame.event.action)} ({label(frame.event.kind)})</dd>
@@ -115,4 +157,5 @@
   dt { font-weight: 600; }
   h3, h4, dt { text-transform: capitalize; }
   section { margin-top: 1.5rem; }
+  .comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
 </style>

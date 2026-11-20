@@ -1,6 +1,7 @@
 class Play::Base
   include ServiceObject
 
+  RULES_VERSION = 1
   PLAY_SEQUENCE = []
   DECKS = []
   TERMS = {}

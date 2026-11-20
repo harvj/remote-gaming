@@ -4,7 +4,11 @@
   <h2>Modern Art replay</h2>
   <div id="session-replay"></div>
   <script id="session-replay-data" type="application/json"><%= raw json_escape({
-    initial: @replay, replayPath: session_replay_path(@replay_session.uid)
+    initial: @replay, replayPath: session_replay_path(@replay_session.uid), lineage: @lineage,
+    branchPath: (@can_branch ? session_branches_path(@replay_session.uid) : nil),
+    branchToken: (@can_branch ? form_authenticity_token(form_options: {
+      action: session_branches_path(@replay_session.uid), method: :post
+    }) : nil)
   }.to_json) %></script>
   <%= vite_javascript_tag "session_replay" %>
 </main>

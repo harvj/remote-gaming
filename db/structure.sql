@@ -266,6 +266,10 @@ CREATE TABLE public.game_sessions (
     updated_at timestamp(6) without time zone NOT NULL,
     experimental boolean DEFAULT false NOT NULL,
     experiment_owner_id bigint,
+    parent_session_id bigint,
+    fork_frame_id bigint,
+    branch_rules_version integer,
+    CONSTRAINT game_sessions_complete_branch_lineage CHECK ((((parent_session_id IS NULL) AND (fork_frame_id IS NULL) AND (branch_rules_version IS NULL)) OR (experimental AND (parent_session_id IS NOT NULL) AND (parent_session_id <> id) AND (fork_frame_id IS NOT NULL) AND (branch_rules_version IS NOT NULL) AND (branch_rules_version > 0)))),
     CONSTRAINT game_sessions_experiment_owner CHECK ((experimental = (experiment_owner_id IS NOT NULL)))
 );
 
@@ -960,10 +964,24 @@ CREATE INDEX index_game_sessions_on_experiment_owner_id ON public.game_sessions 
 
 
 --
+-- Name: index_game_sessions_on_fork_frame_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_game_sessions_on_fork_frame_id ON public.game_sessions USING btree (fork_frame_id);
+
+
+--
 -- Name: index_game_sessions_on_game_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_game_sessions_on_game_id ON public.game_sessions USING btree (game_id);
+
+
+--
+-- Name: index_game_sessions_on_parent_session_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_game_sessions_on_parent_session_id ON public.game_sessions USING btree (parent_session_id);
 
 
 --
@@ -1256,6 +1274,14 @@ ALTER TABLE ONLY public.auth_identity_decisions
 
 
 --
+-- Name: game_sessions fk_rails_1f938de3bb; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.game_sessions
+    ADD CONSTRAINT fk_rails_1f938de3bb FOREIGN KEY (fork_frame_id) REFERENCES public.session_frames(id);
+
+
+--
 -- Name: dummy_accesses fk_rails_3f5b8a6547; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1269,6 +1295,14 @@ ALTER TABLE ONLY public.dummy_accesses
 
 ALTER TABLE ONLY public.auth_logins
     ADD CONSTRAINT fk_rails_5d881b1336 FOREIGN KEY (auth_identity_id) REFERENCES public.auth_identities(id) ON DELETE CASCADE;
+
+
+--
+-- Name: game_sessions fk_rails_cd41ca6570; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.game_sessions
+    ADD CONSTRAINT fk_rails_cd41ca6570 FOREIGN KEY (parent_session_id) REFERENCES public.game_sessions(id);
 
 
 --
@@ -1286,6 +1320,7 @@ ALTER TABLE ONLY public.auth_identities
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261120000001'),
 ('20261119000003'),
 ('20261119000002'),
 ('20261119000001'),

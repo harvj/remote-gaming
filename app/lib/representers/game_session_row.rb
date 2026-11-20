@@ -6,6 +6,7 @@ module Representers
       @session = session
       {
         id: session.id,
+        branch: session.parent_session_id.present?,
         active: session.active?,
         archived: session.completed_at.present? && session.completed_at < Date.parse("2021-01-06"),
         completed: session.completed_at.present?,

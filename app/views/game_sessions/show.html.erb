@@ -3,7 +3,13 @@
 <% end %>
 <% if ExperimentalAccess.enabled? && @game_session.experimental? %>
   <section class="panel">
-    <h2>Private experiment</h2>
+    <h2><%= @game_session.parent_session_id? ? "Private experimental branch" : "Private experiment" %></h2>
+    <% if @game_session.parent_session_id? %>
+      <p>Forked at frame <%= @game_session.fork_frame.sequence %> · Rules v<%= @game_session.branch_rules_version %></p>
+      <% if @game_session.parent_session.can_replay?(current_user) %>
+        <p><%= link_to "Original timeline", session_replay_path(@game_session.parent_session.uid, frame: @game_session.fork_frame.sequence) %></p>
+      <% end %>
+    <% end %>
     <% if @game_session.experiment_owner_id == current_user.id %>
       <% if @game_session.joinable? %>
         <%= button_to "Add dummy player", session_dummies_path(@game_session.uid) %>

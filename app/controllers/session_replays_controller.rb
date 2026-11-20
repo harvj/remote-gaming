@@ -22,6 +22,10 @@ class SessionReplaysController < ApplicationController
 
     view = SessionFrame::View.new(frames, cursor:)
     @replay = view.for_viewer(current_user)
+    @can_branch = !current_user.dummy? && BrowserIdentity.oidc_user(session) == current_user &&
+      SessionFrame::Branch.allowed?(@replay_session, current_user)
+    @replay[:branchable] = @can_branch && SessionFrame::Branch.supported?(view, current_user)
+    @lineage = replay_lineage
     respond_to do |format|
       format.html
       format.json { render json: @replay }
@@ -34,6 +38,17 @@ class SessionReplaysController < ApplicationController
   end
 
   private
+
+  def replay_lineage
+    return unless @replay_session.parent_session_id
+
+    origin = @replay_session.parent_session
+    fork = @replay_session.fork_frame.sequence
+    lineage = { fork: fork, rulesVersion: @replay_session.branch_rules_version }
+    return lineage unless origin.can_replay?(current_user)
+
+    lineage.merge(path: session_replay_path(origin.uid, frame: fork))
+  end
 
   def find_replay_session
     scope = ProductionReplay.enabled? ? GameSession.ordinary : GameSession.all

@@ -4,6 +4,8 @@ class GameSession < ApplicationRecord
 
   belongs_to :game
   belongs_to :experiment_owner, class_name: "User", optional: true
+  belongs_to :parent_session, class_name: "GameSession", optional: true
+  belongs_to :fork_frame, class_name: "SessionFrame", optional: true
   belongs_to :current_player, class_name: "Player", optional: true
 
   has_many :players, -> { joined.order(:turn_order) }
@@ -13,6 +15,8 @@ class GameSession < ApplicationRecord
   has_many :decks, class_name: "SessionDeck", dependent: :destroy
   has_many :cards, class_name: "SessionCard", dependent: :destroy
   has_many :frames, class_name: "SessionFrame", dependent: :restrict_with_exception
+
+  attr_readonly :parent_session_id, :fork_frame_id, :branch_rules_version
 
   validates :uid, presence: true, uniqueness: true
   validates :state, presence: true

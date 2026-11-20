@@ -7,7 +7,7 @@ class SessionFrame::Snapshot
   def self.call(session)
     {
       "session" => fields(session, SESSION_FIELDS + (session.experimental? ? %w[experimental experiment_owner_id] : [])),
-      "game" => session.game.slice("id", "key", "name", "min_players", "max_players").merge("rules_version" => 1),
+      "game" => session.game.slice("id", "key", "name", "min_players", "max_players").merge("rules_version" => session.play_class::RULES_VERSION),
       "players" => session.all_players.order(:id).includes(:role, :user).map do |player|
         fields(player, PLAYER_FIELDS).merge(
           "identity" => player.user.slice("id", "username", "name").tap { |identity| identity["kind"] = "dummy" if player.user.dummy? },
