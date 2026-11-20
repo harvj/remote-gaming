@@ -9,7 +9,6 @@ gem "vite_rails"
 gem "devise"
 gem "jwt", "~> 3.1"
 gem "immutable-struct"
-gem "passphrase"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

@@ -1,6 +1,6 @@
 class GameSession::Create < Services::Create
   def apply_pre_processing
-    @subject.uid = "#{GameSession.generate_uid}-#{SecureRandom.hex(8)}"
+    @subject.uid = SecureRandom.hex(16)
     @subject.state = :waiting
   end
 
