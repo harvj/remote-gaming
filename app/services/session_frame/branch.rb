@@ -9,9 +9,10 @@ class SessionFrame::Branch
 
   def self.supported?(view, viewer)
     state = view.state
+    return false unless state && view.selected.kind == "checkpoint"
+
     seats = state.fetch("players")
-    view.selected.kind == "checkpoint" &&
-      state.dig("game", "rules_version") == RULES_VERSION &&
+    state.dig("game", "rules_version") == RULES_VERSION &&
       Play::ModernArt::PLAY_SEQUENCE.include?(state.dig("session", "state")) &&
       seats.any? { |seat| seat["user_id"] == viewer.id && seat["table_captain"] && !seat["removed_at"] } &&
       seats.all? { |seat| !seat["removed_at"] && (seat["user_id"] == viewer.id || seat.dig("identity", "kind") == "dummy") }

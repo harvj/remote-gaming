@@ -51,11 +51,20 @@ module Representers
 
       if member && replayable && session.game.key == "modern_art"
         scalar[:physical] = physical_history(member)
+        scalar[:tabletop] = tabletop
       elsif member && !replayable
         scalar[:physical] = { coverage: "unrecorded", observations: [] }
       end
 
       scalar
+    end
+
+    def tabletop
+      frames = session.frames.order(:sequence).to_a
+      state = ::SessionFrame::Replay.call(frames)
+      Games::ModernArt::Board.new(state, frames, viewer).call
+    rescue ::SessionFrame::Replay::Unavailable
+      nil
     end
 
     def physical_history(member)

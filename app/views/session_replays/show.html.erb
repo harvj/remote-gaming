@@ -1,3 +1,7 @@
+<% content_for :head do %>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/c8fac941ce.js" crossorigin="anonymous"></script>
+<% end %>
 <main id="game-directory" class="directory-content replay-content" data-art-role="default" tabindex="-1">
   <p><%= link_to ProductionReplay.enabled? ? "My replays" : "Live table",
     ProductionReplay.enabled? ? replays_path : game_session_path(@replay_session.uid) %></p>

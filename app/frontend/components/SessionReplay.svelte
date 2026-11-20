@@ -1,4 +1,5 @@
 <script>
+  import ModernArtTabletop from "./ModernArtTabletop.svelte"
   import { onDestroy } from "svelte"
 
   export let initial
@@ -95,37 +96,29 @@
     {#each [{ title: "Original fork", state: original }, { title: "Branch frame", state: frame }] as timeline (timeline.title)}
       <div>
         <h3>{timeline.title} {timeline.state.cursor}</h3>
-        <p>{label(timeline.state.phase)} · {timeline.state.played.length} {timeline.state.played.length === 1 ? "painting" : "paintings"} played</p>
-        <ul>{#each timeline.state.played as card (card.id)}<li>{card.label}</li>{/each}</ul>
+        {#if timeline.state.available}
+          <p>{timeline.state.played.length} {timeline.state.played.length === 1 ? "painting" : "paintings"} played</p>
+          <ModernArtTabletop board={timeline.state} />
+        {:else}<p>Digital state unavailable for this frame.</p>{/if}
       </div>
     {/each}
   </section>
+{:else if frame.available}
+  <ModernArtTabletop board={frame} />
+{:else}
+  <p role="status" class="missing">Digital state unavailable at this frame. The recorded events and checkpoints do not establish the full state. Use the replay controls to inspect another frame.</p>
 {/if}
 
+<details class="history" open>
+  <summary>Recorded event and table-captain observations</summary>
 <dl class="event">
   <dt>Action</dt><dd>{label(frame.event.action)} ({label(frame.event.kind)})</dd>
   <dt>Actor</dt><dd>{frame.event.actor ?? label(frame.event.actorKind)}</dd>
   <dt>Phase</dt><dd>{label(frame.event.phase)}</dd>
+  {#if frame.event.occurredAt}<dt>Occurred</dt><dd><time datetime={frame.event.occurredAt}>{date(frame.event.occurredAt)}</time></dd>{/if}
   <dt>Recorded</dt><dd><time datetime={frame.event.recordedAt}>{date(frame.event.recordedAt)}</time></dd>
 </dl>
-{#if frame.checkpoint !== frame.cursor}<p>State from checkpoint {frame.checkpoint}.</p>{/if}
-
-<section aria-label="Recorded game state">
-  <h3>{label(frame.phase)}</h3>
-  <ul>
-    {#each frame.players as player (player.id)}
-      <li>
-        <strong>{player.name}</strong>{player.captain ? " · Captain" : ""}{player.id === frame.currentPlayerId ? " · Current turn" : ""}{player.winner ? " · Winner" : ""}
-        <span> · {player.handCount} in hand{player.score == null ? "" : ` · Score ${player.score}`}</span>
-        {#if player.hand?.length}<ul>{#each player.hand as card (card.id)}<li>{card.label}</li>{/each}</ul>{/if}
-      </li>
-    {/each}
-  </ul>
-  <h4>Played paintings</h4>
-  {#if frame.played.length}
-    <ul>{#each frame.played as card (card.id)}<li>{card.label}</li>{/each}</ul>
-  {:else}<p>No paintings played.</p>{/if}
-</section>
+<p>Physical-table reports are incomplete. Only recorded offers, sales, and corrections are shown.</p>
 
 <section aria-label="Table-captain observations">
   <h3>Table-captain observations</h3>
@@ -148,14 +141,30 @@
     </ul>
   {:else}<p>No observations at this point.</p>{/if}
 </section>
+</details>
 
 <style>
   nav, form { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-  input { width: 6rem; }
+  nav { gap: .35rem; margin-top: .7rem; }
+  nav button, nav input {
+    box-sizing: border-box;
+    min-height: 2.15rem;
+    border: 1px solid #b7aa94;
+    border-radius: .35rem;
+    padding: .25rem .6rem;
+    background: #fff9eb;
+    color: #30251a;
+    font: 600 .82rem "IBM Plex Sans", system-ui, sans-serif;
+  }
+  nav button:enabled:hover { background: #e8dcc6; cursor: pointer; }
+  nav button:disabled { opacity: .6; }
+  nav input { width: 4.3rem; font-weight: 400; }
   .event { display: grid; grid-template-columns: max-content 1fr; gap: .2rem 1rem; }
   dd { margin: 0; }
   dt { font-weight: 600; }
-  h3, h4, dt { text-transform: capitalize; }
+  h3, dt { text-transform: capitalize; }
   section { margin-top: 1.5rem; }
-  .comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
+  .history, .missing { border-radius: .55rem; padding: .75rem 1rem; background: #fff9eb; color: #30251a; margin-top: 1rem; }
+  summary { font-weight: 600; cursor: pointer; }
+  .comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 32rem), 1fr)); gap: 1rem; }
 </style>

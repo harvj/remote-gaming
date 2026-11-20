@@ -2,6 +2,7 @@
   import { onMount } from "svelte"
   import { cable } from "../lib/cable"
   import PlayerList from "./PlayerList.svelte"
+  import ModernArtTabletop from "./ModernArtTabletop.svelte"
   import PlayerCards from "./PlayerCards.svelte"
   import PhysicalObservations from "./PhysicalObservations.svelte"
 
@@ -129,12 +130,22 @@
         </button>
       {/each}
     {/if}
-    <PlayerCards {displayPlayer} {session} {groupCardsBy} {sortCardsBy} {showInactiveCards}
+  {/if}
+
+  {#snippet hand(embedded)}
+    <PlayerCards {displayPlayer} {session} {groupCardsBy} {sortCardsBy} {showInactiveCards} {embedded}
       playable={displayPlayer.id === player?.id && !session.readOnly && !session.completed && !busy}
       ongroup={() => groupCardsBy = groupNext[groupCardsBy]}
       onsort={() => sortCardsBy = sortNext[sortCardsBy]}
       ontoggle={() => showInactiveCards = !showInactiveCards}
       onplay={(card) => submit(card.updatePath, { card_action: "play" })} />
+  {/snippet}
+  {#if session.tabletop}
+    {#snippet liveHand()}{@render hand(true)}{/snippet}
+    <ModernArtTabletop board={session.tabletop} livePlayerId={displayPlayer?.id ?? null}
+      liveHand={displayPlayer && session.started ? liveHand : null} />
+  {:else if displayPlayer && session.started}
+    {@render hand(false)}
   {/if}
 
   {#if session.completed && displayPlayer}

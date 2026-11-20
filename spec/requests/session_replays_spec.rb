@@ -33,6 +33,12 @@ RSpec.describe "Session replay", type: :request do
     expect(started["players"].find { |seat| seat["id"] == own.id }["hand"].size).to eq(10)
     expect(started["players"].reject { |seat| seat["id"] == own.id }.pluck("hand")).to eq([ nil, nil ])
     expect(started.to_json).not_to include("definition", "session_deck_id", "payload")
+    play = table.frames.engine_events.find_by!(action: "card_played")
+    at_play = frame(play.sequence)
+    expect(at_play).to include("available" => true, "currentPlayerId" => card.player_id)
+    expect(at_play["offer"].first).to include("id" => card.id, "name" => card.card.name.titleize,
+      "value" => card.card.value.titleize, "color" => card.card.color, "iconClass" => card.card.icon_class)
+    expect(at_play["players"].find { |seat| seat["id"] == card.player_id }["handCount"]).to eq(9)
     expect(frame(table.frames.last.sequence)["played"].pluck("id")).to include(card.id)
     expect(frame(checkpoint.sequence)).to eq(started)
   end
@@ -59,6 +65,43 @@ RSpec.describe "Session replay", type: :request do
     expect(reports.first).to include("superseded" => true, "actor" => members.first.name)
     expect(reports.last).to include("kind" => "correction", "corrects" => first.sequence,
       "context" => context.sequence, "occurredAt" => "2026-01-15T14:17:00.000000Z")
+  end
+
+  it "keeps navigable frames when an intermediate command has no closing evidence" do
+    members.each { |user| Player::Create.!(user, session: table) }
+    table.play_class.(table, members.first)
+    checkpoint = table.frames.checkpoints.last
+    unknown = SessionFrame::Create.!(table.reload, action: "missing_command_evidence", subject: table).subject
+    sign_in members.first
+
+    expect(frame(unknown.sequence)).to include("available" => false, "cursor" => unknown.sequence,
+      "event" => include("action" => "missing_command_evidence"))
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.keys).not_to include("players", "played", "offer")
+    expect(frame(checkpoint.sequence)).to include("available" => true)
+  end
+
+  it "shows corrected physical sales only at their recorded cursor without changing digital ownership" do
+    members.each { |user| Player::Create.!(user, session: table) }
+    table.play_class.(table, members.first)
+    painter = table.reload.current_player
+    card = painter.cards.active.find(&:playable?)
+    card.play
+    context = table.frames.checkpoints.last
+    buyer = table.players.where.not(id: painter.id).first
+    attrs = { "type" => "auction_result", "context_frame_id" => context.id,
+      "data" => { "card_id" => card.id, "buyer_id" => buyer.id, "winning_bid" => 12 } }
+    report = SessionFrame::Observe.call(table, members.first, attrs)
+    correction = SessionFrame::Observe.call(table, members.first, attrs.merge(
+      "corrects_frame_id" => report.id, "data" => attrs["data"].merge("winning_bid" => 14)
+    ))
+    sign_in members.first
+
+    expect(frame(context.sequence)["sales"]).to be_empty
+    expect(frame(report.sequence)["sales"]).to eq([ { "cardId" => card.id, "buyer" => buyer.user.name, "amount" => 12 } ])
+    corrected = frame(correction.sequence)
+    expect(corrected["sales"].first).to include("amount" => 14)
+    expect(corrected["played"].find { |item| item["id"] == card.id }).to include("playerId" => painter.id)
   end
 
   it "denies nonparticipants even when an ordinary table is waiting and joinable" do

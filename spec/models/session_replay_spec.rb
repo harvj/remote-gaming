@@ -25,6 +25,13 @@ RSpec.describe "Modern Art frame history" do
   end
 
   it "replays a full three-player game, including random deals, turns, phases and scores" do
+    recorded = {}
+    allow(SessionFrame::Create).to receive(:!).and_wrap_original do |call, table, params|
+      result = call.call(table, params)
+      frame = result.subject
+      recorded[frame.sequence] = SessionFrame::Snapshot.call(GameSession.find(table.id)) if frame.kind == "engine"
+      result
+    end
     members = Array.new(3) { Player::Create.!(create(:user), session: session).subject }
     session.play_class.(session, members.first.user)
     expect(session.reload.state).to eq("season_one")
@@ -49,6 +56,22 @@ RSpec.describe "Modern Art frame history" do
     final_state = SessionFrame::Snapshot.call(session.reload)
     expect(SessionFrame::Replay.call(frames)).to eq(final_state)
     expect(SessionFrame::Replay.call(frames, through: 1).fetch("players")).to eq([])
+    SessionFrame::Replay.validate!(frames)
+    aggregate_failures "every recorded engine event agrees with its original database state" do
+      recorded.to_a.shuffle(random: Random.new(27)).each do |sequence, expected|
+        actual = SessionFrame::Replay.state_at(frames, sequence)
+        expect(actual).to eq(expected), "state differs at frame #{sequence} (#{frames[sequence - 1][:action]})"
+      end
+    end
+
+    damaged = frames.deep_dup
+    first_deal = damaged.find { |frame| frame[:action] == "card_dealt" }
+    first_deal[:affected_player_id] = -1
+    expect { SessionFrame::Replay.call(damaged, through: first_deal[:sequence]) }
+      .to raise_error(SessionFrame::Replay::Unavailable, /do not account/)
+    closing = damaged.find { |frame| frame[:kind] == "checkpoint" && frame[:sequence] > first_deal[:sequence] }
+    expect(SessionFrame::Replay.call(damaged, through: closing[:sequence])).to eq(closing[:payload])
+
     expect { SessionFrame::Replay.call(frames.drop(1)) }.to raise_error(SessionFrame::Replay::Unavailable)
     expect(session.winner).to eq(members.last)
 

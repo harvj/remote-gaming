@@ -16,11 +16,11 @@ class SessionReplaysController < ApplicationController
     @title = "Modern Art replay"
     @replay_session = find_replay_session
     frames = @replay_session.frames.order(:sequence).to_a
-    SessionFrame::Replay.call(frames)
+    SessionFrame::Replay.validate!(frames)
     cursor = params.key?(:frame) ? Integer(params[:frame].to_s, 10, exception: false) : frames.size
     return head :bad_request unless cursor&.between?(1, frames.size)
 
-    view = SessionFrame::View.new(frames, cursor:)
+    view = SessionFrame::View.new(frames, cursor:, validated: true)
     @replay = view.for_viewer(current_user)
     @can_branch = !current_user.dummy? && BrowserIdentity.oidc_user(session) == current_user &&
       SessionFrame::Branch.allowed?(@replay_session, current_user)

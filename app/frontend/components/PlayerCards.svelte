@@ -1,4 +1,5 @@
 <script>
+  import ModernArtCard from "./ModernArtCard.svelte"
   export let session
   export let displayPlayer
   export let groupCardsBy
@@ -9,6 +10,7 @@
   export let onsort
   export let ontoggle
   export let onplay
+  export let embedded = false
 
   $: active = displayPlayer.activeCards ?? []
   $: inactive = displayPlayer.inactiveCards ?? []
@@ -31,30 +33,40 @@
   }
 </script>
 
-<section class="player-cards panel ghost">
-  <h3>{displayPlayer.user.name}’s cards</h3>
-  <p>{active.length} cards in hand</p>
+<section class="player-cards" class:panel={!embedded} class:ghost={!embedded}>
+  {#if !embedded}
+    <h3>{displayPlayer.user.name}’s cards</h3>
+    <p>{active.length} cards in hand</p>
+  {/if}
   <p>
     Grouped by <button type="button" onclick={ongroup}>{session.terms[groupCardsBy]}</button>
     and sorted by <button type="button" onclick={onsort}>{session.terms[sortCardsBy]}</button>
   </p>
 
   {#snippet cardGroups(entries, actionable)}
-    {#each entries as [title, cards] (title)}
-      <h4>{title}</h4>
-      <ul class="hand" role="list">
-        {#each cards as card (card.id)}
-          <li>
-            <button class="btn btn-primary {card.color ?? ''}" type="button" data-card-id={card.id}
-              disabled={!actionable || card.validAction !== "play"}
-              onclick={() => onplay(card)}>
-              <i class={"fas fa-" + card.iconClass} aria-hidden="true"></i>
-              {card.name} · {card.value}
-            </button>
-          </li>
-        {/each}
-      </ul>
-    {/each}
+    <div class:compact={embedded}>
+      {#each entries as [title, cards] (title)}
+        <div class="hand-group">
+          <h4>{title}</h4>
+          <ul class="hand" role="list">
+            {#each cards as card (card.id)}
+              <li>
+                {#if session.game.key === "modern_art" || embedded}
+                  <ModernArtCard {card} onplay={actionable ? onplay : null} disabled={card.validAction !== "play"} />
+                {:else}
+                  <button class="btn btn-primary {card.color ?? ''}" type="button" data-card-id={card.id}
+                    disabled={!actionable || card.validAction !== "play"}
+                    onclick={() => onplay(card)}>
+                    <i class={"fas fa-" + card.iconClass} aria-hidden="true"></i>
+                    {card.name} · {card.value}
+                  </button>
+                {/if}
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {/each}
+    </div>
   {/snippet}
 
   {@render cardGroups(groups, playable)}
@@ -67,5 +79,8 @@
 </section>
 
 <style>
+  .compact { display: flex; flex-wrap: wrap; gap: .55rem 1.05rem; }
+  .compact h4 { margin: .35rem 0 .3rem; font-size: .78rem; }
+  .compact .hand { margin: 0; }
   .hand { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; }
 </style>

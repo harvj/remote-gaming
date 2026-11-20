@@ -47,7 +47,12 @@ RSpec.describe SessionFrame::Branch do
     expect(copied_correction.corrects_frame).to eq(copied_report)
     expect(copied_report.context_frame.game_session).to eq(branch)
     expect(copied_report.payload["payer_id"]).not_to eq(payer.id)
-    expect(SessionFrame::Replay.call(branch.frames.order(:sequence))).to eq(SessionFrame::Snapshot.call(branch))
+    branch_frames = branch.frames.order(:sequence).to_a
+    expect(SessionFrame::Replay.call(branch_frames)).to eq(SessionFrame::Snapshot.call(branch))
+    deal = branch.frames.engine_events.where(action: "card_dealt").order(:sequence).first
+    deal_state = SessionFrame::Replay.state_at(branch_frames, deal.sequence)
+    expect(deal_state.fetch("cards").select { |card| card["dealt_at"] }.pluck("id")).to eq([ deal.subject_id ])
+    expect(deal_state.fetch("cards").find { |card| card["id"] == deal.subject_id }["player_id"]).to eq(deal.affected_player_id)
 
     eligible = branch.current_player.cards.active.select(&:playable?)
     alternate = eligible.find { |card| card.card_id != next_card.card_id }
