@@ -59,10 +59,10 @@ RSpec.describe "Modern Art frame history" do
 
   it "keeps the archived single-double pass sequence" do
     members = Array.new(3) { Player::Create.!(create(:user), session: session).subject }
-    first_draw = true
+    opening_deals = members.size
     allow_any_instance_of(SessionDeck).to receive(:next_card).and_wrap_original do |original|
-      if first_draw
-        first_draw = false
+      if opening_deals.positive?
+        opening_deals -= 1
         original.receiver.cards.undealt.joins(:card).find_by!(cards: { value: "double" })
       else
         original.call

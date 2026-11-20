@@ -71,6 +71,7 @@ class DummyAccessesController < ApplicationController
 
   def private_response
     response.headers["Cache-Control"] = "no-store"
-    response.headers["Referrer-Policy"] = "no-referrer"
+    # Browsers send a null Origin for a form POST under no-referrer.
+    response.headers["Referrer-Policy"] = action_name == "new" ? "same-origin" : "no-referrer"
   end
 end

@@ -1,6 +1,17 @@
 require "rails_helper"
 
 RSpec.describe "Modern Art interactive replay and branching", type: :system do
+  around do |example|
+    protection = ActionController::Base.allow_forgery_protection
+    origin_check = ActionController::Base.forgery_protection_origin_check
+    ActionController::Base.allow_forgery_protection = true
+    ActionController::Base.forgery_protection_origin_check = true
+    example.run
+  ensure
+    ActionController::Base.allow_forgery_protection = protection
+    ActionController::Base.forgery_protection_origin_check = origin_check
+  end
+
   it "navigates replay, branches at a checkpoint, and plays an alternative through a new dummy browser" do
     owner = create(:user)
     game = create(:game, :modern_art)

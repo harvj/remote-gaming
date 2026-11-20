@@ -70,6 +70,22 @@ APPROVED_COMMIT=REVIEWED_FULL_SHA ALLOW_MIGRATIONS=1 bundle exec cap production 
 
 For a migration the helper stops only the selected app before the backup, verifies the history fingerprints after migrating, switches `current` atomically, and restarts that service. This release's migration workflow requires preserved historical rows and sequence values. Review changes to the fingerprint procedure before approving a future data-changing migration. Successful rollout requires the selected loopback smoke checks. Use the [production runbook](README.md) or [staging runbook](staging.md) afterward for public HTTPS, Action Cable, and browser checks. Caddy and the other systemd services are outside this workflow.
 
+## Promote the same revision
+
+Stage the exact reviewed GitHub main SHA first. Record its CI result, installed helper digest, backup verification, migration ledger, and hosted acceptance. Rehearse a production backup restore and the exact migration on a disposable copy. Compare historical rows, SessionFrames and sequence values before and after. Check both production route configurations using the candidate. Keep public replay disabled until its separate Auth registration and access review are complete.
+
+Once staging acceptance and the production checks pass, request approval for that exact SHA and production maintenance window. Promote in that window using a clean checkout of the same GitHub main revision. Recheck the active production baseline and schema ledger, then run:
+
+```bash
+bundle exec cap production deploy:check
+APPROVED_COMMIT=VERIFIED_STAGING_SHA ALLOW_MIGRATIONS=1 bundle exec cap production deploy
+./deploy/smoke
+```
+
+Use `ALLOW_MIGRATIONS=1` only when the approved rollout has a pending migration. The helper verifies the backup before migration and compares data fingerprints before switching the release. Confirm the active SHA and migration ledger afterward. Verify the public directory and confirm that replay, dummy management, branching, gameplay and Cable routes are unavailable under the default production configuration. Record the before and after releases and preserve the migration backup.
+
+For P1.4, the only pending migration from the v0.3.0 production ledger is `20261120000001`. After it runs, the helper rejects a code rollback to a predecessor recorded against the old ledger. Use a reviewed forward fix or a separately approved isolated restore and cutover. Reversing the migration on an untouched rehearsal copy demonstrates reversibility of the schema change. A live reversal after branches are created would discard lineage metadata.
+
 ## Rollback and failure recovery
 
 Review the immediately previous release SHA recorded in `current/.remote-gaming-previous` on the selected target. From a clean operator checkout:
