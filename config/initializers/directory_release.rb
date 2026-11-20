@@ -4,7 +4,7 @@ revision = release.basename.to_s
 label = "development"
 
 if release.parent.basename.to_s == "releases" && revision.match?(/\A[0-9a-f]{40}\z/)
-  label = revision[0, 12]
+  label = "unversioned"
   version_file = release.join(".release-version")
   if version_file.file?
     stamped_revision, tag = version_file.read.split

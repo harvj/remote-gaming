@@ -1,4 +1,4 @@
-body:has(> #site-art-background img) {
+body[data-site-art-background] {
   isolation: isolate;
 }
 

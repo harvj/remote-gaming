@@ -91,6 +91,9 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Test Site Art presentation
+        run: node --test spec/frontend/site_art_presentation_test.js
+
       - name: Build production assets
         run: RAILS_ENV=production SECRET_KEY_BASE_DUMMY=1 bundle exec rails assets:precompile
 

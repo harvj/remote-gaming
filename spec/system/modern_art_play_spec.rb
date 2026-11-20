@@ -31,7 +31,7 @@ RSpec.describe "Modern Art multiplayer", type: :system do
         fill_in "user_username", with: member.username
         fill_in "user_password", with: member.password
         click_button "Log In"
-        expect(page).to have_text("What are we playing?")
+        expect(page).to have_css("main[aria-label=Games] .directory-cards")
         visit game_session_path(table.uid)
         click_button "Join"
         count = index + 1

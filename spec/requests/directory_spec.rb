@@ -7,7 +7,11 @@ RSpec.describe "Game directory", type: :request do
       get "/"
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("<h1>Remote Gaming</h1>", "What are we playing?", "Not yet available")
+      expect(response.body).to include("Not yet available")
+      page = Nokogiri::HTML5(response.body)
+      expect(page.css("h1").map { |heading| heading.text.strip }).to eq([ "remote-gaming." ])
+      expect(page.css("main .directory-cards > li").size).to eq(3)
+      expect(page.at_css("main").text).not_to include("What are we playing?")
       expect(response.body).to include('href="https://arkham.radioactivita.com/"')
       expect(response.body).to include('class="directory-wordmark"', 'aria-label="harvj.com home"', "Jim Harvey")
       expect(response.body).not_to include('class="directory-apps"')

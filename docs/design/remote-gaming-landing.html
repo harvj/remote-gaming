@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Remote Gaming</title>
     <link rel="stylesheet" href="../../app/assets/stylesheets/directory.css">
+    <link rel="stylesheet" href="../../app/frontend/styles/site_art.css">
     <link rel="icon" href="../../public/icon.svg" type="image/svg+xml">
   </head>
   <body class="directory-site">
+    <div id="site-art-background" aria-hidden="true"></div>
     <a class="directory-skip" href="#game-directory">Skip to content</a>
-    <header class="directory-header">
-      <a class="directory-wordmark" href="remote-gaming-landing.html">
+    <header class="directory-header" data-art-role="top">
+      <h1 class="directory-brand"><a class="directory-wordmark" href="remote-gaming-landing.html">
         remote-gaming<span>.</span>
-      </a>
+      </a></h1>
       <nav class="directory-nav" aria-label="Applications">
     <a class="directory-home" href="https://harvj.com/" aria-label="harvj.com home">
       <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -22,10 +24,8 @@
 </nav>
 
     </header>
-    <main id="game-directory" class="directory-content" tabindex="-1">
+    <main id="game-directory" class="directory-content" data-art-role="default" aria-label="Games" tabindex="-1">
 
-  <h1>Remote Gaming</h1>
-  <p>What are we playing?</p>
   <ul class="directory-cards" role="list">
       <li>
         <h2>Arkham</h2>
@@ -45,9 +45,9 @@
   </ul>
 </main>
 
-    <footer class="directory-footer">
+    <footer class="directory-footer" data-art-role="bottom">
       <span>© 2026 Jim Harvey</span>
-      <span><span aria-hidden="true">·</span> Remote Gaming v0.2.0</span>
+      <span><span aria-hidden="true">·</span> Remote Gaming v0.3.0</span>
     </footer>
     <!-- Open with ?signed-in=1 to preview the signed-in navigation. The release label is sample data. -->
     <template id="signed-in-navigation">
@@ -70,6 +70,20 @@
         const navigation = document.querySelector("#signed-in-navigation")
         document.querySelector(".directory-nav").replaceWith(navigation.content.cloneNode(true))
       }
+      // This standalone preview uses a snapshot of the published oak treatment.
+      const oak = new Image()
+      oak.alt = ""
+      oak.src = "https://art.harvj.com/assets/c7bd42b422f5adbbf0e379c8821233f81186906763b742c960cbebd826a8e2d6.png"
+      const treatment = {"default":{"--art-foreground":"#FFF3DE","--art-text-shadow":"0px 1px 2px rgb(22 13 8 / 85%)"},"top":{"--art-foreground":"#FFF3DE","--art-text-shadow":"0px 1px 2px rgb(22 13 8 / 85%)"},"bottom":{"--art-foreground":"#FFF3DE","--art-text-shadow":"0px 1px 2px rgb(22 13 8 / 85%)"}}
+      oak.decode().then(() => {
+        document.querySelector("#site-art-background").replaceChildren(oak)
+        for (const element of document.querySelectorAll("[data-art-role]")) {
+          for (const [property, value] of Object.entries(treatment[element.dataset.artRole])) {
+            element.style.setProperty(property, value)
+          }
+        }
+        document.body.setAttribute("data-site-art-background", "")
+      }).catch(() => {})
     </script>
   </body>
 </html>

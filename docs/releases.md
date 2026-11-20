@@ -4,7 +4,7 @@ Remote Gaming uses Semantic Versioning with annotated Git tags of the form `v0.M
 
 ## Publishing and deploying
 
-- Tag the exact reviewed release commit. Published tags are immutable. Publish a new version to correct a release.
+- Tag the exact reviewed release commit before creating its deployment archive. The archive stamps that commit and tag into the release metadata used by the landing page footer. Published tags are immutable. Publish a new version to correct a release.
 - Start each GitHub release title with the exact tag followed by an em dash and a descriptive name, for example `v0.2.0 — SessionFrame Replay and Modern Art`.
 - Describe functionality, compatibility, migrations, verification results, known limitations, and deployment status in the release notes. State which capabilities are public, which are private staging only, and which require a future rollout.
 - Record both the exact version and full Git SHA in production and staging deployment reports, including rollback reports. Use `git describe --exact-match --match 'v0.*' <sha>` to check the version. Record an untagged reviewed build as `unreleased` with its full SHA.

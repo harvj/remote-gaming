@@ -14,7 +14,8 @@ request() {
 
 for host in radioactivita.com gaming.harvj.com; do
   page=$(request "$host" / -f)
-  grep -q '<h1>Remote Gaming</h1>' <<< "$page"
+  grep -Fq 'class="directory-wordmark"' <<< "$page"
+  grep -Fq 'class="directory-cards"' <<< "$page"
   asset=$(sed -nE 's@.*src="(/vite/[^"]+\.js)".*@\1@p' <<< "$page" | head -n1)
   [[ -n $asset ]]
   request "$host" "$asset" -fo /dev/null
@@ -34,7 +35,7 @@ if [[ -n ${PUMA_URL:-} ]]; then
   done
 else
   page=$(request arkham.radioactivita.com / -fL)
-  [[ $page != *'<h1>Remote Gaming</h1>'* ]]
+  [[ $page != *'class="directory-wordmark"'* ]]
   if [[ ${WILDCARD_TLS:-0} == 1 ]]; then
     [[ $(request p10-unregistered.radioactivita.com / -o /dev/null -w '%{http_code}') == 404 ]]
   fi
