@@ -11,7 +11,7 @@ RSpec.describe "Remote Gaming navigation", type: :system do
       viewport(width)
       visit root_path
       expect(page).to have_link("remote-gaming.", href: "/")
-      expect(page).to have_link("Log in", href: "https://auth.harvj.com/login")
+      expect(page).to have_link("Log in", href: "/login")
       expect(page).to have_link("Jim Harvey", href: "https://harvj.com")
       expect(page.evaluate_script("document.documentElement.scrollWidth")).to eq(width)
     end

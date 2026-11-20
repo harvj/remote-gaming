@@ -80,6 +80,8 @@ Rails.application.configure do
 
   config.hosts = [ "radioactivita.com", "gaming.harvj.com", /[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.radioactivita\.com/ ]
 
+  config.session_store :cookie_store, key: "__Host-remote_gaming", secure: true, httponly: true, same_site: :lax
+
   config.after_initialize { ProductionReplay.validate_oidc! if ProductionReplay.enabled? }
   if ENV["REMOTE_GAMING_PRODUCTION_REPLAY"] == "1" && !ModernArtStaging.enabled?
     config.session_store :cookie_store, key: "__Host-remote_gaming_replay", secure: true, same_site: :lax

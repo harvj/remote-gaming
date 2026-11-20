@@ -2,7 +2,10 @@ require "open3"
 require "digest"
 
 module RemoteGamingDeployment
-  HELPER = "/usr/local/sbin/remote-gaming-deploy"
+  def self.helper(stage)
+    stage.to_s == "staging" ? "/usr/local/sbin/remote-gaming-staging-deploy" : "/usr/local/sbin/remote-gaming-deploy"
+  end
+
   REPOSITORIES = %w[git@github.com:harvj/remote-gaming.git https://github.com/harvj/remote-gaming.git].freeze
   SHA = /\A[0-9a-f]{40}\z/
 

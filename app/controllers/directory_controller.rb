@@ -20,8 +20,13 @@ class DirectoryController < ActionController::Base
 
   def staging
     response.headers["Cache-Control"] = "no-store"
-    page = request.host == ModernArtStaging::PANDEMIC_HOST ? "pandemic" : "directory"
-    redirect_to "https://#{ModernArtStaging::GAME_HOST}/staging/#{page}", allow_other_host: true
+    if request.host == ModernArtStaging::GAME_HOST && directory_signed_in?
+      return redirect_to "/modern_art"
+    end
+
+    @title = "Remote Gaming staging"
+    @games = GameDirectory.new.games.select { |game| %w[modernart pandemic].include?(game.fetch(:slug)) }
+    render :show
   end
 
   def staging_content

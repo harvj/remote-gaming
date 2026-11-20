@@ -30,6 +30,7 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 
 require "capybara/selenium/driver"
+require_relative "support/oidc_journey"
 
 # Recent Chrome versions reject the wildcard origin used by Capybara 3.40's reset.
 # These isolated browser profiles only persist authentication cookies.
@@ -49,6 +50,7 @@ Capybara::Selenium::Driver::ChromeDriver.prepend(SystemBrowserCookieReset)
 
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+  config.include OidcJourney
 
   config.before(:each, type: :system) do
     Selenium::WebDriver::Chrome::Service.driver_path = ENV["CHROMEDRIVER"] if ENV["CHROMEDRIVER"]

@@ -9,7 +9,7 @@ Capistrano uses the established `harvj` SSH alias and existing application runti
 
 ## One-time adoption
 
-After deployment authorization, install the reviewed root-owned helper from the same clean commit used by the operator. Capistrano checks the helper digest before each remote operation. Repeat the reviewed installation when its source changes. The operator uses the existing administrative SSH and sudo access.
+After deployment authorization, install the reviewed root-owned helper from the same clean commit used by the operator. Capistrano checks the helper digest before each remote operation. Repeat the reviewed installation when its source changes. The operator uses the existing administrative SSH and sudo access. Use /usr/local/sbin/remote-gaming-staging-deploy for staging and /usr/local/sbin/remote-gaming-deploy for production. The staging binary rejects production targets.
 
 ```bash
 work=$(mktemp -d)

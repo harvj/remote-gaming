@@ -15,7 +15,8 @@ RSpec.describe "Private experiments", type: :request do
   def login(browser, person)
     identity = AuthIdentity.create!(user: person, subject: person.username,
       issuer: ENV["REMOTE_GAMING_OIDC_ISSUER"], evidence_reference: "fixture")
-    allow(oidc).to receive(:authenticate).with(nil, state: "fixture", code: person.username).and_return([ identity, CanonicalAuth::PASSWORD ])
+    stub_oidc_journey(oidc, identity, code: person.username)
+    browser.get("/login")
     browser.get("/auth/callback", params: { state: "fixture", code: person.username })
   end
 

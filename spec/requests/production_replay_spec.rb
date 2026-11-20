@@ -53,7 +53,8 @@ RSpec.describe "Production replay route boundaries", type: :request do
     identity = AuthIdentity.create!(user: captain, issuer: issuer, subject: "fixture", evidence_reference: "fixture")
     provider = instance_double(CanonicalAuth)
     allow(CanonicalAuth).to receive(:new).and_return(provider)
-    allow(provider).to receive(:authenticate).with(nil, state: "fixture", code: "fixture").and_return([ identity, CanonicalAuth::MFA ])
+    stub_oidc_journey(provider, identity, assurance: CanonicalAuth::MFA)
+    get "/login"
     get "/auth/callback", params: { state: "fixture", code: "fixture" }
 
     expect do

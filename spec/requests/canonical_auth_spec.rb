@@ -20,6 +20,14 @@ RSpec.describe "Canonical Auth", type: :request do
     ENV.update(previous)
   end
 
+  before do
+    allow_any_instance_of(CanonicalAuth).to receive(:provider_metadata).and_return(
+      { "issuer" => issuer, "authorization_endpoint" => "#{issuer}/authorize",
+        "token_endpoint" => "#{issuer}/token", "jwks_uri" => "#{issuer}/jwks" }
+    )
+    allow_any_instance_of(CanonicalAuth).to receive(:revoke)
+  end
+
   def start
     post "/auth/start"
     expect(response).to have_http_status(:redirect)
@@ -30,22 +38,29 @@ RSpec.describe "Canonical Auth", type: :request do
     attributes = { iss: issuer, aud: "gaming", sub: "canonical-subject", nonce: authorization.fetch("nonce"),
       iat: Time.current.to_i, exp: 5.minutes.from_now.to_i, acr: CanonicalAuth::PASSWORD }.merge(claims)
     token = JWT.encode(attributes, key, "RS256", kid: "auth-key")
-    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json) do |_provider, uri, request|
+    stub_token_exchange do |request|
+      expect(request.request_headers["Authorization"]).to eq("Basic #{Base64.strict_encode64('gaming:fixture')}")
+      form = URI.decode_www_form(request.body).to_h
+      challenge = Base64.urlsafe_encode64(Digest::SHA256.digest(form.fetch("code_verifier")), padding: false)
+      expect(challenge).to eq(authorization.fetch("code_challenge"))
+      expect(form.fetch("redirect_uri")).to eq(authorization.fetch("redirect_uri"))
+      { "id_token" => token, "access_token" => "fixture-grant", "expires_in" => 300, "token_type" => "Bearer" }
+    end
+    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json) do |_provider, uri, _request|
       expect(uri.host).to eq(URI(issuer).host)
-      if request.is_a?(Net::HTTP::Post)
-        expect(uri.path).to eq("/token")
-        expect(request["Authorization"]).to eq("Basic #{Base64.strict_encode64('gaming:fixture')}")
-        form = URI.decode_www_form(request.body).to_h
-        challenge = Base64.urlsafe_encode64(Digest::SHA256.digest(form.fetch("code_verifier")), padding: false)
-        expect(challenge).to eq(authorization.fetch("code_challenge"))
-        expect(form.fetch("redirect_uri")).to eq(authorization.fetch("redirect_uri"))
-        { "id_token" => token }
-      else
-        expect(uri.path).to eq("/jwks")
-        jwks
-      end
+      uri.path == "/introspect" ? { "active" => true, "client_id" => "gaming" } : jwks
     end
     get "/auth/callback", params: { state: authorization.fetch("state"), code: "fixture-code" }
+  end
+
+  def stub_token_exchange(&response)
+    transport = Faraday.new do |connection|
+      connection.request :url_encoded
+      connection.adapter :test do |stub|
+        stub.post("#{issuer}/token") { |request| [ 200, {}, response.call(request) ] }
+      end
+    end
+    allow(Rack::OAuth2).to receive(:http_client).and_return(transport)
   end
 
   it "authenticates a linked historical profile with password assurance and logs out locally" do
@@ -83,6 +98,7 @@ RSpec.describe "Canonical Auth", type: :request do
       expect(authorization).to include("client_id" => "gaming", "redirect_uri" => redirect_uri, "code_challenge_method" => "S256")
       callback(authorization)
       expect(response).to redirect_to(expected)
+      delete "/logout"
     end
   end
 
@@ -113,9 +129,67 @@ RSpec.describe "Canonical Auth", type: :request do
     post "/login", params: { user: { username: "radio", password: "fixture" } }
     expect(response).to have_http_status(:not_found)
   end
+  it "reuses a usable local session and fails closed when the provider invalidates the grant" do
+    host! "radioactivita.com"
+    AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
+    callback(start)
+    login = AuthLogin.last
+    expect(login.grant_ciphertext).not_to include("fixture-grant")
+    expect(login.expires_at).to be_within(2.seconds).of(5.minutes.from_now)
+
+    expect { get "/login", params: { return_to: "/s/review" } }.not_to change(AuthLoginAttempt, :count)
+    expect(response).to redirect_to("/s/review")
+
+    allow_any_instance_of(CanonicalAuth).to receive(:active_access_token?).and_return(false)
+    get "/s/review", as: :json
+    expect(response).to have_http_status(:unauthorized)
+    get "/"
+    expect(response).to have_http_status(:ok)
+    delete "/logout"
+    expect(response).to have_http_status(:see_other)
+    expect(AuthLogin.exists?(login.id)).to be(false)
+  end
+
+  it "consumes only the matched browser transaction and rejects replays, expired state and background starts" do
+    AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
+    expect { get "/login", headers: { "Sec-Purpose" => "prefetch" } }.not_to change(AuthLoginAttempt, :count)
+    expect(response).to have_http_status(:bad_request)
+    first = start
+    second = start
+    other = ActionDispatch::Integration::Session.new(Rails.application)
+    other.get("/auth/callback", params: { state: first.fetch("state"), code: "fixture" })
+    expect(other.response).to have_http_status(:unauthorized)
+    expect(AuthLoginAttempt.count).to eq(2)
+
+    get "/auth/callback?state=#{first.fetch("state")}&state=#{second.fetch("state")}&code=fixture"
+    expect(response).to have_http_status(:unauthorized)
+    get "/auth/callback", params: { state: first.fetch("state"), error: "access_denied" }
+    expect(response).to have_http_status(:unauthorized)
+    expect(AuthLoginAttempt.count).to eq(1)
+    callback(first)
+    expect(response).to have_http_status(:unauthorized)
+
+    AuthLoginAttempt.update_all(expires_at: 1.second.ago)
+    callback(second)
+    expect(response).to have_http_status(:unauthorized)
+    expect(AuthLogin.count).to eq(0)
+  end
+
+  it "leaves the public directory usable and renders an explicit retry even when discovery is unavailable" do
+    host! "radioactivita.com"
+    allow_any_instance_of(CanonicalAuth).to receive(:provider_metadata).and_raise(CanonicalAuth::InvalidLogin)
+    get "/login"
+    expect(response).to have_http_status(:service_unavailable)
+    expect(response.headers["Location"]).to be_nil
+    expect(response.body).to include("Try signing in again")
+    get "/"
+    expect(response).to have_http_status(:ok)
+    expect(AuthLoginAttempt.count).to eq(0)
+  end
+
   it "rejects an incomplete token response without opening a local login" do
     authorization = start
-    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json).and_return({ "id_token" => [] })
+    stub_token_exchange { { "id_token" => [] } }
 
     expect do
       get "/auth/callback", params: { state: authorization.fetch("state"), code: "fixture-code" }

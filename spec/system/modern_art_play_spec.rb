@@ -52,11 +52,12 @@ RSpec.describe "Modern Art multiplayer", type: :system do
     identity = AuthIdentity.create!(user: owner, issuer: issuer, subject: "owner", evidence_reference: "fixture")
     provider = instance_double(CanonicalAuth)
     allow(CanonicalAuth).to receive(:new).and_return(provider)
-    allow(provider).to receive(:authenticate).with(nil, state: "fixture", code: "fixture").and_return([ identity, CanonicalAuth::MFA ])
+    stub_oidc_journey(provider, identity, assurance: CanonicalAuth::MFA)
 
     experiment = nil
     seats = []
     using_session(owner.id) do
+      visit "/login"
       visit "/auth/callback?state=fixture&code=fixture"
       visit game_path(game.key)
       click_button "Create private experiment"

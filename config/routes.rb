@@ -2,6 +2,11 @@ Rails.application.routes.draw do
   get "/up", to: "rails/health#show"
   get "/ready", to: "directory#ready"
 
+  login_hosts = ModernArtStaging.enabled? ? ModernArtStaging::HOSTS : GameDirectory::DIRECTORY_HOSTS
+  constraints ->(request) { !Rails.env.production? || login_hosts.include?(request.host) } do
+    get "login", to: "auth#start", as: :login
+  end
+
   private_staging = Rails.env.production? && ModernArtStaging.enabled?
 
   if HistoricalUserAdministration.enabled? || Rails.env.test?
@@ -19,12 +24,12 @@ Rails.application.routes.draw do
     if ProductionReplay.enabled?
       constraints host: ProductionReplay::HOST do
         get "replay", to: "session_replays#index", as: :replays
-        get "replay/auth", to: "auth#start", as: :login
+        get "replay/auth", to: "auth#start", defaults: { return_to: "/replay" }
         delete "replay/logout", to: "auth#end_session", as: :logout
         get "s/:uid/replay", to: "session_replays#show", as: :session_replay
       end
     end
-    if ProductionReplay.enabled? || HistoricalUserAdministration.enabled?
+    if CanonicalAuth.enabled? || ProductionReplay.enabled? || HistoricalUserAdministration.enabled?
       constraints host: ProductionReplay::HOST do
         get "auth/callback", to: "auth#callback", as: :auth_callback
       end
@@ -33,9 +38,7 @@ Rails.application.routes.draw do
   end
 
   if private_staging
-    root "directory#staging", constraints: ->(request) { ModernArtStaging::HOSTS.include?(request.host) && request.host != ModernArtStaging::GAME_HOST }, as: :staging_directory
-    root "games#show", defaults: { game_key: ModernArtStaging::GAME_KEY },
-      constraints: ->(request) { request.host == ModernArtStaging::GAME_HOST }
+    root "directory#staging", constraints: ->(request) { ModernArtStaging::HOSTS.include?(request.host) }, as: :root
   else
     constraints ->(request) {
       GameDirectory::DIRECTORY_HOSTS.include?(request.host) ||
@@ -95,7 +98,6 @@ Rails.application.routes.draw do
     get "auth/callback", to: "auth#callback", as: :auth_callback
 
     devise_scope :user do
-      get "/login", to: (private_staging ? "auth#start" : "users/sessions#new"), as: :login
       delete "/logout", to: "users/sessions#destroy", as: :logout
     end
 

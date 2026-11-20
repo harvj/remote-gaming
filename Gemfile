@@ -8,6 +8,7 @@ gem "vite_rails"
 
 gem "devise"
 gem "jwt", "~> 3.1"
+gem "openid_connect", "~> 2.5"
 gem "immutable-struct"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

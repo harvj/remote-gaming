@@ -2,7 +2,7 @@ require "tempfile"
 
 def remote_gaming_verify_helper
   expected = Digest::SHA256.file("deploy/remote-gaming-deploy").hexdigest
-  actual = capture(:sudo, "-n", RemoteGamingDeployment::HELPER, "version").strip
+  actual = capture(:sudo, "-n", RemoteGamingDeployment.helper(fetch(:stage)), "version").strip
   raise "Installed Remote Gaming deployment helper differs from the reviewed local file" unless actual == expected
 end
 
@@ -16,7 +16,7 @@ namespace :deploy do
   task :check do
     on roles(:app) do
       remote_gaming_verify_helper
-      execute :sudo, "-n", RemoteGamingDeployment::HELPER, "check", fetch(:stage)
+      execute :sudo, "-n", RemoteGamingDeployment.helper(fetch(:stage)), "check", fetch(:stage)
     end
   end
 
@@ -25,7 +25,7 @@ namespace :deploy do
     revision = RemoteGamingDeployment.approved!(ENV["APPROVED_COMMIT"], rollback: true)
     on roles(:app) do
       remote_gaming_verify_helper
-      execute :sudo, "-n", RemoteGamingDeployment::HELPER, "rollback", fetch(:stage), revision
+      execute :sudo, "-n", RemoteGamingDeployment.helper(fetch(:stage)), "rollback", fetch(:stage), revision
     end
   end
 end
@@ -41,13 +41,13 @@ task :deploy do
     checksum = Digest::SHA256.file(archive.path).hexdigest
     on roles(:app) do
       remote_gaming_verify_helper
-      execute :sudo, "-n", RemoteGamingDeployment::HELPER, "check", fetch(:stage)
+      execute :sudo, "-n", RemoteGamingDeployment.helper(fetch(:stage)), "check", fetch(:stage)
       directory = capture(:mktemp, "-d", "/tmp/remote-gaming-cap.XXXXXXXX").strip
       raise "Unexpected upload directory" unless directory.match?(%r{\A/tmp/remote-gaming-cap\.[a-zA-Z0-9]{8}\z})
 
       begin
         upload! archive.path, "#{directory}/release.tar.gz"
-        execute :sudo, "-n", RemoteGamingDeployment::HELPER, "deploy", fetch(:stage), revision, checksum, migrations,
+        execute :sudo, "-n", RemoteGamingDeployment.helper(fetch(:stage)), "deploy", fetch(:stage), revision, checksum, migrations,
           "#{directory}/release.tar.gz"
       ensure
         execute :rm, "-f", "--", "#{directory}/release.tar.gz"

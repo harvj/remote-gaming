@@ -38,7 +38,7 @@
             uri: game_path(@game.key),
             name: @game.name
           } : nil,
-          loginPath: navigation_login_url,
+          loginPath: login_path,
           csrfToken: form_authenticity_token
         }.to_json) %>
       </script>

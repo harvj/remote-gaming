@@ -1,10 +1,6 @@
 class Users::SessionsController < Devise::SessionsController
   def new
-    if CanonicalAuth.enabled?
-      redirect_to auth_start_path
-    else
-      redirect_to NavigationLogin::AUTH_URL, allow_other_host: true
-    end
+    head :not_found
   end
 
   def create
@@ -13,7 +9,7 @@ class Users::SessionsController < Devise::SessionsController
 
   def destroy
     if CanonicalAuth.enabled?
-      AuthLogin.authorized(session[:oidc_login])&.destroy!
+      AuthLogin.end_session(session[:oidc_login])
       reset_session
       destination = ModernArtStaging.enabled? ? staging_signed_out_path : login_path
       return redirect_to destination, status: :see_other

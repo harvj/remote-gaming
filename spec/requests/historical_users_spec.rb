@@ -23,19 +23,14 @@ RSpec.describe "Historical user administration", type: :request do
   end
 
   def oidc_login(identity, status: :found)
-    allow(provider).to receive(:authenticate).with(nil, state: "fixture", code: "fixture")
-      .and_return([ identity, CanonicalAuth::PASSWORD ])
+    stub_oidc_journey(provider, identity)
+    get "/login"
     get "/auth/callback", params: { state: "fixture", code: "fixture" }
     expect(response).to have_http_status(status)
   end
 
   it "signs the attested owner in through the production admin entry point" do
-    attempt = { "state" => "fixture" }
-    admin_attempt = attempt.merge("historical_admin" => true)
-    allow(provider).to receive(:start).and_return(attempt)
-    allow(provider).to receive(:authorization_url).with(admin_attempt).and_return("https://auth.harvj.com/authorize")
-    allow(provider).to receive(:authenticate).with(admin_attempt, state: "fixture", code: "fixture")
-      .and_return([ identity, CanonicalAuth::PASSWORD ])
+    stub_oidc_journey(provider, identity, destination: "https://auth.harvj.com/authorize")
 
     get historical_admin_auth_path
     expect(response).to redirect_to("https://auth.harvj.com/authorize")

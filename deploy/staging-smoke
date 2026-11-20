@@ -33,17 +33,18 @@ for host in "$directory" "$modern" "$pandemic"; do
 done
 
 for host in "$directory" "$pandemic"; do
-  [[ $(status "$host" /login) == 404 ]]
+  [[ $(status "$host" /login) == 302 ]]
+  [[ $(location "$host" /login) == "https://$modern/login?"* ]]
   [[ $(status "$host" /s/staging-probe -H 'Accept: application/json') == 404 ]]
 done
-[[ $(status "$modern" / -H 'Accept: text/html') == 302 ]]
+for host in "$directory" "$modern" "$pandemic"; do
+  [[ $(status "$host" / -H 'Accept: text/html') == 200 ]]
+done
 [[ $(status "$modern" /pandemic) == 404 ]]
 [[ $(status "$modern" /s/staging-probe -H 'Accept: application/json') == 401 ]]
 
 [[ $(status "$modern" /login) == 302 ]]
 [[ $(location "$modern" /login) == https://auth.harvj.com/authorize\?* ]]
-[[ $(location "$directory" /) == "https://$modern/staging/directory" ]]
-[[ $(location "$pandemic" /) == "https://$modern/staging/pandemic" ]]
 for path in /staging/directory /staging/pandemic; do
   [[ $(status "$modern" "$path" -H 'Accept: text/html') == 302 ]]
   [[ $(location "$modern" "$path" -H 'Accept: text/html') == */login ]]

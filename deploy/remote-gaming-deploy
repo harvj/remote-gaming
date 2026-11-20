@@ -7,6 +7,7 @@ fail() { echo "$*" >&2; exit 1; }
 revision() { [[ $1 =~ ^[a-f0-9]{40}$ ]]; }
 
 target() {
+  [[ ${0##*/} != remote-gaming-staging-deploy || $1 == staging ]] || fail "This helper is restricted to staging"
   case "$1" in
     production)
       app=remote-gaming role=remote_gaming database=remote_gaming_production port=3012 smoke=smoke ;;
@@ -171,7 +172,7 @@ deploy_release() {
   rails_task "$build/app" runner deploy/check-reference-data.rb
   if [[ $environment == production ]]; then
     rails_task "$build/app" routes > "$build/production-routes"
-    if grep -Eq 'game_sessions#|players#|session_cards#|/cable|/login|observations' "$build/production-routes"; then
+    if grep -Eq 'game_sessions#|players#|session_cards#|dummy_accesses#|session_branches#|users/sessions#|/cable|POST +/login|observations' "$build/production-routes"; then
       fail "Public gameplay and login routes must stay disabled"
     fi
   fi

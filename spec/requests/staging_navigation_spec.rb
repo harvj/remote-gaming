@@ -13,7 +13,9 @@ RSpec.describe "Staging navigation", type: :request do
 
     host! ModernArtStaging::DIRECTORY_HOST
     get "/"
-    expect(response).to redirect_to("https://#{game_host}/staging/directory")
+    expect(response).to have_http_status(:ok)
+    get "/login"
+    expect(response).to redirect_to("https://#{game_host}/login?return_to=%2Fstaging%2Fdirectory")
 
     host! game_host
     get "/staging/directory"
@@ -22,7 +24,7 @@ RSpec.describe "Staging navigation", type: :request do
     expect(response).to have_http_status(:ok)
     signed_out = Nokogiri::HTML5(response.body)
     navbar = JSON.parse(signed_out.at_css("#navbar-data").text)
-    expect(navbar).to include("loginPath" => "/login?return_to=%2F", "currentUser" => nil)
+    expect(navbar).to include("loginPath" => "/login", "currentUser" => nil)
     expect(signed_out.at_css("footer a")["href"]).to eq("https://harvj.com")
     expect(signed_out.css('input[type="password"]')).to be_empty
 
@@ -31,11 +33,7 @@ RSpec.describe "Staging navigation", type: :request do
       evidence_reference: "staging-fixture")
     provider = instance_double(CanonicalAuth)
     allow(CanonicalAuth).to receive(:new).and_return(provider)
-    attempt = { "state" => "fixture" }
-    allow(provider).to receive(:start).and_return(attempt)
-    allow(provider).to receive(:authorization_url).with(attempt).and_return("https://auth.harvj.com/authorize")
-    allow(provider).to receive(:authenticate).with(attempt, state: "fixture", code: "fixture")
-      .and_return([ identity, CanonicalAuth::PASSWORD ])
+    stub_oidc_journey(provider, identity, destination: "https://auth.harvj.com/authorize")
     get "/login"
     expect(response).to redirect_to("https://auth.harvj.com/authorize")
     get "/auth/callback", params: { state: "fixture", code: "fixture" }
@@ -48,6 +46,8 @@ RSpec.describe "Staging navigation", type: :request do
     expect(directory.at_css("footer a")["href"]).to eq("https://harvj.com")
 
     get "/"
+    expect(response).to redirect_to("/modern_art")
+    follow_redirect!
     game = Nokogiri::HTML5(response.body)
     expect(JSON.parse(game.at_css("#navbar-data").text).dig("currentUser", "name")).to eq("jim")
     expect(game.at_css("footer a").text).to eq("Jim Harvey")

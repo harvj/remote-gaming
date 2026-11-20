@@ -16,7 +16,7 @@ RSpec.describe "Game directory", type: :request do
       expect(response.body).to include('href="https://arkham.radioactivita.com/"')
       expect(page.at_css(".directory-wordmark")["href"]).to eq("/")
       expect(page.at_css(".directory-nav a").text).to eq("Log in")
-      expect(page.at_css(".directory-nav a")["href"]).to eq("https://auth.harvj.com/login")
+      expect(page.at_css(".directory-nav a")["href"]).to eq("/login")
       expect(page.at_css("footer a").text).to eq("Jim Harvey")
       expect(page.at_css("footer a")["href"]).to eq("https://harvj.com")
       expect(page.at_css("footer").text).to include(Rails.configuration.x.directory_release_label)
@@ -56,9 +56,10 @@ RSpec.describe "Game directory", type: :request do
     end
   end
 
-  it "delegates login to Auth and refuses local password submissions" do
+  it "offers a safe retry while Auth is unconfigured and refuses local password submissions" do
     get "/login"
-    expect(response).to redirect_to("https://auth.harvj.com/login")
+    expect(response).to have_http_status(:service_unavailable)
+    expect(response.body).to include("Try signing in again")
     post "/login", params: { user: { username: "fixture", password: "fixture" } }
     expect(response).to have_http_status(:not_found)
   end

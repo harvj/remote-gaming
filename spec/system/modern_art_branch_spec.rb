@@ -38,8 +38,9 @@ RSpec.describe "Modern Art interactive replay and branching", type: :system do
     provider = instance_double(CanonicalAuth)
     identity = AuthIdentity.create!(user: owner, issuer: issuer, subject: "owner", evidence_reference: "fixture")
     allow(CanonicalAuth).to receive(:new).and_return(provider)
-    allow(provider).to receive(:authenticate).with(nil, state: "fixture", code: "fixture").and_return([ identity, CanonicalAuth::MFA ])
+    stub_oidc_journey(provider, identity, assurance: CanonicalAuth::MFA)
 
+    visit "/login"
     visit "/auth/callback?state=fixture&code=fixture"
     visit game_session_path(table.uid)
     click_link "Replay history"

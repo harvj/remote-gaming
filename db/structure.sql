@@ -106,6 +106,41 @@ ALTER SEQUENCE public.auth_identity_decisions_id_seq OWNED BY public.auth_identi
 
 
 --
+-- Name: auth_login_attempts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_login_attempts (
+    id bigint NOT NULL,
+    state_digest character varying NOT NULL,
+    browser_digest character varying NOT NULL,
+    nonce character varying NOT NULL,
+    verifier character varying NOT NULL,
+    destination character varying NOT NULL,
+    historical_admin boolean DEFAULT false NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: auth_login_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.auth_login_attempts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: auth_login_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.auth_login_attempts_id_seq OWNED BY public.auth_login_attempts.id;
+
+
+--
 -- Name: auth_logins; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -115,7 +150,8 @@ CREATE TABLE public.auth_logins (
     assurance character varying NOT NULL,
     expires_at timestamp(6) without time zone NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    grant_ciphertext text
 );
 
 
@@ -696,6 +732,13 @@ ALTER TABLE ONLY public.auth_identity_decisions ALTER COLUMN id SET DEFAULT next
 
 
 --
+-- Name: auth_login_attempts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_login_attempts ALTER COLUMN id SET DEFAULT nextval('public.auth_login_attempts_id_seq'::regclass);
+
+
+--
 -- Name: auth_logins id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -822,6 +865,14 @@ ALTER TABLE ONLY public.auth_identities
 
 ALTER TABLE ONLY public.auth_identity_decisions
     ADD CONSTRAINT auth_identity_decisions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_login_attempts auth_login_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_login_attempts
+    ADD CONSTRAINT auth_login_attempts_pkey PRIMARY KEY (id);
 
 
 --
@@ -971,6 +1022,20 @@ CREATE UNIQUE INDEX index_auth_identities_on_user_id ON public.auth_identities U
 --
 
 CREATE INDEX index_auth_identity_decisions_on_auth_identity_id ON public.auth_identity_decisions USING btree (auth_identity_id);
+
+
+--
+-- Name: index_auth_login_attempts_on_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_auth_login_attempts_on_expires_at ON public.auth_login_attempts USING btree (expires_at);
+
+
+--
+-- Name: index_auth_login_attempts_on_state_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_auth_login_attempts_on_state_digest ON public.auth_login_attempts USING btree (state_digest);
 
 
 --
@@ -1446,6 +1511,7 @@ ALTER TABLE ONLY public.auth_identities
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261120000003'),
 ('20261120000002'),
 ('20261120000001'),
 ('20261119000003'),

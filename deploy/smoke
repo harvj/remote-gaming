@@ -21,7 +21,9 @@ for host in radioactivita.com gaming.harvj.com; do
   request "$host" "$asset" -fo /dev/null
   request "$host" /up -fo /dev/null
   request "$host" /ready -fo /dev/null
-  [[ $(request "$host" /login -o /dev/null -w '%{http_code}') == 404 ]]
+  login_status=$(request "$host" /login -o /dev/null -w '%{http_code}')
+  [[ $login_status == 302 || $login_status == 503 ]]
+  [[ $(request "$host" /login -X POST -o /dev/null -w '%{http_code}') == 404 ]]
 done
 
 for game in pandemic modernart; do
