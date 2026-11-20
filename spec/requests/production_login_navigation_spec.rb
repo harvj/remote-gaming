@@ -10,7 +10,7 @@ RSpec.describe "Production login navigation", type: :request do
       get "/"
       expect(response).to have_http_status(:ok)
       expect(Nokogiri::HTML5(response.body).at_css(".directory-login")["href"]).to eq("/login")
-      expect { get "/login" }.not_to change(AuthLoginAttempt, :count)
+      expect { get "/login", headers: { "Accept" => "*/*" } }.not_to change(AuthLoginAttempt, :count)
       expect(response).to have_http_status(:service_unavailable)
       expect(response.headers["Location"]).to be_nil
     end

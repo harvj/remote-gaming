@@ -53,7 +53,8 @@ class AuthController < ApplicationController
   private
 
   def start_login(destination, historical_admin: false)
-    return head :bad_request if !request.format.html? || request.headers["Sec-Purpose"].to_s.include?("prefetch") ||
+    accepts_document = request.format.html? || request.headers["Accept"] == "*/*"
+    return head :bad_request if !accepts_document || request.headers["Sec-Purpose"].to_s.include?("prefetch") ||
       request.headers["Purpose"] == "prefetch" ||
       request.headers["Sec-Fetch-Dest"].present? && request.headers["Sec-Fetch-Dest"] != "document"
 
