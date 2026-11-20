@@ -48,6 +48,7 @@ RSpec.describe "Canonical Auth", type: :request do
   end
 
   it "authenticates a linked historical profile with password assurance and logs out locally" do
+    host! "radioactivita.com"
     create(:game, key: "modern_art")
     AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
     expect(start.fetch("code_challenge_method")).to eq("S256")
@@ -57,8 +58,15 @@ RSpec.describe "Canonical Auth", type: :request do
     expect(AuthLogin.last.assurance).to eq(CanonicalAuth::PASSWORD)
     get "/users/radio"
     expect(response).to have_http_status(:ok)
+    get "/"
+    expect(response.body).to include('class="directory-apps"', 'href="https://intelligence.harvj.com/"')
+    expect(response.body).not_to include('aria-label="harvj.com home"')
+    expect(response.headers["Cache-Control"]).to eq("no-store")
     delete "/logout"
     expect(response).to have_http_status(:see_other)
+    get "/"
+    expect(response.body).to include('aria-label="harvj.com home"')
+    expect(response.body).not_to include('class="directory-apps"')
     get "/modern_art"
     expect(response).to have_http_status(:redirect)
   end

@@ -1,5 +1,7 @@
 class DirectoryController < ActionController::Base
   layout "directory"
+  helper_method :directory_signed_in?
+  before_action :keep_signed_in_navigation_private, only: %i[show staging]
 
   def show
     directory = GameDirectory.new
@@ -38,5 +40,22 @@ class DirectoryController < ActionController::Base
   rescue ActiveRecord::ActiveRecordError, PG::Error => error
     Rails.logger.warn("Remote Gaming readiness failed (#{error.class})")
     head :service_unavailable
+  end
+
+  private
+
+  def directory_signed_in?
+    return @directory_signed_in if defined?(@directory_signed_in)
+
+    user = if CanonicalAuth.enabled?
+      BrowserIdentity.oidc_user(session) unless session.key?(:dummy_browser)
+    else
+      request.env["warden"]&.user(:user)
+    end
+    @directory_signed_in = user.present? && !user.dummy?
+  end
+
+  def keep_signed_in_navigation_private
+    response.headers["Cache-Control"] = "no-store" if directory_signed_in?
   end
 end

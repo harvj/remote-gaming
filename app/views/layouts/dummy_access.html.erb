@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Private game access</title>
     <%= stylesheet_link_tag :app %>
+    <%= render "shared/site_art_head" %>
   </head>
-  <body><main class="page"><%= yield %></main></body>
+  <body>
+    <div id="site-art-background" aria-hidden="true"></div>
+    <main class="page"><%= yield %></main>
+  </body>
 </html>

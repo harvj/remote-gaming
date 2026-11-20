@@ -1,0 +1,21 @@
+<nav class="directory-nav" aria-label="Applications">
+  <% if directory_signed_in? %>
+    <details class="directory-apps">
+      <summary>Apps <span aria-hidden="true">⌄</span></summary>
+      <ul>
+        <li><a href="https://harvj.com/">harvj.</a></li>
+        <li><a href="https://auth.harvj.com/">Auth</a></li>
+        <li><a href="https://network.harvj.com/">Network</a></li>
+        <li><a href="https://library.harvj.com/">Library</a></li>
+        <li><a href="https://intelligence.harvj.com/">Intelligence</a></li>
+        <li><a href="https://muzeum.fm/">Muzeum</a></li>
+      </ul>
+    </details>
+  <% else %>
+    <a class="directory-home" href="https://harvj.com/" aria-label="harvj.com home">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>
+      </svg>
+    </a>
+  <% end %>
+</nav>

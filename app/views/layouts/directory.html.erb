@@ -4,10 +4,23 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= @title %></title>
+    <%= stylesheet_link_tag "directory" %>
     <%= vite_client_tag %>
-    <%= vite_javascript_tag "directory" %>
+    <%= render "shared/site_art_head" %>
   </head>
-  <body>
+  <body class="directory-site">
+    <div id="site-art-background" aria-hidden="true"></div>
+    <a class="directory-skip" href="#game-directory">Skip to content</a>
+    <header class="directory-header">
+      <%= link_to (@directory_url || (@game_page ? "https://radioactivita.com/" : "/")), class: "directory-wordmark" do %>
+        remote-gaming<span>.</span>
+      <% end %>
+      <%= render "directory/navigation" %>
+    </header>
     <%= yield %>
+    <footer class="directory-footer">
+      <span>© <%= Date.current.year %> Jim Harvey</span>
+      <span><span aria-hidden="true">·</span> <%= Rails.configuration.x.directory_release_label %></span>
+    </footer>
   </body>
 </html>

@@ -9,6 +9,8 @@ RSpec.describe "Game directory", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("<h1>Remote Gaming</h1>", "What are we playing?", "Not yet available")
       expect(response.body).to include('href="https://arkham.radioactivita.com/"')
+      expect(response.body).to include('class="directory-wordmark"', 'aria-label="harvj.com home"', "Jim Harvey")
+      expect(response.body).not_to include('class="directory-apps"')
       expect(response.body).not_to include('href="https://pandemic.radioactivita.com/"')
     end
   end

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Remote Gaming</title>
+    <link rel="stylesheet" href="../../app/assets/stylesheets/directory.css">
+    <link rel="icon" href="../../public/icon.svg" type="image/svg+xml">
+  </head>
+  <body class="directory-site">
+    <a class="directory-skip" href="#game-directory">Skip to content</a>
+    <header class="directory-header">
+      <a class="directory-wordmark" href="remote-gaming-landing.html">
+        remote-gaming<span>.</span>
+      </a>
+      <nav class="directory-nav" aria-label="Applications">
+    <a class="directory-home" href="https://harvj.com/" aria-label="harvj.com home">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>
+      </svg>
+    </a>
+</nav>
+
+    </header>
+    <main id="game-directory" class="directory-content" tabindex="-1">
+
+  <h1>Remote Gaming</h1>
+  <p>What are we playing?</p>
+  <ul class="directory-cards" role="list">
+      <li>
+        <h2>Arkham</h2>
+        <p>Investigate strange events in the independently hosted Arkham app.</p>
+          <p class="directory-status">Available · <a href="https://arkham.radioactivita.com/">Open Arkham</a></p>
+      </li>
+      <li>
+        <h2>Modern Art</h2>
+        <p>Bid on paintings and build the most valuable collection in this auction game.</p>
+          <p class="directory-status">Not yet available</p>
+      </li>
+      <li>
+        <h2>Pandemic</h2>
+        <p>Work together to contain outbreaks and discover cures.</p>
+          <p class="directory-status">Not yet available</p>
+      </li>
+  </ul>
+</main>
+
+    <footer class="directory-footer">
+      <span>© 2026 Jim Harvey</span>
+      <span><span aria-hidden="true">·</span> Remote Gaming v0.2.0</span>
+    </footer>
+    <!-- Open with ?signed-in=1 to preview the signed-in navigation. The release label is sample data. -->
+    <template id="signed-in-navigation">
+      <nav class="directory-nav" aria-label="Applications">
+    <details class="directory-apps">
+      <summary>Apps <span aria-hidden="true">⌄</span></summary>
+      <ul>
+        <li><a href="https://harvj.com/">harvj.</a></li>
+        <li><a href="https://auth.harvj.com/">Auth</a></li>
+        <li><a href="https://network.harvj.com/">Network</a></li>
+        <li><a href="https://library.harvj.com/">Library</a></li>
+        <li><a href="https://intelligence.harvj.com/">Intelligence</a></li>
+        <li><a href="https://muzeum.fm/">Muzeum</a></li>
+      </ul>
+    </details>
+</nav>
+    </template>
+    <script>
+      if (new URLSearchParams(location.search).get("signed-in") === "1") {
+        const navigation = document.querySelector("#signed-in-navigation")
+        document.querySelector(".directory-nav").replaceWith(navigation.content.cloneNode(true))
+      }
+    </script>
+  </body>
+</html>

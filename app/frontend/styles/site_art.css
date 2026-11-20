@@ -1,0 +1,22 @@
+body:has(> #site-art-background img) {
+  isolation: isolate;
+}
+
+#site-art-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+#site-art-background img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (forced-colors: active) {
+  #site-art-background {
+    display: none;
+  }
+}
