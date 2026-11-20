@@ -103,6 +103,24 @@ jobs:
       - name: Run RSpec
         run: bundle exec rspec --format progress
 
+      - name: Check isolated staging route boot
+        env:
+          RAILS_ENV: production
+          REMOTE_GAMING_PRIVATE_STAGING: '1'
+          REMOTE_GAMING_OIDC_ISSUER: https://auth.harvj.com
+          REMOTE_GAMING_OIDC_CLIENT_ID: fixture
+          REMOTE_GAMING_OIDC_CLIENT_SECRET: fixture
+          REMOTE_GAMING_OIDC_REDIRECT_URI: https://modern-art.staging.radioactivita.com/auth/callback
+          REMOTE_GAMING_OIDC_OWNER_SUBJECT: 11111111-2222-4333-8444-555555555555
+          REMOTE_GAMING_OIDC_OWNER_EVIDENCE: RG-STAGING-AUTH-OWNER-1-1
+        run: |
+          export DATABASE_URL="postgresql://remote_gaming_staging:$(openssl rand -hex 32)@127.0.0.1/remote_gaming_staging"
+          export SECRET_KEY_BASE="$(openssl rand -hex 64)"
+          bundle exec rails routes | tee tmp/staging-routes
+          grep -Eq 'GET +/login[^ ]* +auth#start' tmp/staging-routes
+          ! grep -Eq 'POST +/login|/login[^ ]* +users/sessions#' tmp/staging-routes
+          grep -Eq 'GET +/staging/directory[^ ]* +directory#staging_content' tmp/staging-routes
+
       - name: Probe production Rails and compiled assets
         shell: bash
         run: |

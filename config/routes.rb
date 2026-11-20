@@ -34,7 +34,6 @@ Rails.application.routes.draw do
     if private_staging
       get "staging/directory", to: "directory#staging_content", defaults: { staging_page: "directory" }
       get "staging/pandemic", to: "directory#staging_content", defaults: { staging_page: "pandemic" }
-      get "login", to: "auth#start"
       get "signed-out", to: "auth#signed_out", as: :staging_signed_out
     end
 
@@ -54,6 +53,7 @@ Rails.application.routes.draw do
     end
 
     devise_for :users,
+      skip: (private_staging ? :sessions : []),
       controllers: { sessions: "users/sessions" },
       path: "",
       path_names: {
@@ -72,7 +72,7 @@ Rails.application.routes.draw do
     get "auth/callback", to: "auth#callback", as: :auth_callback
 
     devise_scope :user do
-      get "/login", to: "users/sessions#new", as: :login
+      get "/login", to: (private_staging ? "auth#start" : "users/sessions#new"), as: :login
       delete "/logout", to: "users/sessions#destroy", as: :logout
     end
 
