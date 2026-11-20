@@ -23,7 +23,8 @@
   gap: 12px;
 }
 
-.brand {
+.navbar .brand {
+  padding: 0;
   font-weight: 600;
   text-decoration: none;
   color: inherit;
@@ -106,4 +107,23 @@
 .dropdown-button {
   font: inherit;
   cursor: pointer;
+}
+
+.nav-login { white-space: nowrap; }
+
+.directory-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .25rem .5rem;
+  padding: 1rem 20px 1.5rem;
+  font-size: .8125rem;
+}
+
+.directory-footer a { padding: 0; color: inherit; text-decoration: underline; }
+
+@media (max-width: 36rem) {
+  .nav-inner { gap: .6rem; padding-inline: 12px; }
+  .nav-left { flex-wrap: wrap; column-gap: .35rem; row-gap: 0; }
+  .nav-right { gap: .3rem; text-align: end; }
 }

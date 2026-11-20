@@ -91,7 +91,7 @@ Rails.application.routes.draw do
     post "s/:uid/dummies/:player_id/rotate", to: "dummy_accesses#rotate", as: :rotate_session_dummy
     delete "s/:uid/dummies/:player_id", to: "dummy_accesses#revoke", as: :session_dummy
 
-    post "auth/start", to: "auth#start", as: :auth_start
+    match "auth/start", to: "auth#start", as: :auth_start, via: %i[get post]
     get "auth/callback", to: "auth#callback", as: :auth_callback
 
     devise_scope :user do

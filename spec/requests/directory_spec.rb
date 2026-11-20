@@ -14,7 +14,12 @@ RSpec.describe "Game directory", type: :request do
       expect(page.at_css("#site-art-icon")["data-art-id"]).to eq("remote-gaming.favicon")
       expect(page.at_css("main").text).not_to include("What are we playing?")
       expect(response.body).to include('href="https://arkham.radioactivita.com/"')
-      expect(response.body).to include('class="directory-wordmark"', 'aria-label="harvj.com home"', "Jim Harvey")
+      expect(page.at_css(".directory-wordmark")["href"]).to eq("/")
+      expect(page.at_css(".directory-nav a").text).to eq("Log in")
+      expect(page.at_css(".directory-nav a")["href"]).to eq("https://auth.harvj.com/login")
+      expect(page.at_css("footer a").text).to eq("Jim Harvey")
+      expect(page.at_css("footer a")["href"]).to eq("https://harvj.com")
+      expect(page.at_css("footer").text).to include(Rails.configuration.x.directory_release_label)
       expect(response.body).not_to include('class="directory-apps"')
       expect(response.body).not_to include('href="https://pandemic.radioactivita.com/"')
     end
@@ -38,6 +43,7 @@ RSpec.describe "Game directory", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("<h1>#{title}</h1>", "Not yet available")
+      expect(Nokogiri::HTML5(response.body).at_css(".directory-wordmark")["href"]).to eq("/")
     end
   end
 
@@ -48,6 +54,13 @@ RSpec.describe "Game directory", type: :request do
 
       expect(response).to have_http_status(:not_found)
     end
+  end
+
+  it "delegates login to Auth and refuses local password submissions" do
+    get "/login"
+    expect(response).to redirect_to("https://auth.harvj.com/login")
+    post "/login", params: { user: { username: "fixture", password: "fixture" } }
+    expect(response).to have_http_status(:not_found)
   end
 
   it "boots and can query the migrated database" do

@@ -1,13 +1,14 @@
 class Users::SessionsController < Devise::SessionsController
-  # skip_before_action :require_user, only: %i[new create]
-  before_action :init_common_data, only: %i[new create]
+  def new
+    if CanonicalAuth.enabled?
+      redirect_to auth_start_path
+    else
+      redirect_to NavigationLogin::AUTH_URL, allow_other_host: true
+    end
+  end
 
   def create
-    return head :not_found if CanonicalAuth.enabled?
-
-    self.resource = warden.authenticate!(auth_options)
-    sign_in(resource_name, resource)
-    respond_with resource, location: after_sign_in_path_for(resource)
+    head :not_found
   end
 
   def destroy
@@ -26,12 +27,5 @@ class Users::SessionsController < Devise::SessionsController
 
   def verify_signed_out_user
     super unless CanonicalAuth.enabled?
-  end
-
-  def init_common_data
-    @common_data = {
-      paths: Representers::Paths.(),
-      token: form_authenticity_token
-    }
   end
 end

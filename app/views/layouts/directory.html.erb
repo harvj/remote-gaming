@@ -14,16 +14,13 @@
     <a class="directory-skip" href="#game-directory">Skip to content</a>
     <header class="directory-header" data-art-role="top">
       <%= content_tag(@game_page ? :div : :h1, class: "directory-brand") do %>
-        <%= link_to (@directory_url || (@game_page ? "https://radioactivita.com/" : "/")), class: "directory-wordmark" do %>
+        <%= link_to "/", class: "directory-wordmark" do %>
           remote-gaming<span>.</span>
         <% end %>
       <% end %>
       <%= render "directory/navigation" %>
     </header>
     <%= yield %>
-    <footer class="directory-footer" data-art-role="bottom">
-      <span>© <%= Date.current.year %> Jim Harvey</span>
-      <span><span aria-hidden="true">·</span> <%= Rails.configuration.x.directory_release_label %></span>
-    </footer>
+    <%= render "shared/footer" %>
   </body>
 </html>

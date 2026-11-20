@@ -3,6 +3,10 @@ require Rails.root.join("db/build/base")
 require Rails.root.join("db/build/games/modern_art")
 
 RSpec.describe "Modern Art tabletop replay", type: :system do
+  include Warden::Test::Helpers
+
+  after { Warden.test_reset! }
+
   it "shares card faces across live and historical boards without exposing other hands or enabling gameplay in replay" do
     GameBuild::ModernArt.()
     game = Game.find_by!(key: "modern_art")
@@ -25,11 +29,7 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
     after = table.frames.checkpoints.last
 
     page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 1440, height: 1250, deviceScaleFactor: 1, mobile: false)
-    visit login_path
-    fill_in "user_username", with: viewer.username
-    fill_in "user_password", with: "fixture-password"
-    click_button "Log In"
-    expect(page).to have_css("main[aria-label=Games]")
+    login_as(viewer, scope: :user)
     visit game_session_path(table.uid)
 
     board = "section[aria-label='Modern Art tabletop']"

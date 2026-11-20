@@ -38,7 +38,7 @@
             uri: game_path(@game.key),
             name: @game.name
           } : nil,
-          loginPath: login_path,
+          loginPath: navigation_login_url,
           csrfToken: form_authenticity_token
         }.to_json) %>
       </script>
@@ -52,5 +52,6 @@
       <% end %>
       <%= yield %>
     </main>
+    <%= render "shared/footer" %>
   </body>
 </html>

@@ -61,15 +61,29 @@ RSpec.describe "Canonical Auth", type: :request do
     expect(response).to have_http_status(:ok)
     get "/"
     expect(response.body).to include('class="directory-apps"', 'href="https://intelligence.harvj.com/"')
-    expect(response.body).not_to include('aria-label="harvj.com home"')
+    expect(response.body).not_to include('class="directory-login"')
     expect(response.headers["Cache-Control"]).to eq("no-store")
     delete "/logout"
     expect(response).to have_http_status(:see_other)
     get "/"
-    expect(response.body).to include('aria-label="harvj.com home"')
+    expect(response.body).to include('class="directory-login"')
     expect(response.body).not_to include('class="directory-apps"')
     get "/modern_art"
     expect(response).to have_http_status(:redirect)
+  end
+
+  it "preserves the approved client and a safe destination when navigation initiates Auth" do
+    AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
+    [ [ "/s/private-room/replay", "/s/private-room/replay" ], [ "//outside.example", "/" ],
+      [ "/auth/callback", "/" ] ].each do |destination, expected|
+      get "/auth/start", params: { return_to: destination }
+      authorize = URI(response.location)
+      expect(authorize.path).to eq("/authorize")
+      authorization = URI.decode_www_form(authorize.query).to_h
+      expect(authorization).to include("client_id" => "gaming", "redirect_uri" => redirect_uri, "code_challenge_method" => "S256")
+      callback(authorization)
+      expect(response).to redirect_to(expected)
+    end
   end
 
   it "accepts signed voluntary MFA but never links by name and rejects foreign audiences and unknown assurance" do

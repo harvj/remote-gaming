@@ -3,7 +3,7 @@
 
   export let currentUser = null;
   export let currentGame = null;
-  export let loginPath = "/login";
+  export let loginPath = null;
   export let csrfToken = null;
 
   let menuOpen = false;
@@ -40,12 +40,11 @@
     document.removeEventListener("keydown", handleEscape);
   });
 
-  $: onLoginPage = window.location.pathname === loginPath;
 </script>
 
 <div class="nav-inner">
   <div class="nav-left">
-    <span class="brand">remote-gaming</span>
+    <a class="brand" href="/">remote-gaming.</a>
 
     {#if currentGame}
       <span class="separator">|</span>
@@ -90,8 +89,8 @@
           </div>
         {/if}
       </div>
-    {:else if !onLoginPage}
-      <a href={loginPath}>Log in</a>
+    {:else if loginPath}
+      <a class="nav-login" href={loginPath}>Log in</a>
     {/if}
   </div>
 </div>

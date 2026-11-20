@@ -1,6 +1,10 @@
 require "rails_helper"
 
 RSpec.describe "Modern Art multiplayer", type: :system do
+  include Warden::Test::Helpers
+
+  after { Warden.test_reset! }
+
   let(:game) { create(:game, :modern_art) }
   let(:table) { GameSession::Create.!(game).subject }
 
@@ -27,11 +31,7 @@ RSpec.describe "Modern Art multiplayer", type: :system do
     members = Array.new(3) { create(:user) }
     members.each_with_index do |member, index|
       using_session(member.id) do
-        visit login_path
-        fill_in "user_username", with: member.username
-        fill_in "user_password", with: member.password
-        click_button "Log In"
-        expect(page).to have_css("main[aria-label=Games] .directory-cards")
+        login_as(member, scope: :user)
         visit game_session_path(table.uid)
         click_button "Join"
         count = index + 1

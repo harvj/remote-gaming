@@ -3,6 +3,8 @@ class AuthController < ApplicationController
   before_action :private_response
 
   def start
+    destination = NavigationLogin.return_path(params[:return_to])
+    session[:user_return_to] = destination if destination
     start_login
   end
 

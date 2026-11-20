@@ -22,6 +22,8 @@ The Remote Gaming operator verifies production profile `jim`, ID 1, and its 83 p
 
 Keep `REMOTE_GAMING_PRODUCTION_REPLAY` off. Once production owner registration and reconciliation have been verified and activation is approved, configure the production `REMOTE_GAMING_OIDC_*` client settings, `REMOTE_GAMING_HISTORICAL_ADMIN_OWNER_SUBJECT`, and `REMOTE_GAMING_HISTORICAL_ADMIN_OWNER_EVIDENCE`. Enable `REMOTE_GAMING_HISTORICAL_ADMIN=1` and verify owner sign-in, logout, expiry, and rejection of other accounts. Staging must have no invitation-provider or transactional email credentials.
 
+The public directory’s **Log in** link uses Auth’s standalone login while production has no enabled Remote Gaming client. With an approved registration and an enabled feature, navigation starts the application’s browser-bound OIDC transaction on the registered callback host. Auth can then select Remote Gaming presentation and return to the application. The alternate public hostname uses that same canonical sign-in origin.
+
 ## Future invitation integration
 
 Return a separate contract for review before implementing invitation delivery. Define the Auth-side action, production client authorization, owner confirmation and idempotency, provider invitation identifier, issuance and expiry timestamps, retry and revocation semantics, and how Remote Gaming verifies acceptance and the stable Auth issuer and subject tied to that exact invitation. Specify which response or event carries the auditable acceptance evidence and how the consumer verifies it.
