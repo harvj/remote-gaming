@@ -11,12 +11,24 @@ RSpec.describe "Game directory", type: :request do
       page = Nokogiri::HTML5(response.body)
       expect(page.css("h1").map { |heading| heading.text.strip }).to eq([ "remote-gaming." ])
       expect(page.css("main .directory-cards > li").size).to eq(3)
+      expect(page.at_css("#site-art-icon")["data-art-id"]).to eq("remote-gaming.favicon")
       expect(page.at_css("main").text).not_to include("What are we playing?")
       expect(response.body).to include('href="https://arkham.radioactivita.com/"')
       expect(response.body).to include('class="directory-wordmark"', 'aria-label="harvj.com home"', "Jim Harvey")
       expect(response.body).not_to include('class="directory-apps"')
       expect(response.body).not_to include('href="https://pandemic.radioactivita.com/"')
     end
+  end
+
+  it "selects the distinct staging asset using staging deployment configuration" do
+    allow(ModernArtStaging).to receive(:enabled?).and_return(true)
+    host! "radioactivita.com"
+    get "/"
+
+    icon = Nokogiri::HTML5(response.body).at_css("#site-art-icon")
+    expect(icon["data-art-id"]).to eq("remote-gaming.favicon_staging")
+    expect(icon["href"]).to eq("/icon-staging.svg")
+    expect(response.body).not_to include('href="/icon.png"')
   end
 
   { "modernart" => "Modern Art", "pandemic" => "Pandemic" }.each do |slug, title|

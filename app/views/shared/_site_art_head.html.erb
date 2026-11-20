@@ -1,3 +1,5 @@
-<link rel="icon" href="/icon.png" type="image/png">
-<link id="site-art-icon" rel="icon" href="/icon.svg" type="image/svg+xml">
+<% staging = ModernArtStaging.enabled? %>
+<% unless staging %><link rel="icon" href="/icon.png" type="image/png"><% end %>
+<link id="site-art-icon" rel="icon" href="<%= staging ? "/icon-staging.svg" : "/icon.svg" %>" type="image/svg+xml"
+      data-art-id="<%= staging ? "remote-gaming.favicon_staging" : "remote-gaming.favicon" %>">
 <%= vite_javascript_tag "site_art" %>

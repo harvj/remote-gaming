@@ -59,7 +59,7 @@ async function setIcon(asset) {
 
 function render(assets) {
   void setBackground(assetFor(assets, "remote-gaming.background", rasterTypes))
-  void setIcon(assetFor(assets, "remote-gaming.favicon", ["image/svg+xml", "image/png"]))
+  void setIcon(assetFor(assets, icon.dataset.artId, ["image/svg+xml", "image/png"]))
 }
 
 let lastAttempt = Number(readCache("site-art.last-attempt"))
