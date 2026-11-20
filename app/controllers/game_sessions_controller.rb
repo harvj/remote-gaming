@@ -5,7 +5,7 @@ class GameSessionsController < ApplicationController
   def create
     game = @game || Game.find_by!(key: params[:game_key])
     experimental = params[:experimental] == "1"
-    return head :forbidden if experimental && !(CanonicalAuth.enabled? && BrowserIdentity.oidc_user(session))
+    return head :forbidden if experimental && !(ExperimentalAccess.enabled? && BrowserIdentity.oidc_user(session))
     return head :not_found if experimental && game.key != "modern_art"
 
     if experimental

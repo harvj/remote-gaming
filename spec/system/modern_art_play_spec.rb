@@ -48,6 +48,7 @@ RSpec.describe "Modern Art multiplayer", type: :system do
     allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with("REMOTE_GAMING_OIDC_ISSUER").and_return(issuer)
     allow(CanonicalAuth).to receive(:enabled?).and_return(true)
+    allow(ExperimentalAccess).to receive(:enabled?).and_return(true)
     identity = AuthIdentity.create!(user: owner, issuer: issuer, subject: "owner", evidence_reference: "fixture")
     provider = instance_double(CanonicalAuth)
     allow(CanonicalAuth).to receive(:new).and_return(provider)

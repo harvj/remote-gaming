@@ -52,7 +52,7 @@ class DummyAccessesController < ApplicationController
   private
 
   def require_experiments
-    head :not_found unless CanonicalAuth.enabled?
+    head :not_found unless ExperimentalAccess.enabled?
   end
 
   def load_experiment

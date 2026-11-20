@@ -166,6 +166,12 @@ class GameSession < ApplicationRecord
     (players.exists?(user_id: user.id) || (replayable? && waiting?))
   end
 
+  def can_replay?(viewer)
+    return false unless game.key == "modern_art" && can_view?(viewer)
+
+    experimental? || (!viewer.dummy? && players.exists?(user_id: viewer.id))
+  end
+
   def broadcast_live!
     GameSessionChannel.broadcast_to(self, { event: "session_changed" })
   end

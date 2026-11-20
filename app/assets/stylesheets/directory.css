@@ -157,7 +157,7 @@
     text-shadow: none;
   }
 
-  .directory-site[data-site-art-background] :is(.directory-content > p a, .directory-wordmark span) {
+  .directory-site[data-site-art-background] :is(.directory-content > p a, .replay-content a, .directory-wordmark span) {
     color: inherit;
   }
 

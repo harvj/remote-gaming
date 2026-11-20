@@ -1,4 +1,7 @@
-<% if @game_session.experimental? %>
+<% if @game_session.can_replay?(current_user) %>
+  <p><%= link_to "Replay history", session_replay_path(@game_session.uid) %></p>
+<% end %>
+<% if ExperimentalAccess.enabled? && @game_session.experimental? %>
   <section class="panel">
     <h2>Private experiment</h2>
     <% if @game_session.experiment_owner_id == current_user.id %>

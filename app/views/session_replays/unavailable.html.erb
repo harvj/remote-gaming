@@ -1,0 +1,5 @@
+<main id="game-directory" class="directory-content replay-content" data-art-role="default" tabindex="-1">
+  <h2>Replay unavailable</h2>
+  <p>This session does not have a complete, supported frame history for deterministic replay.</p>
+  <%= link_to "Back", ProductionReplay.enabled? ? replays_path : game_session_path(@replay_session.uid) %>
+</main>

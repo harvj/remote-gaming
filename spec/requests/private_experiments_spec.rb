@@ -8,6 +8,7 @@ RSpec.describe "Private experiments", type: :request do
 
   before do
     allow(CanonicalAuth).to receive(:enabled?).and_return(true)
+    allow(ExperimentalAccess).to receive(:enabled?).and_return(true)
     allow(CanonicalAuth).to receive(:new).and_return(oidc)
   end
 

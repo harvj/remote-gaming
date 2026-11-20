@@ -19,7 +19,10 @@ class SessionFrame::Replay
       end
       if frame[:kind] == "checkpoint"
         state = frame[:payload]
-        raise Unavailable, "Incomplete checkpoint" unless state.is_a?(Hash) && state["session"]
+        unless state.is_a?(Hash) && state["session"].is_a?(Hash) && state["game"].is_a?(Hash) &&
+            %w[players decks cards].all? { |key| state[key].is_a?(Array) }
+          raise Unavailable, "Incomplete checkpoint"
+        end
       end
       previous_id = frame[:id]
     end

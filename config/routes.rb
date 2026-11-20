@@ -6,6 +6,15 @@ Rails.application.routes.draw do
 
   if Rails.env.production? && !private_staging
     root "directory#show"
+    if ProductionReplay.enabled?
+      constraints host: ProductionReplay::HOST do
+        get "replay", to: "session_replays#index", as: :replays
+        get "replay/auth", to: "auth#start", as: :login
+        get "auth/callback", to: "auth#callback", as: :auth_callback
+        delete "replay/logout", to: "auth#end_session", as: :logout
+        get "s/:uid/replay", to: "session_replays#show", as: :session_replay
+      end
+    end
     next
   end
 
@@ -76,6 +85,7 @@ Rails.application.routes.draw do
       delete "/logout", to: "users/sessions#destroy", as: :logout
     end
 
+    get "s/:uid/replay", to: "session_replays#show", as: :session_replay
     get "s/:uid" => "game_sessions#show", as: :game_session
     patch "s/:uid" => "game_sessions#update"
     post "s/:uid/observations" => "game_sessions#observe", as: :session_observations

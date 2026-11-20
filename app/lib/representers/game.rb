@@ -13,7 +13,7 @@ module Representers
 
       scalar.merge(
         sessions: Representers::GameSessionRow.(game_sessions),
-        experiments: CanonicalAuth.enabled? ? Representers::GameSessionRow.(experiments) : nil
+        experiments: ExperimentalAccess.enabled? ? Representers::GameSessionRow.(experiments) : nil
       )
     end
 

@@ -1,6 +1,9 @@
 <main id="game-directory" class="directory-content" data-art-role="default" aria-label="<%= @game_page ? @title : "Games" %>" tabindex="-1">
   <% if @game_page %><p><a href="<%= @directory_url || "https://radioactivita.com/" %>">Remote Gaming directory</a></p><% end %>
   <% if @game_page %><h1><%= @title %></h1><% end %>
+  <% if ProductionReplay.enabled? && !@game_page %>
+    <p><%= link_to "Replay my games", "https://#{ProductionReplay::HOST}/replay" %></p>
+  <% end %>
   <ul class="<%= "directory-cards" unless @game_page %>" role="list">
     <% @games.each do |game| %>
       <li>

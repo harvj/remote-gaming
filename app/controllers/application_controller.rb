@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   DUMMY_ACTIONS = {
     "dummy_accesses" => %w[new redeem logout].freeze,
     "game_sessions" => %w[show].freeze,
+    "session_replays" => %w[show].freeze,
     "players" => %w[play update].freeze,
     "session_cards" => %w[update].freeze
   }.freeze

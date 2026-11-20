@@ -1,0 +1,10 @@
+<main id="game-directory" class="directory-content replay-content" data-art-role="default" tabindex="-1">
+  <h2>My Modern Art replays</h2>
+  <% if @replays.empty? %><p>You have no Modern Art sessions.</p><% end %>
+  <ul>
+    <% @replays.each do |table| %>
+      <li><%= link_to "Replay · #{l(table.created_at, format: :long)}", session_replay_path(table.uid) %></li>
+    <% end %>
+  </ul>
+  <%= button_to "Log out", logout_path, method: :delete %>
+</main>
