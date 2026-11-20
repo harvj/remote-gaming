@@ -36,7 +36,7 @@ for host in "$directory" "$pandemic"; do
   [[ $(status "$host" /login) == 404 ]]
   [[ $(status "$host" /s/staging-probe -H 'Accept: application/json') == 404 ]]
 done
-[[ $(status "$modern" /) == 302 ]]
+[[ $(status "$modern" / -H 'Accept: text/html') == 302 ]]
 [[ $(status "$modern" /pandemic) == 404 ]]
 [[ $(status "$modern" /s/staging-probe -H 'Accept: application/json') == 401 ]]
 
@@ -45,8 +45,8 @@ done
 [[ $(location "$directory" /) == "https://$modern/staging/directory" ]]
 [[ $(location "$pandemic" /) == "https://$modern/staging/pandemic" ]]
 for path in /staging/directory /staging/pandemic; do
-  [[ $(status "$modern" "$path") == 302 ]]
-  [[ $(location "$modern" "$path") == */login ]]
+  [[ $(status "$modern" "$path" -H 'Accept: text/html') == 302 ]]
+  [[ $(location "$modern" "$path" -H 'Accept: text/html') == */login ]]
   [[ $(status "$modern" "$path" -H 'Accept: application/json') == 401 ]]
 done
 [[ $(status "$modern" /auth/callback) == 401 ]]
