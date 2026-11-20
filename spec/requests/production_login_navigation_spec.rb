@@ -5,7 +5,7 @@ RSpec.describe "Production login navigation", type: :request do
     allow(Rails.env).to receive(:production?).and_return(true)
     allow(CanonicalAuth).to receive(:enabled?).and_return(false)
     Rails.application.reload_routes!
-    GameDirectory::DIRECTORY_HOSTS.each do |host|
+    (GameDirectory::DIRECTORY_HOSTS + %w[modernart.radioactivita.com pandemic.radioactivita.com]).each do |host|
       host! host
       get "/"
       expect(response).to have_http_status(:ok)
@@ -14,6 +14,10 @@ RSpec.describe "Production login navigation", type: :request do
       expect(response).to have_http_status(:service_unavailable)
       expect(response.headers["Location"]).to be_nil
     end
+
+    host! "arkham.radioactivita.com"
+    get "/login"
+    expect(response).to have_http_status(:not_found)
 
     allow(CanonicalAuth).to receive(:enabled?).and_return(true)
     Rails.application.reload_routes!

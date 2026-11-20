@@ -2,8 +2,13 @@ Rails.application.routes.draw do
   get "/up", to: "rails/health#show"
   get "/ready", to: "directory#ready"
 
-  login_hosts = ModernArtStaging.enabled? ? ModernArtStaging::HOSTS : GameDirectory::DIRECTORY_HOSTS
-  constraints ->(request) { !Rails.env.production? || login_hosts.include?(request.host) } do
+  login_host = ->(request) do
+    next true unless Rails.env.production?
+    next ModernArtStaging::HOSTS.include?(request.host) if ModernArtStaging.enabled?
+
+    GameDirectory::DIRECTORY_HOSTS.include?(request.host) || GameDirectory.new.internal_game(request.host).present?
+  end
+  constraints login_host do
     get "login", to: "auth#start", as: :login
   end
 
