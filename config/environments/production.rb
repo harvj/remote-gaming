@@ -34,9 +34,10 @@ Rails.application.configure do
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
-  # Log to STDOUT with the current request id as a default log tag.
+  # Keep deployment probe output on stdout and route Rails diagnostics to stderr.
   config.log_tags = [ :request_id ]
-  config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
+  log_output = ENV["REMOTE_GAMING_DEPLOY_TASK"] == "1" ? STDERR : STDOUT
+  config.logger = ActiveSupport::TaggedLogging.logger(log_output)
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!).
   config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
