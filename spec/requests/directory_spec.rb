@@ -15,7 +15,7 @@ RSpec.describe "Game directory", type: :request do
       expect(page.at_css("main").text).not_to include("What are we playing?")
       expect(response.body).to include('href="https://arkham.radioactivita.com/"')
       expect(page.at_css(".directory-wordmark")["href"]).to eq("/")
-      expect(page.at_css(".directory-nav a").text).to eq("Log in")
+      expect(page.at_css(".directory-nav a").text).to eq("Log In")
       expect(page.at_css(".directory-nav a")["href"]).to eq("/login")
       expect(page.at_css("footer a").text).to eq("Jim Harvey")
       expect(page.at_css("footer a")["href"]).to eq("https://harvj.com")
