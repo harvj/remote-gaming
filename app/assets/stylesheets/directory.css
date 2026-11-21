@@ -79,7 +79,7 @@
 }
 
 .directory-apps summary::-webkit-details-marker { display: none; }
-.directory-apps[open] summary span { transform: rotate(180deg); }
+.directory-apps[open] summary .shell-chevron { transform: rotate(180deg); }
 
 .directory-apps ul {
   position: absolute;
@@ -96,7 +96,7 @@
   border-radius: 0.75rem;
 }
 
-.directory-apps a {
+.directory-apps :is(a, button) {
   display: flex;
   align-items: center;
   min-height: 44px;
@@ -105,8 +105,8 @@
   text-decoration: none;
 }
 
-.directory-apps a:hover { background: #e3e9e6; }
-.directory-apps a:focus-visible { outline-offset: -2px; }
+.directory-apps :is(a, button):hover { background: #e3e9e6; }
+.directory-apps :is(a, button):focus-visible { outline-offset: -2px; }
 
 .directory-content {
   box-sizing: border-box;
@@ -172,4 +172,29 @@
   .directory-site[data-site-art-background] .directory-apps ul {
     text-shadow: none;
   }
+}
+
+.directory-apps summary { max-width: min(14rem, 36vw); }
+
+.directory-apps button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.shell-session-dot {
+  width: .5rem;
+  height: .5rem;
+  flex: none;
+  border-radius: 50%;
+  background: #238636;
+}
+
+.shell-username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -127,3 +127,36 @@
   .nav-left { flex-wrap: wrap; column-gap: .35rem; row-gap: 0; }
   .nav-right { gap: .3rem; text-align: end; }
 }
+
+.shell-account-button {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 44px;
+  max-width: min(14rem, 40vw);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.navbar .dropdown-item {
+  box-sizing: border-box;
+  min-height: 44px;
+}
+
+.shell-session-dot {
+  width: .5rem;
+  height: .5rem;
+  flex: none;
+  border-radius: 50%;
+  background: #238636;
+}
+
+.shell-username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

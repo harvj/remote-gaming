@@ -11,6 +11,7 @@ class ApplicationController < ActionController::Base
 
   before_action :restrict_dummy_browser
   before_action :load_game
+  after_action :keep_canonical_navigation_private
 
   rescue_from ActiveRecord::RecordNotFound, with: -> { head :not_found }
   rescue_from SessionFrame::Record::InvalidAction, ActiveRecord::RecordInvalid do |error|
@@ -18,6 +19,10 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  def keep_canonical_navigation_private
+    response.headers["Cache-Control"] = "no-store" if CanonicalAuth.enabled? && session[:oidc_login]
+  end
 
   def current_user
     return super unless CanonicalAuth.enabled?

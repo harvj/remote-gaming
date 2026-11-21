@@ -7,9 +7,15 @@ RSpec.describe "Production login navigation", type: :request do
     Rails.application.reload_routes!
     (GameDirectory::DIRECTORY_HOSTS + %w[modernart.radioactivita.com pandemic.radioactivita.com]).each do |host|
       host! host
-      get "/"
+      expect { get "/" }.not_to change(AuthLoginAttempt, :count)
       expect(response).to have_http_status(:ok)
-      expect(Nokogiri::HTML5(response.body).at_css(".directory-login")["href"]).to eq("/login")
+      page = Nokogiri::HTML5(response.body)
+      expect(page.at_css("header .directory-wordmark").text.strip).to eq("remote-gaming.")
+      expect(page.at_css("header .directory-wordmark")["href"]).to eq("/")
+      login = page.at_css('header nav[aria-label="Account navigation"] .directory-login')
+      expect(login.text).to eq("Log In")
+      expect(login["href"]).to eq("/login")
+      expect(page.at_css('header nav[aria-label="Applications"], header .directory-apps')).to be_nil
       expect { get "/login", headers: { "Accept" => "*/*" } }.not_to change(AuthLoginAttempt, :count)
       expect(response).to have_http_status(:service_unavailable)
       expect(response.headers["Location"]).to be_nil

@@ -179,7 +179,7 @@ RSpec.describe "Historical user administration", type: :request do
     ActionController::Base.allow_forgery_protection = true
     get historical_user_path(profile.id)
     expect(response).to have_http_status(:ok)
-    token = Nokogiri::HTML(response.body).at_css("input[name=authenticity_token]")["value"]
+    token = Nokogiri::HTML(response.body).at_css(%(form[action="#{historical_user_path(profile.id)}"] input[name=authenticity_token]))["value"]
     proposal = { proposed_email: "example@example.test", revision: "new" }
     patch historical_user_path(profile.id), params: proposal
     expect(response).to have_http_status(:not_found)

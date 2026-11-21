@@ -22,7 +22,8 @@ class AuthController < ApplicationController
   def end_session
     AuthLogin.end_session(session[:oidc_login])
     reset_session
-    redirect_to root_path, status: :see_other
+    destination = ModernArtStaging.enabled? ? staging_signed_out_path : root_path
+    redirect_to destination, status: :see_other
   end
 
   def callback
@@ -32,7 +33,10 @@ class AuthController < ApplicationController
     attempt = AuthLoginAttempt.consume(state: state, browser: session[:oidc_browser])
     raise CanonicalAuth::InvalidLogin unless attempt && code.present? && !error
 
-    identity, assurance, grant, lifetime = CanonicalAuth.new.authenticate(attempt.provider_attempt(state), state: state, code: code)
+    provider = CanonicalAuth.new
+    identity, assurance, grant, deadline, username = provider.authenticate(attempt.provider_attempt(state), state: state, code: code)
+    raise CanonicalAuth::InvalidLogin unless deadline.future?
+
     admin_only = HistoricalUserAdministration.available_on?(request.host) && !ProductionReplay.enabled?
     if (admin_only || attempt.historical_admin?) && !HistoricalUserAdministration.owner_identity?(identity)
       raise CanonicalAuth::InvalidLogin
@@ -41,10 +45,12 @@ class AuthController < ApplicationController
     login = identity.with_lock do
       raise CanonicalAuth::InvalidLogin if identity.revoked_at?
 
-      AuthLogin.create!(auth_identity: identity, assurance: assurance, grant_token: grant, expires_at: lifetime.seconds.from_now)
+      AuthLogin.create!(auth_identity: identity, assurance: assurance, grant_token: grant, expires_at: deadline)
     end
     reset_session
     session[:oidc_login] = login.id
+    username ||= provider.shell_username(login.grant_token, identity.subject, login.expires_at)
+    session[:oidc_username] = username if username
     redirect_to attempt.destination
   rescue CanonicalAuth::InvalidLogin
     login_failure(:unauthorized)

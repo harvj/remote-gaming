@@ -1,17 +1,17 @@
-<nav class="directory-nav" aria-label="Applications">
+<nav class="directory-nav" aria-label="Account navigation">
   <% if directory_signed_in? %>
     <details class="directory-apps">
-      <summary>Apps <span aria-hidden="true">⌄</span></summary>
+      <summary><span class="shell-session-dot" aria-hidden="true"></span><span class="shell-username"><%= session[:oidc_username].presence || "Signed in" %></span><span class="shell-chevron" aria-hidden="true">⌄</span></summary>
       <ul>
-        <li><a href="https://harvj.com/">harvj.</a></li>
-        <li><a href="https://auth.harvj.com/">Auth</a></li>
-        <li><a href="https://network.harvj.com/">Network</a></li>
-        <li><a href="https://library.harvj.com/">Library</a></li>
-        <li><a href="https://intelligence.harvj.com/">Intelligence</a></li>
-        <li><a href="https://muzeum.fm/">Muzeum</a></li>
+        <% if CanonicalAuth.enabled? && (account_url = CanonicalAuth.account_settings_url) %>
+          <li><%= link_to "Account Settings", account_url %></li>
+        <% end %>
+        <% if (logout = respond_to?(:canonical_logout_path) ? canonical_logout_path : (logout_path if respond_to?(:logout_path))) %>
+          <li><%= button_to "Log Out", logout, method: :delete %></li>
+        <% end %>
       </ul>
     </details>
   <% else %>
-    <%= link_to "Log in", login_path, class: "directory-login" %>
+    <%= link_to "Log In", login_path, class: "directory-login" %>
   <% end %>
 </nav>

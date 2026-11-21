@@ -28,6 +28,22 @@ class CanonicalAuth
     ENV.key?("REMOTE_GAMING_OIDC_ISSUER")
   end
 
+  def self.account_settings_url
+    issuer = ENV["REMOTE_GAMING_OIDC_ISSUER"]
+    client_id = ENV["REMOTE_GAMING_OIDC_CLIENT_ID"]
+    return if issuer.blank? || client_id.blank?
+
+    uri = URI.parse(issuer)
+    return unless uri.is_a?(URI::HTTPS) && uri.host.present? && uri.path.empty? &&
+      !uri.userinfo && !uri.query && !uri.fragment
+
+    uri.path = "/account"
+    uri.query = URI.encode_www_form(client_id: client_id)
+    uri.to_s
+  rescue URI::InvalidURIError
+    nil
+  end
+
   def initialize
     @issuer = ENV.fetch("REMOTE_GAMING_OIDC_ISSUER")
     @client_id = ENV.fetch("REMOTE_GAMING_OIDC_CLIENT_ID")
@@ -89,6 +105,7 @@ class CanonicalAuth
     end
     token, access, seconds = tokens.id_token, tokens.access_token, tokens.expires_in
 
+    grant_deadline = Time.current + seconds
     jwks_uri = URI(provider_metadata.fetch("jwks_uri"))
     jwks = fetch_json(jwks_uri, Net::HTTP::Get.new(jwks_uri))
     raise InvalidLogin unless jwks["keys"].is_a?(Array) && jwks["keys"].all?(Hash)
@@ -103,7 +120,8 @@ class CanonicalAuth
     else
       AuthIdentity.active.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
     end
-    [ identity, claims.fetch("acr"), access, [ seconds, SESSION_SECONDS ].min ]
+    username = claims["preferred_username"] if valid_username?(claims["preferred_username"])
+    [ identity, claims.fetch("acr"), access, [ grant_deadline, Time.current + SESSION_SECONDS ].min, username ]
   rescue Rack::OAuth2::Client::Error, Faraday::Error, JWT::DecodeError, KeyError, JSON::ParserError, ActiveRecord::RecordNotFound,
       IOError, SocketError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError
     raise InvalidLogin, cause: nil
@@ -111,7 +129,35 @@ class CanonicalAuth
     raise InvalidLogin, cause: nil
   end
 
+  def shell_username(token, subject, grant_deadline)
+    request = token_request("introspect", token)
+    request.set_form_data(token: token, token_type_hint: "access_token", application_shell_version: "1")
+    result = fetch_json(request.uri, request)
+    return unless result.keys.sort == %w[active application_shell]
+
+    evidence = result["application_shell"]
+    return unless result["active"] == true && evidence.is_a?(Hash)
+    return unless evidence.keys.sort == %w[aud eligible_destination_ids exp grant_binding iat iss preferred_username sub version]
+    return unless evidence["eligible_destination_ids"].is_a?(Array) && evidence["eligible_destination_ids"].all?(String)
+    return unless evidence.values_at("version", "iss", "aud", "sub", "grant_binding") ==
+      [ "1", @issuer, @client_id, subject, Digest::SHA256.hexdigest(token) ]
+
+    issued, expires = evidence.values_at("iat", "exp")
+    return unless issued.is_a?(Integer) && expires.is_a?(Integer) &&
+      issued <= Time.current.to_i && Time.current.to_i < expires &&
+      expires <= grant_deadline.to_i && (expires - issued).between?(1, 60)
+
+    username = evidence["preferred_username"]
+    username if valid_username?(username)
+  rescue InvalidLogin
+    nil
+  end
+
   private
+
+  def valid_username?(value)
+    value.is_a?(String) && /\A[a-z0-9][a-z0-9_-]{0,31}\z/.match?(value)
+  end
 
   def oidc_client
     Client.new(identifier: @client_id, secret: @client_secret, redirect_uri: @redirect_uri,

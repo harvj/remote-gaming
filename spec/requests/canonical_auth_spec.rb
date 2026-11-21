@@ -34,7 +34,7 @@ RSpec.describe "Canonical Auth", type: :request do
     URI.decode_www_form(URI(response.location).query).to_h
   end
 
-  def callback(authorization, claims = {})
+  def callback(authorization, shell_username: nil, shell_overrides: {}, **claims)
     attributes = { iss: issuer, aud: "gaming", sub: "canonical-subject", nonce: authorization.fetch("nonce"),
       iat: Time.current.to_i, exp: 5.minutes.from_now.to_i, acr: CanonicalAuth::PASSWORD }.merge(claims)
     token = JWT.encode(attributes, key, "RS256", kid: "auth-key")
@@ -46,9 +46,22 @@ RSpec.describe "Canonical Auth", type: :request do
       expect(form.fetch("redirect_uri")).to eq(authorization.fetch("redirect_uri"))
       { "id_token" => token, "access_token" => "fixture-grant", "expires_in" => 300, "token_type" => "Bearer" }
     end
-    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json) do |_provider, uri, _request|
+    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json) do |_provider, uri, request|
       expect(uri.host).to eq(URI(issuer).host)
-      uri.path == "/introspect" ? { "active" => true, "client_id" => "gaming" } : jwks
+      next jwks unless uri.path == "/introspect"
+
+      form = URI.decode_www_form(request.body).to_h
+      next({ "active" => true, "client_id" => "gaming" }) unless form.key?("application_shell_version")
+      expect(form).to eq("application_shell_version" => "1", "token" => "fixture-grant", "token_type_hint" => "access_token")
+      next({ "active" => false }) unless shell_username
+
+      now = Time.current.to_i
+      evidence = {
+        "version" => "1", "iss" => issuer, "aud" => "gaming", "sub" => attributes.fetch(:sub),
+        "grant_binding" => Digest::SHA256.hexdigest("fixture-grant"),
+        "preferred_username" => shell_username, "eligible_destination_ids" => [ "continuum" ], "iat" => now, "exp" => now + 30
+      }.merge(shell_overrides)
+      { "active" => true, "application_shell" => evidence }
     end
     get "/auth/callback", params: { state: authorization.fetch("state"), code: "fixture-code" }
   end
@@ -68,16 +81,20 @@ RSpec.describe "Canonical Auth", type: :request do
     create(:game, key: "modern_art")
     AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
     expect(start.fetch("code_challenge_method")).to eq("S256")
-    callback(start)
+    callback(start, shell_username: "verified_name")
     expect(response).to have_http_status(:redirect)
     expect(AuthLogin.last.auth_identity.user_id).to eq(profile.id)
     expect(AuthLogin.last.assurance).to eq(CanonicalAuth::PASSWORD)
     get "/users/radio"
     expect(response).to have_http_status(:ok)
     get "/"
-    expect(response.body).to include('class="directory-apps"', 'href="https://intelligence.harvj.com/"')
+    expect(response.body).to include('class="directory-apps"', 'verified_name')
+    page = Nokogiri::HTML5(response.body)
+    expect(page.css(".directory-apps a").map { |link| link["href"] }).to eq([ "#{issuer}/account?client_id=gaming" ])
+    expect(page.at_css(".directory-apps form")["action"]).to eq("/logout")
     expect(response.body).not_to include('class="directory-login"')
     expect(response.headers["Cache-Control"]).to eq("no-store")
+    allow_any_instance_of(CanonicalAuth).to receive(:revoke).and_raise(CanonicalAuth::InvalidLogin)
     delete "/logout"
     expect(response).to have_http_status(:see_other)
     get "/"
@@ -148,6 +165,23 @@ RSpec.describe "Canonical Auth", type: :request do
     delete "/logout"
     expect(response).to have_http_status(:see_other)
     expect(AuthLogin.exists?(login.id)).to be(false)
+  end
+
+  it "keeps the signed identity through session reuse and discards it on a new session with unbound evidence" do
+    host! "radioactivita.com"
+    AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
+    callback(start, preferred_username: "signed_name", shell_username: "ignored_name")
+    expect(response).to have_http_status(:redirect)
+    expect { get "/login" }.not_to change(AuthLoginAttempt, :count)
+    get "/"
+    expect(Nokogiri::HTML5(response.body).at_css(".directory-apps summary").text).to include("signed_name")
+
+    delete "/logout"
+    callback(start, shell_username: "other_name", shell_overrides: { "sub" => "other-subject" })
+    expect(response).to have_http_status(:redirect)
+    get "/"
+    expect(Nokogiri::HTML5(response.body).at_css(".directory-apps summary").text).to include("Signed in")
+    expect(response.body).not_to include("signed_name", "other_name")
   end
 
   it "consumes only the matched browser transaction and rejects replays, expired state and background starts" do
