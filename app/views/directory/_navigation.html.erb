@@ -1,8 +1,8 @@
-<nav class="directory-nav" aria-label="Account navigation">
+<nav class="directory-nav shell-account" aria-label="Account navigation">
   <% if directory_signed_in? %>
     <details class="directory-apps">
-      <summary><span class="shell-session-dot" aria-hidden="true"></span><span class="shell-username"><%= session[:oidc_username].presence || "Signed in" %></span><span class="shell-chevron" aria-hidden="true">⌄</span></summary>
-      <ul class="directory-account-controls">
+      <summary class="shell-trigger shell-trigger--identity"><span class="shell-session-dot" aria-hidden="true"></span><span class="shell-username"><%= session[:oidc_username].presence || "Signed in" %></span><span class="shell-chevron" aria-hidden="true">⌄</span></summary>
+      <ul class="directory-account-controls shell-panel">
         <% if CanonicalAuth.enabled? && session[:oidc_login] %>
           <li data-shell-applications="<%= shell_applications_path %>" hidden>
             <section aria-label="Applications"><strong>Applications</strong><ul></ul></section>

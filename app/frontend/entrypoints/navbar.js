@@ -37,6 +37,13 @@ if (disclosure) {
   });
 }
 
+window.addEventListener("pagehide", (event) => {
+  if (event.persisted) {
+    if (disclosure) disclosure.open = false;
+    document.documentElement.classList.add("shell-restoring");
+  }
+});
+
 window.addEventListener("pageshow", (event) => {
   if (event.persisted) window.location.reload();
 });

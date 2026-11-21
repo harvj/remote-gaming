@@ -21,7 +21,8 @@
 
   function handleDocumentClick(event) {
     if (!menuEl) return;
-    if (!menuEl.contains(event.target)) {
+    if (menuOpen && !menuEl.contains(event.target)) {
+      if (menuEl.contains(document.activeElement)) menuButton.focus();
       closeMenu();
     }
   }
@@ -45,25 +46,24 @@
 
 </script>
 
-<div class="nav-inner">
-  <div class="nav-left">
-    <a class="brand" href="/">remote-gaming.</a>
-
-    {#if currentGame}
-      <span class="separator">|</span>
-      <span class="game-title">
-        <a href={currentGame.uri}>{currentGame.name}</a>
-      </span>
-    {/if}
+<div class="nav-inner shell-header-row">
+  <div class="shell-brand">
+    <a class="brand shell-wordmark" href="/">remote-gaming.</a>
   </div>
 
-  <div class="nav-right">
+  {#if currentGame && currentUser}
+    <nav class="shell-primary" aria-label="Primary navigation">
+      <a class="shell-trigger" href={currentGame.uri} aria-current={currentGame.current ? "page" : undefined}>{currentGame.name}</a>
+    </nav>
+  {/if}
+
+  <div class="nav-right shell-account">
     {#if currentUser}
       {#if !currentUser.canonical}<div>Logged in as <strong>{currentUser.name}</strong></div>{/if}
       <div class="nav-menu" bind:this={menuEl}>
         <button
           type="button"
-          class={currentUser.canonical ? "shell-account-button" : "gear-button"}
+          class={currentUser.canonical ? "shell-account-button shell-trigger shell-trigger--identity" : "gear-button shell-trigger"}
           bind:this={menuButton}
           aria-label={currentUser.canonical ? currentUser.name : "Open user menu"}
           aria-controls={menuOpen ? "navbar-account-controls" : undefined}
@@ -80,7 +80,7 @@
         </button>
 
         {#if menuOpen}
-          <div class="dropdown-menu" id="navbar-account-controls">
+          <div class="dropdown-menu shell-panel" id="navbar-account-controls">
             {#if currentUser.applicationsPath}
               <section aria-label="Applications" data-shell-applications={currentUser.applicationsPath} use:watchApplications hidden>
                 <strong>Applications</strong><ul></ul>
@@ -110,7 +110,7 @@
         {/if}
       </div>
     {:else if loginPath}
-      <a class="nav-login" href={loginPath}>Log In</a>
+      <a class="nav-login shell-trigger" href={loginPath}>Log In</a>
     {/if}
   </div>
 </div>
