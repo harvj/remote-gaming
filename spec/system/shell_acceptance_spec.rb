@@ -148,7 +148,7 @@ RSpec.describe "Signed Application Shell acceptance", type: :system do
       expect_geometry(width)
       trigger.hover
       expect(trigger.style("color", "background-color")).to eq(
-        "color" => "rgba(255, 243, 222, 1)", "background-color" => "rgba(75, 49, 32, 1)"
+        "color" => "rgba(36, 59, 68, 1)", "background-color" => "rgba(227, 233, 230, 1)"
       )
       browser.execute_script("document.querySelector('main').style.minHeight = '150vh'; window.scrollTo(0, 400)")
       expect(page.evaluate_script("document.querySelector('header').getBoundingClientRect().top")).to eq(0)
@@ -165,6 +165,63 @@ RSpec.describe "Signed Application Shell acceptance", type: :system do
       expect(page.evaluate_script("document.querySelector('header').getBoundingClientRect().top")).to eq(0)
       browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
     end
+  end
+
+  it "uses a light hover surface without underlines or text shadows in either navigation layout" do
+    viewport(390)
+    visit root_path
+    login = find(".directory-login")
+    expect_plain_navigation(login)
+    login.hover
+    expect_light_navigation(login)
+    login.send_keys(:tab)
+    expect_plain_navigation(login)
+
+    game = create(:game, :modern_art)
+    sign_in
+    [ 390, 1440 ].each do |width|
+      viewport(width)
+      visit game_path(game.key)
+      trigger = find_button(username)
+      expect_plain_navigation(trigger)
+      trigger.hover
+      expect_light_navigation(trigger)
+      browser.action.move_to(trigger.native).click_and_hold.perform
+      expect_light_navigation(trigger)
+      browser.action.release.perform
+      expect(page).to have_link("Account Settings")
+      expect_light_navigation(trigger)
+      find_link("Account Settings").send_keys(:shift, :tab)
+      expect_plain_navigation(trigger)
+      expect(page).to have_css('nav[aria-label="Primary navigation"] [aria-current="page"]')
+      focus = browser.execute_script(<<~JS)
+        const trigger = document.querySelector(".shell-trigger--identity");
+        trigger.focus();
+        return getComputedStyle(trigger).outlineStyle;
+      JS
+      expect(focus).to eq("solid")
+      browser.execute_script(<<~JS)
+        document.body.setAttribute("data-site-art-background", "");
+        document.querySelector("header").style.setProperty("--art-text-shadow", "2px 2px 2px black");
+        document.querySelector("footer").style.setProperty("--art-text-shadow", "2px 2px 2px black");
+      JS
+      expect(browser.execute_script(<<~JS)).to be(true)
+        return [...document.querySelectorAll("body *")].every(node => getComputedStyle(node).textShadow === "none");
+      JS
+    end
+  end
+
+  def expect_plain_navigation(control)
+    expect(control.style("text-decoration-line", "text-shadow")).to eq(
+      "text-decoration-line" => "none", "text-shadow" => "none"
+    )
+  end
+
+  def expect_light_navigation(control)
+    expect_plain_navigation(control)
+    expect(control.style("background-color", "color")).to eq(
+      "background-color" => "rgba(227, 233, 230, 1)", "color" => "rgba(36, 59, 68, 1)"
+    )
   end
 
   def accessible_node(name)
