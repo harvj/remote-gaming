@@ -69,6 +69,17 @@ Hosted staging captures.
 | 1440 CSS px | [![Pandemic status, 1440 CSS px, candidate](pandemic-status-desktop.png)](pandemic-status-desktop.png) | [![Pandemic status, 1440 CSS px, Log In hover](pandemic-status-desktop-login-hover.png)](pandemic-status-desktop-login-hover.png) |
 | 390 CSS px | [![Pandemic status, 390 CSS px, candidate](pandemic-status-mobile.png)](pandemic-status-mobile.png) | [![Pandemic status, 390 CSS px, Log In hover](pandemic-status-mobile-login-hover.png)](pandemic-status-mobile-login-hover.png) |
 
+## Modern Art card-color comparison
+
+Both columns are local Chromium captures using the same disposable table layout and deterministic deal. The before fixture reproduces the original review’s missing artist colors and auction icons. The after fixture uses the canonical catalog definitions. The colors and icons match the v0.4.4 card renderer and the original game definitions.
+
+| Viewport | Before · missing fixture metadata | After · canonical fixture metadata |
+| --- | --- | --- |
+| 1440 CSS px | [![Scrolled desktop tabletop before fixture correction](card-colors-before-desktop-scrolled.png)](card-colors-before-desktop-scrolled.png) | [![Scrolled desktop tabletop with all five artist colors and auction icons](card-colors-after-desktop-scrolled.png)](card-colors-after-desktop-scrolled.png) |
+| 390 CSS px | [![Scrolled mobile tabletop before fixture correction](card-colors-before-mobile-scrolled.png)](card-colors-before-mobile-scrolled.png) | [![Scrolled mobile tabletop with solid colored card faces](card-colors-after-mobile-scrolled.png)](card-colors-after-mobile-scrolled.png) |
+
+The staging catalog contains color and icon values for all 25 Modern Art definitions. The scrolled captures show the header pinned and the fade at its lower edge. Outside that band the card renderer uses opaque sRGB colors. The browser regression checks the five artist swatches, the same card face in live play and replay, opacity and compositing properties, and the active fade at mobile width.
+
 ## Verification and release dependencies
 
 - The candidate’s recorded application and Chrome suite passed 115 examples. Hosted Chromium checked the directory, Modern Art entry and Pandemic status at 320, 390, 700, 701 and 1440 CSS px. Browser accessibility checks covered keyboard focus and return, reduced motion, forced colors and disclosure in a short viewport. The candidate review recorded 39 passing Infrastructure Shell reference tests. [Candidate CI](https://github.com/harvj/remote-gaming/actions/runs/44959759471)

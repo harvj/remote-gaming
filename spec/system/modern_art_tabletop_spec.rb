@@ -1,6 +1,4 @@
 require "rails_helper"
-require Rails.root.join("db/build/base")
-require Rails.root.join("db/build/games/modern_art")
 
 RSpec.describe "Modern Art tabletop replay", type: :system do
   include Warden::Test::Helpers
@@ -8,8 +6,7 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
   after { Warden.test_reset! }
 
   it "shares card faces across live and historical boards without exposing other hands or enabling gameplay in replay" do
-    GameBuild::ModernArt.()
-    game = Game.find_by!(key: "modern_art")
+    game = create(:game, :modern_art)
     table = GameSession::Create.!(game).subject
     %w[Alex Inez Morgan].each { |name| Player::Create.!(create(:user, name: name, password: "fixture-password"), session: table) }
     random = Random.new(411)
@@ -41,10 +38,15 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
       expect(page).to have_css("#{face} .emblem :is(.fa-#{card.card.icon_class}, [data-icon])")
       expect(page).to have_no_css(hidden_ids.map { |id| "[data-card-id='#{id}']" }.join(","))
     end
-    color = find("#{auction} #{face} .artist").evaluate_script("this.closest('[data-card-id]').style.getPropertyValue('--artist').trim()")
-    palette = { "yellow" => "#d1d322", "light-green" => "#5be67e", "dark-pink" => "#ff0000",
-      "light-purple" => "#c0afef", "light-brown" => "#d7ae85" }
-    expect(color).to eq(palette.fetch(card.card.color))
+    palette = {
+      "yellow" => [ 209, 211, 34 ], "light-green" => [ 91, 230, 126 ], "dark-pink" => [ 255, 0, 0 ],
+      "light-purple" => [ 192, 175, 239 ], "light-brown" => [ 215, 174, 133 ]
+    }
+    artist = palette.fetch(card.card.color)
+    live_style = card_style(find("#{auction} #{face}"))
+    expect(live_style).to eq(expected_card_style(artist))
+    expect(all("#{board} .swatch").map { |swatch| swatch.evaluate_script("getComputedStyle(this).backgroundColor") })
+      .to eq(palette.values.map { |rgb| "rgb(#{rgb.join(', ')})" })
     screenshot("live-desktop")
 
     visit session_replay_path(table.uid, frame: after.sequence)
@@ -53,7 +55,7 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
       expect(page).to have_no_css("button[data-card-id]")
       expect(page).to have_no_css(hidden_ids.map { |id| "[data-card-id='#{id}']" }.join(","))
     end
-    expect(find("#{auction} #{face} .artist").evaluate_script("this.closest('[data-card-id]').style.getPropertyValue('--artist').trim()")).to eq(color)
+    expect(card_style(find("#{auction} #{face}"))).to eq(live_style)
     screenshot("replay-checkpoint-desktop")
 
     visit session_replay_path(table.uid, frame: before.sequence)
@@ -70,6 +72,15 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
     page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 1, mobile: true)
     expect(page.evaluate_script("document.documentElement.scrollWidth")).to eq(390)
     expect(page).to have_css("#{auction} #{face}")
+    page.execute_script("window.scrollTo(0, 120)")
+    expect(page).to have_css("main[data-shell-fading]")
+    expect(page.evaluate_script("getComputedStyle(document.querySelector('main')).maskImage")).to include("linear-gradient")
+    expect(page.evaluate_script("document.querySelector('header').getBoundingClientRect().top")).to eq(0)
+    replay_card = find("#{auction} #{face}")
+    expect(replay_card.evaluate_script(<<~JS)).to be >= 24
+      this.getBoundingClientRect().top - document.querySelector('header').getBoundingClientRect().bottom
+    JS
+    expect(card_style(replay_card)).to eq(live_style)
     screenshot("replay-intermediate-mobile")
 
     game.play_class.(table, table.players.find_by!(table_captain: true).user)
@@ -84,6 +95,42 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
 
   ensure
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
+  end
+
+  def card_style(card)
+    page.evaluate_script(<<~JS, card)
+      ((element) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 1;
+        const context = canvas.getContext("2d");
+        const rgba = (color) => {
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = color;
+          context.fillRect(0, 0, 1, 1);
+          return Array.from(context.getImageData(0, 0, 1, 1).data);
+        };
+        const style = getComputedStyle(element);
+        const ancestors = [];
+        for (let node = element; node; node = node.parentElement) ancestors.push(node);
+        const layers = ancestors.map(node => getComputedStyle(node));
+        return {
+          accent: rgba(style.borderTopColor),
+          face: rgba(style.backgroundColor),
+          emblem: rgba(getComputedStyle(element.querySelector(".emblem")).backgroundColor),
+          opaque: layers.every(layer => layer.opacity === "1"),
+          unfiltered: layers.every(layer => layer.filter === "none" && layer.backdropFilter === "none"),
+          unblended: layers.every(layer => layer.mixBlendMode === "normal"),
+          locallyUnmasked: layers.every((layer, index) => layer.maskImage === "none" || ancestors[index].matches("main[data-shell-fading]")),
+        };
+      })(arguments[0])
+    JS
+  end
+
+  def expected_card_style(artist)
+    paper = [ 255, 253, 246 ]
+    mix = ->(weight) { artist.zip(paper).map { |channel, base| (channel * weight + base * (1 - weight)).round(half: :even) } + [ 255 ] }
+    { "accent" => artist + [ 255 ], "face" => mix.call(0.2), "emblem" => mix.call(0.5),
+      "opaque" => true, "unfiltered" => true, "unblended" => true, "locallyUnmasked" => true }
   end
 
   def screenshot(name)

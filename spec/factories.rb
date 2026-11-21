@@ -1,3 +1,6 @@
+require Rails.root.join("db/build/base")
+require Rails.root.join("db/build/games/modern_art")
+
 FactoryBot.define do
   factory :game do
     name { "Card Game" }
@@ -14,9 +17,12 @@ FactoryBot.define do
       max_players { 5 }
 
       after(:create) do |game|
+        attributes = GameBuild::ModernArt::CARD_ATTRS
         Play::ModernArt::DECKS.first.each_with_index do |(artist, auctions), artist_index|
           auctions.each_key.with_index do |auction, auction_index|
-            game.cards.create!(name: artist, value: auction, name_sort: artist_index, value_sort: auction_index)
+            game.cards.create!(name: artist, value: auction, name_sort: artist_index, value_sort: auction_index,
+              color: attributes.fetch(artist.to_sym).fetch(:color),
+              icon_class: attributes.fetch(auction.to_sym).fetch(:icon_class))
           end
         end
       end
