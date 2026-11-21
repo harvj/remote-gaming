@@ -4,19 +4,6 @@
   border-bottom: 1px solid #d0d7de;
 }
 
-.nav-inner {
-  padding: 14px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.nav-left {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-}
-
 .nav-right {
   display: flex;
   align-items: center;
@@ -28,21 +15,6 @@
   font-weight: 600;
   text-decoration: none;
   color: inherit;
-}
-
-.separator {
-  opacity: 0.5;
-}
-
-.game-title, .game-title > a {
-  font-family: "Fraunces", serif;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  color: var(--muted);
-}
-
-.game-title > a:hover {
-  color: var(--link-hover-text);
 }
 
 .nav-menu {
@@ -110,30 +82,15 @@
 }
 
 .nav-login { white-space: nowrap; }
+.navbar .shell-account-button { padding-inline: .25rem; }
 
-.directory-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: .25rem .5rem;
-  padding: 1rem 20px 1.5rem;
-  font-size: .8125rem;
-}
-
-.directory-footer a { padding: 0; color: inherit; text-decoration: underline; }
-
-@media (max-width: 36rem) {
-  .nav-inner { gap: .6rem; padding-inline: 12px; }
-  .nav-left { flex-wrap: wrap; column-gap: .35rem; row-gap: 0; }
-  .nav-right { gap: .3rem; text-align: end; }
-}
+.directory-footer a { padding: 0; }
 
 .shell-account-button {
   display: flex;
   align-items: center;
   gap: .4rem;
   min-height: 44px;
-  max-width: min(14rem, 40vw);
   border: 0;
   border-radius: 8px;
   background: transparent;

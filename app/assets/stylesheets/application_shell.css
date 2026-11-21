@@ -1,0 +1,167 @@
+/* Application Shell v1.1.0 and Auth identity v1.0.0. */
+@font-face {
+  font-family: DM;
+  src: url("/identity/v1/dm-sans.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+:root {
+  --shell-font: DM, ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --shell-inset: 6.5vw;
+  --shell-wordmark-top: 35px;
+  --shell-wordmark-size: 24px;
+  --shell-inset-left: max(var(--shell-inset), env(safe-area-inset-left));
+  --shell-inset-right: max(var(--shell-inset), env(safe-area-inset-right));
+  --shell-panel-width: min(300px, calc(100vw - var(--shell-inset-left) - var(--shell-inset-right)));
+}
+
+.shell-header-row {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
+  grid-template-areas: "brand primary account";
+  grid-template-rows: minmax(44px, auto);
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  min-height: 44px;
+  padding: calc(max(var(--shell-wordmark-top), env(safe-area-inset-top)) + var(--shell-wordmark-size) * .6 - 22px)
+    var(--shell-inset-right) 0 var(--shell-inset-left);
+  box-sizing: content-box;
+  font: 500 14px/1.3 var(--shell-font);
+  font-synthesis: none;
+  position: relative;
+  z-index: 2;
+}
+
+.shell-brand { grid-area: brand; margin: 0; font: inherit; }
+.shell-header-row :is(.shell-wordmark, .directory-wordmark) {
+  display: block;
+  padding: 0;
+  color: inherit;
+  text-decoration: none;
+  font: 600 var(--shell-wordmark-size)/1.2 var(--shell-font);
+  letter-spacing: -1.2px;
+  white-space: nowrap;
+}
+
+.shell-primary {
+  grid-area: primary;
+  justify-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 20px;
+}
+
+.shell-primary [aria-current="page"] { font-weight: 600; text-decoration: underline; }
+.shell-account { grid-area: account; justify-self: end; min-width: 0; }
+.shell-header-row :is(.shell-trigger, .directory-login) {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 44px;
+  min-width: 44px;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.shell-header-row button, .shell-header-row summary { font: inherit; cursor: pointer; }
+.shell-header-row :is(a, button, summary):focus-visible, .directory-footer a:focus-visible, .shell-skip:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.shell-header-row .shell-panel {
+  width: var(--shell-panel-width);
+  max-height: calc(100dvh - 105px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  z-index: 3;
+}
+
+.shell-skip {
+  position: fixed;
+  inset: .75rem auto auto var(--shell-inset-left);
+  transform: translateY(-200%);
+  z-index: 5;
+  color: #243b44;
+  background: #f5f4ee;
+  padding: .5rem .75rem;
+}
+.shell-skip:focus { transform: none; }
+
+.shell-header-row .shell-username { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shell-header-row .shell-session-dot { width: 8px; height: 8px; flex: none; background: #238636; border-radius: 50%; }
+.shell-header-row .shell-trigger--identity { max-width: min(14rem, 34vw); }
+
+.directory-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 8px;
+  margin-top: auto;
+  padding: 16px var(--shell-inset-right) max(24px, env(safe-area-inset-bottom)) var(--shell-inset-left);
+  font: 400 13px/1.5 var(--shell-font);
+  font-synthesis: none;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.directory-footer a { color: inherit; text-decoration: underline; }
+
+@media (max-width: 700px) {
+  :root {
+    --shell-inset: 28px;
+    --shell-wordmark-top: 27px;
+    --shell-wordmark-size: 23px;
+  }
+  .shell-header-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "brand account" "primary primary";
+    grid-template-rows: minmax(44px, auto) auto;
+    column-gap: 8px;
+  }
+  .shell-primary { column-gap: 12px; }
+  .shell-header-row .shell-trigger--identity { max-width: min(14rem, 30vw); }
+}
+
+@media (max-height: 300px) {
+  .shell-header-row:has(.shell-panel) .shell-panel {
+    position: static;
+    max-height: none;
+    margin-top: 8px;
+  }
+  .shell-header-row:has(details[open] .shell-panel, .shell-account-button[aria-expanded="true"] + .shell-panel) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+  }
+}
+
+@media (forced-colors: active) {
+  .shell-header-row .shell-panel { color: CanvasText; background: Canvas; border: 1px solid CanvasText; }
+  .shell-header-row .shell-session-dot { background: CanvasText; forced-color-adjust: none; }
+}
+
+.shell-restoring .shell-account { visibility: hidden; }
+
+@media (forced-colors: none) {
+  [data-site-art-background] :is(header, footer)[data-art-role] {
+    color: var(--art-foreground, #243b44);
+    text-shadow: var(--art-text-shadow, none);
+    background-color: var(--art-backing, transparent);
+  }
+
+  [data-site-art-background] .shell-header-row :is(.brand, .shell-primary a, .nav-login, .shell-trigger--identity) {
+    color: inherit;
+    text-shadow: inherit;
+  }
+
+  [data-site-art-background] .shell-header-row .shell-panel { text-shadow: none; }
+  [data-site-art-background] .shell-header-row .dropdown-menu { color: var(--text); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-header-row *, .directory-footer * { transition: none; }
+}

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= @title %></title>
     <%= stylesheet_link_tag "directory" %>
+    <%= stylesheet_link_tag "application_shell" %>
     <%= vite_client_tag %>
     <%= yield :head %>
     <%= vite_javascript_tag "navbar" %>
@@ -12,9 +13,9 @@
   </head>
   <body class="directory-site">
     <div id="site-art-background" aria-hidden="true"></div>
-    <a class="directory-skip" href="#game-directory">Skip to content</a>
-    <header class="directory-header" data-art-role="top">
-      <%= content_tag(@game_page ? :div : :h1, class: "directory-brand") do %>
+    <a class="shell-skip" href="#game-directory">Skip to content</a>
+    <header class="directory-header shell-header-row" data-art-role="top">
+      <%= content_tag(@game_page ? :div : :h1, class: "directory-brand shell-brand") do %>
         <%= link_to "/", class: "directory-wordmark" do %>
           remote-gaming<span>.</span>
         <% end %>

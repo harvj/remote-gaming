@@ -24,46 +24,6 @@
   outline-offset: 4px;
 }
 
-.directory-skip {
-  position: fixed;
-  z-index: 3;
-  inset: 0.75rem auto auto var(--directory-inset);
-  transform: translateY(-200%);
-  padding: 0.5rem 0.75rem;
-  background: var(--directory-paper);
-}
-
-.directory-skip:focus { transform: none; }
-
-.directory-header {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 35px var(--directory-inset) 0;
-}
-
-.directory-brand { margin: 0; font: inherit; }
-
-.directory-header .directory-wordmark {
-  color: inherit;
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -1.2px;
-  line-height: 1.2;
-  text-decoration: none;
-}
-
-.directory-wordmark span { color: #42636e; }
-
-@media (max-width: 700px) {
-  .directory-site { --directory-inset: 28px; }
-  .directory-header { padding-top: 22px; }
-
-  .directory-header .directory-wordmark { font-size: 23px; }
-}
 
 .directory-apps { position: relative; }
 
@@ -92,6 +52,7 @@
   padding: 0.5rem;
   list-style: none;
   background: var(--directory-paper);
+  color: var(--directory-ink);
   border: 1px solid var(--directory-line);
   border-radius: 0.75rem;
 }
@@ -121,17 +82,6 @@
 .directory-cards li { padding: 1rem; background: #fff; border: 1px solid var(--directory-line); border-radius: 0.625rem; }
 .directory-status { margin-bottom: 0; font-size: 0.875rem; font-weight: 600; }
 
-.directory-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.25rem 0.5rem;
-  margin-top: auto;
-  padding: 1rem var(--directory-inset) 1.5rem;
-  font-size: 0.8125rem;
-}
-
-.directory-footer a { color: inherit; }
 
 .directory-nav .directory-login {
   display: grid;
@@ -152,7 +102,7 @@
     text-shadow: var(--art-text-shadow, none);
   }
 
-  .directory-site[data-site-art-background] .directory-content {
+  .directory-site[data-site-art-background] .directory-content[data-art-role] {
     background: transparent;
   }
 
@@ -174,7 +124,7 @@
   }
 }
 
-.directory-apps summary { max-width: min(14rem, 36vw); }
+
 
 .directory-apps button {
   width: 100%;

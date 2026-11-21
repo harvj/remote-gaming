@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
     <%= vite_client_tag %>
-    <%= stylesheet_link_tag :app %>
+    <%= stylesheet_link_tag :app, "application_shell" %>
     <script src="https://kit.fontawesome.com/c8fac941ce.js" crossorigin="anonymous"></script>
 
     <%= render "shared/site_art_head" %>
@@ -24,7 +24,8 @@
 
   <body>
     <div id="site-art-background" aria-hidden="true"></div>
-    <header class="navbar">
+    <a class="shell-skip" href="#application-main">Skip to content</a>
+    <header class="navbar" data-art-role="top">
       <div id="navbar-app"></div>
 
       <script id="navbar-data" type="application/json">
@@ -39,7 +40,8 @@
           } : nil,
           currentGame: @game ? {
             uri: game_path(@game.key),
-            name: @game.name
+            name: @game.name,
+            current: request.path == game_path(@game.key)
           } : nil,
           loginPath: login_path,
           csrfToken: form_authenticity_token
@@ -49,7 +51,7 @@
       <%= vite_javascript_tag "navbar" %>
     </header>
 
-    <main class="page">
+    <main id="application-main" class="page" tabindex="-1">
       <% if ModernArtStaging.enabled? %>
         <p class="panel ghost"><strong>Private staging</strong> · Use approved accounts and test data.</p>
       <% end %>
