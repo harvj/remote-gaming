@@ -137,7 +137,7 @@ RSpec.describe "Signed Application Shell acceptance", type: :system do
     browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
   end
 
-  it "keeps the oak account control readable and the staging header usable while scrolling" do
+  it "keeps the oak account control readable and the shared header usable while scrolling" do
     allow(ModernArtStaging).to receive_messages(enabled?: true, owner_subject: "owner")
     create(:game, :modern_art)
     sign_in
@@ -152,11 +152,15 @@ RSpec.describe "Signed Application Shell acceptance", type: :system do
       )
       browser.execute_script("document.querySelector('main').style.minHeight = '150vh'; window.scrollTo(0, 400)")
       expect(page.evaluate_script("document.querySelector('header').getBoundingClientRect().top")).to eq(0)
-      expect(page.evaluate_script("getComputedStyle(document.querySelector('header'), '::after').pointerEvents")).to eq("none")
+      expect(page).to have_css("main[data-shell-fading]")
+      expect(page.evaluate_script("getComputedStyle(document.querySelector('main')).maskImage")).to include("linear-gradient")
       trigger.send_keys(:space)
       expect(page).to have_link("Account Settings")
       browser.action.send_keys(:escape).perform
       expect(page).to have_css("summary:focus", text: username)
+      browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-reduced-motion", value: "reduce" } ])
+      expect(page.evaluate_script("getComputedStyle(document.querySelector('main')).maskImage")).to eq("none")
+      browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
     end
   end
 
@@ -184,6 +188,7 @@ RSpec.describe "Signed Application Shell acceptance", type: :system do
     expect(top).to be_within(0.03).of(mobile ? 27 : 35), "unexpected geometry at #{width} on #{page.current_path}: #{result.inspect}"
     expect(control_middle).to be_within(0.03).of(brand_middle)
     expect(target).to be >= 44
+    expect(page.evaluate_script("getComputedStyle(document.querySelector('body > header')).position")).to eq("sticky")
     expect(font).to start_with("DM,")
     expect(size).to eq(mobile ? "23px" : "24px")
     expect(weight).to eq("600")

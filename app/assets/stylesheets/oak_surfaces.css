@@ -83,34 +83,30 @@
   outline-offset: 2px;
 }
 
-.oak-shell[data-sticky-preview] > header {
+.oak-shell > header {
   position: sticky;
   top: 0;
   z-index: 4;
   isolation: isolate;
-  background: linear-gradient(to bottom, rgb(32 22 15 / 74%), rgb(32 22 15 / 65%));
+  background-color: rgb(32 22 15 / 49%);
 }
 
-.oak-shell[data-sticky-preview] > header::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 100% 0 auto;
-  height: 24px;
-  pointer-events: none;
-  background: linear-gradient(to bottom, rgb(32 22 15 / 65%), transparent);
+.oak-shell :is(main, main :focus-visible, footer :focus-visible) {
+  scroll-margin-top: calc(var(--shell-header-height, 70px) + 24px);
 }
 
-.oak-shell[data-sticky-preview] :is(main, main :focus) { scroll-margin-top: 140px; }
-.oak-shell[data-sticky-preview] > header:has(+ main :focus-visible)::after { display: none; }
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  .oak-shell [data-shell-fading]:not(:has(:focus-visible)):not(:focus-visible) {
+    mask-image: linear-gradient(to bottom, transparent var(--shell-cover), black calc(var(--shell-cover) + 24px));
+  }
+}
 
 @media (max-height: 300px) {
-  .oak-shell[data-sticky-preview] > header:has(details[open], [aria-expanded="true"]) { position: relative; }
+  .oak-shell > header:has(details[open], [aria-expanded="true"]) { position: relative; }
 }
 
 @media (forced-colors: active) {
-  .oak-shell[data-sticky-preview] > header,
+  .oak-shell > header,
   .oak-shell .shell-header-row .shell-panel { background: Canvas; color: CanvasText; }
-  .oak-shell[data-sticky-preview] > header::after { display: none; }
   .oak-shell :is(a, button, summary):focus-visible { outline-color: Highlight; }
 }

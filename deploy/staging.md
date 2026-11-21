@@ -186,4 +186,4 @@ Existing `/staging/directory` and `/staging/pandemic` bookmarks redirect to thei
 
 The wordmark always returns to the explicit directory origin. Staging shows `Signed in` when the provider omits verified display identity. The Auth Shell eligibility contract excludes staging clients, so application code cannot use that endpoint to recover `jim`. A supported verified claim from Auth is needed for the staging control to show that exact name. The historical profile is not a display-identity source.
 
-The sticky header and gradient are staging-only visual previews. The signed Shell v1.1.0 baseline requires the header to leave the reading area as the page scrolls. Review the preview with Infrastructure before any adoption outside staging. The preview uses the existing Site Art publication; it adds no artwork to the repo.
+The shared header uses sticky positioning and a viewport-aligned content fade in both environments. Deploy it only to staging for review while Infrastructure updates the signed v1.1.0 scrolling requirement. Production activation requires approval and the applicable signed preflight. The header uses the existing Site Art publication.
