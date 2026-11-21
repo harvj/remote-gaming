@@ -1,4 +1,5 @@
 import { mount } from "svelte";
+import { watchApplications } from "../shell_applications.js";
 import Navbar from "../components/Navbar.svelte";
 
 const target = document.getElementById("navbar-app");
@@ -14,6 +15,14 @@ if (target && dataEl) {
 const disclosure = document.querySelector(".directory-apps");
 if (disclosure) {
   const trigger = disclosure.querySelector("summary");
+  const applications = disclosure.querySelector("[data-shell-applications]");
+  if (applications) {
+    let current;
+    disclosure.addEventListener("toggle", () => {
+      current?.destroy();
+      current = disclosure.open ? watchApplications(applications) : null;
+    });
+  }
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && disclosure.open && disclosure.contains(document.activeElement)) {
       trigger.focus();

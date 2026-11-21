@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   end
   constraints login_host do
     get "login", to: "auth#start", as: :login
+    get "shell/applications", to: "shell_applications#show", as: :shell_applications
   end
 
   private_staging = Rails.env.production? && ModernArtStaging.enabled?

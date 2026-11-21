@@ -1,0 +1,15 @@
+[Unit]
+Description=Refresh Remote Gaming signed Application Shell registry (%i)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+StateDirectory=remote-gaming-shell-%i
+StateDirectoryMode=0755
+ExecStart=/usr/bin/python3 -B /usr/local/lib/application-shell/refresh-remote-gaming-registry /var/lib/remote-gaming-shell-%i/registry.json
+TimeoutStartSec=50
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true

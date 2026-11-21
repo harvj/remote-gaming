@@ -31,6 +31,7 @@
         <%= raw json_escape({
           currentUser: current_user ? {
             name: CanonicalAuth.enabled? && !current_user.dummy? ? (session[:oidc_username].presence || "Signed in") : (current_user.username || current_user.name),
+            applicationsPath: (shell_applications_path if CanonicalAuth.enabled? && !current_user.dummy?),
             accountPath: (CanonicalAuth.account_settings_url if CanonicalAuth.enabled? && !current_user.dummy?),
             canonical: CanonicalAuth.enabled? && !current_user.dummy?,
             profilePath: current_user.dummy? ? nil : user_path(current_user),

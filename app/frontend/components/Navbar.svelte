@@ -1,4 +1,5 @@
 <script>
+  import { watchApplications } from "../shell_applications.js";
   import { onMount, onDestroy } from "svelte";
 
   export let currentUser = null;
@@ -80,6 +81,11 @@
 
         {#if menuOpen}
           <div class="dropdown-menu" id="navbar-account-controls">
+            {#if currentUser.applicationsPath}
+              <section aria-label="Applications" data-shell-applications={currentUser.applicationsPath} use:watchApplications hidden>
+                <strong>Applications</strong><ul></ul>
+              </section>
+            {/if}
             {#if currentUser.profilePath}
               <a href={currentUser.profilePath} class="dropdown-item" on:click={closeMenu}>
                 {currentUser.canonical ? "Remote Gaming settings" : "Profile"}

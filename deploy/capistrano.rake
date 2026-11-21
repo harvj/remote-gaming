@@ -39,6 +39,11 @@ task :deploy do
   Tempfile.create([ "remote-gaming", ".tar.gz" ]) do |archive|
     RemoteGamingDeployment.command("git", "archive", "--format=tar.gz", "--output=#{archive.path}", revision)
     checksum = Digest::SHA256.file(archive.path).hexdigest
+    RemoteGamingDeployment.verify_artifact!(archive.path, revision, checksum)
+    if fetch(:stage).to_s == "production"
+      RemoteGamingDeployment.verify_shell!(revision)
+    end
+
     on roles(:app) do
       remote_gaming_verify_helper
       execute :sudo, "-n", RemoteGamingDeployment.helper(fetch(:stage)), "check", fetch(:stage)

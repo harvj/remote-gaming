@@ -19,7 +19,7 @@ RSpec.describe "Game directory", type: :request do
       expect(page.at_css(".directory-nav a")["href"]).to eq("/login")
       expect(page.at_css("footer a").text).to eq("Jim Harvey")
       expect(page.at_css("footer a")["href"]).to eq("https://harvj.com")
-      expect(page.at_css("footer").text).to include(Rails.configuration.x.directory_release_label)
+      expect(page.at_css("footer").text).to include(Rails.configuration.x.directory_release.label)
       expect(response.body).not_to include('class="directory-apps"')
       expect(response.body).not_to include('href="https://pandemic.radioactivita.com/"')
     end

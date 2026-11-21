@@ -184,6 +184,36 @@ RSpec.describe "Canonical Auth", type: :request do
     expect(response.body).not_to include("signed_name", "other_name")
   end
 
+  it "uses fresh eligibility for the local session and hides links after mismatches, expiry and logout" do
+    host! "radioactivita.com"
+    create(:game, key: "modern_art")
+    AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
+    overrides = {}
+    callback(start, shell_username: "verified_name", shell_overrides: overrides)
+    allow(ShellRegistry).to receive(:destinations).with([ "continuum" ])
+      .and_return([ { name: "Library", url: "https://library.harvj.com/" } ])
+
+    get "/shell/applications"
+    expect(response.headers["Cache-Control"]).to eq("no-store")
+    expect(response.parsed_body.fetch("applications")).to eq([ { "name" => "Library", "url" => "https://library.harvj.com/" } ])
+    expect(response.parsed_body.fetch("expires_in_ms")).to be_between(1, 30_000)
+
+    [
+      { "sub" => "another-subject" }, { "aud" => "another-client" },
+      { "grant_binding" => "a" * 64 }, { "exp" => Time.current.to_i - 1 }
+    ].each do |invalid|
+      overrides.replace(invalid)
+      get "/shell/applications"
+      expect(response.parsed_body).to eq("applications" => [], "expires_in_ms" => 0)
+      get "/"
+      expect(response.body).to include("verified_name")
+    end
+
+    delete "/logout"
+    get "/shell/applications"
+    expect(response).to have_http_status(:unauthorized)
+  end
+
   it "consumes only the matched browser transaction and rejects replays, expired state and background starts" do
     AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
     expect { get "/login", headers: { "Sec-Purpose" => "prefetch" } }.not_to change(AuthLoginAttempt, :count)

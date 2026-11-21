@@ -18,6 +18,27 @@ module RemoteGamingDeployment
     output.strip
   end
 
+  def self.verify_artifact!(archive, revision, checksum)
+    expected = ENV.fetch("APPROVED_ARTIFACT_SHA256", "")
+    unless /\A[0-9a-f]{64}\z/.match?(expected) && checksum == expected
+      raise "Set APPROVED_ARTIFACT_SHA256 to the exact reviewed archive digest"
+    end
+
+    stamp = command("tar", "-xOzf", archive, ".release-version")
+    unless /\A#{revision} v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)-rc\.[1-9][0-9]*\z/.match?(stamp)
+      raise "Deployment requires an annotated release-candidate tag on the exact revision"
+    end
+  end
+
+  def self.verify_shell!(revision)
+    executable = ENV.fetch("APPLICATION_SHELL_PREFLIGHT", "application-shell-preflight")
+    review = ENV.fetch("APPLICATION_SHELL_REVIEW") { raise "Set APPLICATION_SHELL_REVIEW to the exact candidate review" }
+    state = ENV.fetch("APPLICATION_SHELL_STATE") { raise "Set APPLICATION_SHELL_STATE to the durable publication checkpoint" }
+    unless system(executable, "--app", "remote-gaming", "--revision", revision, "--review", review, "--state", state)
+      raise "Application Shell preflight failed. Resolve the reported checks before retrying."
+    end
+  end
+
   def self.approved!(revision, rollback: false)
     raise "Set APPROVED_COMMIT to the reviewed full SHA" unless SHA.match?(revision.to_s)
     raise "Deployment requires a clean checkout" unless command("git", "status", "--porcelain").empty?
