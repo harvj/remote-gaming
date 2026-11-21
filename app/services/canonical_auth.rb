@@ -130,6 +130,10 @@ class CanonicalAuth
   end
 
   def shell_username(token, subject, grant_deadline)
+    shell_evidence(token, subject, grant_deadline)&.fetch("preferred_username")
+  end
+
+  def shell_evidence(token, subject, grant_deadline)
     request = token_request("introspect", token)
     request.set_form_data(token: token, token_type_hint: "access_token", application_shell_version: "1")
     result = fetch_json(request.uri, request)
@@ -138,7 +142,9 @@ class CanonicalAuth
     evidence = result["application_shell"]
     return unless result["active"] == true && evidence.is_a?(Hash)
     return unless evidence.keys.sort == %w[aud eligible_destination_ids exp grant_binding iat iss preferred_username sub version]
-    return unless evidence["eligible_destination_ids"].is_a?(Array) && evidence["eligible_destination_ids"].all?(String)
+    destinations = evidence["eligible_destination_ids"]
+    return unless destinations.is_a?(Array) && destinations.uniq == destinations &&
+      destinations.all? { |id| id.is_a?(String) && /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/.match?(id) }
     return unless evidence.values_at("version", "iss", "aud", "sub", "grant_binding") ==
       [ "1", @issuer, @client_id, subject, Digest::SHA256.hexdigest(token) ]
 
@@ -147,8 +153,7 @@ class CanonicalAuth
       issued <= Time.current.to_i && Time.current.to_i < expires &&
       expires <= grant_deadline.to_i && (expires - issued).between?(1, 60)
 
-    username = evidence["preferred_username"]
-    username if valid_username?(username)
+    evidence if valid_username?(evidence["preferred_username"])
   rescue InvalidLogin
     nil
   end

@@ -26,3 +26,11 @@ Remote Gaming uses Semantic Versioning with annotated Git tags of the form `v0.M
 | v0.5.0 | Public Modern Art activation |
 
 These targets are planning labels. Create their tags and GitHub releases after review and verification of the exact release commits.
+
+## Shell release candidates
+
+Allocate an annotated `vX.Y.Z-rc.N` tag on the exact reviewed main commit. Start at 1 for each target, use the next number after checking the remote tags, and push normally without force. A concurrent allocation of the same tag must fail. Archive the tagged commit once and retain the archive and its SHA-256. The archive stamps the candidate tag. Use the same archive digest for both environments. This workflow uses one artifact per Git revision. If the archive bytes must change, use a new revision and the next candidate number.
+
+After activation, verify the running footer and record the exact candidate tuple from the root-owned `.release-candidate.json`, passing acceptance evidence reference, and UTC acceptance time. The deployment helper writes the tuple from the upload checksum after validating the archive. Store the approved acceptance in the root-owned staging state directory under `acceptance/<sha>-<digest>.json` with the keys `candidate`, `status` (value `pass`), `evidence_ref`, and `accepted_at` (UTC to the second). Use the corresponding production directory after that environment passes.
+
+After successful promotion and verification, publish the annotated final tag at the same commit and attach the **retained candidate archive bytes** as `remote-gaming-vX.Y.Z.tar.gz`. Never move an existing final tag. Use the reviewed release operator to invoke `deploy/record-shell-publication.rb STAGE SHA` for each environment. It verifies the final tag, published release and GitHub asset digest independently of the local acceptance record and installs the immutable receipt. Retry a failed lookup after one minute, then after five minutes. Reads take effect on the next request with no service restart. Retain the candidate archive, acceptance records, and matching receipts for rollback.

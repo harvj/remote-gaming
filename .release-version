@@ -1,1 +1,1 @@
-$Format:%H %(describe:match=v0.*)$
+$Format:%H %(describe:match=v*-rc.*)$

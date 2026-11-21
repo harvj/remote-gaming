@@ -2,7 +2,12 @@
   <% if directory_signed_in? %>
     <details class="directory-apps">
       <summary><span class="shell-session-dot" aria-hidden="true"></span><span class="shell-username"><%= session[:oidc_username].presence || "Signed in" %></span><span class="shell-chevron" aria-hidden="true">⌄</span></summary>
-      <ul>
+      <ul class="directory-account-controls">
+        <% if CanonicalAuth.enabled? && session[:oidc_login] %>
+          <li data-shell-applications="<%= shell_applications_path %>" hidden>
+            <section aria-label="Applications"><strong>Applications</strong><ul></ul></section>
+          </li>
+        <% end %>
         <% if CanonicalAuth.enabled? && (account_url = CanonicalAuth.account_settings_url) %>
           <li><%= link_to "Account Settings", account_url %></li>
         <% end %>
