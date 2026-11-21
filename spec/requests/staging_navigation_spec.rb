@@ -6,6 +6,7 @@ RSpec.describe "Staging navigation", type: :request do
     allow(ModernArtStaging).to receive_messages(enabled?: true, owner_subject: "fixture-owner")
     allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with("REMOTE_GAMING_OIDC_ISSUER").and_return("https://auth.harvj.com")
+    allow(ENV).to receive(:[]).with("REMOTE_GAMING_OIDC_CLIENT_ID").and_return("staging-fixture-client")
     allow(CanonicalAuth).to receive(:enabled?).and_return(true)
     Rails.application.reload_routes!
     game_host = ModernArtStaging::GAME_HOST
@@ -33,7 +34,7 @@ RSpec.describe "Staging navigation", type: :request do
       evidence_reference: "staging-fixture")
     provider = instance_double(CanonicalAuth)
     allow(CanonicalAuth).to receive(:new).and_return(provider)
-    stub_oidc_journey(provider, identity, destination: "https://auth.harvj.com/authorize")
+    stub_oidc_journey(provider, identity, destination: "https://auth.harvj.com/authorize", username: "auth_jim")
     get "/login"
     expect(response).to redirect_to("https://auth.harvj.com/authorize")
     get "/auth/callback", params: { state: "fixture", code: "fixture" }
@@ -41,7 +42,10 @@ RSpec.describe "Staging navigation", type: :request do
     get "/staging/directory"
     directory = Nokogiri::HTML5(response.body)
     expect(directory.at_css(".directory-wordmark")["href"]).to eq("/")
-    expect(directory.at_css(".directory-apps")).to be_present
+    expect(directory.at_css(".directory-apps summary").text).to include("auth_jim")
+    expect(directory.css(".directory-apps a").map { |link| link["href"] }).to eq(
+      [ "https://auth.harvj.com/account?client_id=staging-fixture-client" ]
+    )
     expect(directory.at_css(".directory-login")).to be_nil
     expect(directory.at_css("footer a")["href"]).to eq("https://harvj.com")
 
@@ -49,8 +53,14 @@ RSpec.describe "Staging navigation", type: :request do
     expect(response).to redirect_to("/modern_art")
     follow_redirect!
     game = Nokogiri::HTML5(response.body)
-    expect(JSON.parse(game.at_css("#navbar-data").text).dig("currentUser", "name")).to eq("jim")
+    navbar = JSON.parse(game.at_css("#navbar-data").text)
+    expect(navbar.fetch("currentUser")).to include("name" => "auth_jim", "logoutPath" => "/logout",
+      "accountPath" => "https://auth.harvj.com/account?client_id=staging-fixture-client")
+    expect(response.headers["Cache-Control"]).to eq("no-store")
     expect(game.at_css("footer a").text).to eq("Jim Harvey")
+    delete "/logout"
+    expect(response).to redirect_to("/signed-out")
+    expect(AuthLogin.count).to eq(0)
   ensure
     allow(Rails.env).to receive(:production?).and_call_original
     Rails.application.reload_routes!

@@ -1,10 +1,14 @@
 <nav class="directory-nav" aria-label="Account navigation">
   <% if directory_signed_in? %>
     <details class="directory-apps">
-      <summary><%= session[:oidc_login] && session[:oidc_username].presence || "Signed in" %> <span aria-hidden="true">⌄</span></summary>
+      <summary><span class="shell-session-dot" aria-hidden="true"></span><span class="shell-username"><%= session[:oidc_username].presence || "Signed in" %></span><span class="shell-chevron" aria-hidden="true">⌄</span></summary>
       <ul>
-        <li><%= link_to "Account Settings", "https://auth.harvj.com/" %></li>
-        <% if respond_to?(:logout_path) %><li><%= button_to "Log Out", logout_path, method: :delete %></li><% end %>
+        <% if CanonicalAuth.enabled? && (account_url = CanonicalAuth.account_settings_url) %>
+          <li><%= link_to "Account Settings", account_url %></li>
+        <% end %>
+        <% if (logout = respond_to?(:canonical_logout_path) ? canonical_logout_path : (logout_path if respond_to?(:logout_path))) %>
+          <li><%= button_to "Log Out", logout, method: :delete %></li>
+        <% end %>
       </ul>
     </details>
   <% else %>

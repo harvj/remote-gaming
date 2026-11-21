@@ -8,6 +8,7 @@
 
   let menuOpen = false;
   let menuEl;
+  let menuButton;
 
   function toggleMenu() {
     menuOpen = !menuOpen;
@@ -25,7 +26,8 @@
   }
 
   function handleEscape(event) {
-    if (event.key === "Escape") {
+    if (event.key === "Escape" && menuOpen && menuEl?.contains(document.activeElement)) {
+      menuButton.focus();
       closeMenu();
     }
   }
@@ -56,24 +58,36 @@
 
   <div class="nav-right">
     {#if currentUser}
-      <div>Logged in as <strong>{currentUser.name}</strong></div>
+      {#if !currentUser.canonical}<div>Logged in as <strong>{currentUser.name}</strong></div>{/if}
       <div class="nav-menu" bind:this={menuEl}>
         <button
           type="button"
-          class="gear-button"
-          aria-label="Open user menu"
+          class={currentUser.canonical ? "shell-account-button" : "gear-button"}
+          bind:this={menuButton}
+          aria-label={currentUser.canonical ? currentUser.name : "Open user menu"}
+          aria-controls={menuOpen ? "navbar-account-controls" : undefined}
           aria-expanded={menuOpen}
           on:click|stopPropagation={toggleMenu}
         >
-          <i class="fa-solid fa-gear"></i>
+          {#if currentUser.canonical}
+            <span class="shell-session-dot" aria-hidden="true"></span>
+            <span class="shell-username">{currentUser.name}</span>
+            <span aria-hidden="true">⌄</span>
+          {:else}
+            <i class="fa-solid fa-gear"></i>
+          {/if}
         </button>
 
         {#if menuOpen}
-          <div class="dropdown-menu">
+          <div class="dropdown-menu" id="navbar-account-controls">
             {#if currentUser.profilePath}
               <a href={currentUser.profilePath} class="dropdown-item" on:click={closeMenu}>
-                Profile
+                {currentUser.canonical ? "Remote Gaming settings" : "Profile"}
               </a>
+            {/if}
+
+            {#if currentUser.accountPath}
+              <a href={currentUser.accountPath} class="dropdown-item">Account Settings</a>
             {/if}
 
             <form method="post" action={currentUser.logoutPath} class="dropdown-form">
@@ -83,14 +97,14 @@
               {/if}
 
               <button type="submit" class="dropdown-item dropdown-button">
-                Logout
+                {currentUser.canonical ? "Log Out" : "Logout"}
               </button>
             </form>
           </div>
         {/if}
       </div>
     {:else if loginPath}
-      <a class="nav-login" href={loginPath}>Log in</a>
+      <a class="nav-login" href={loginPath}>Log In</a>
     {/if}
   </div>
 </div>

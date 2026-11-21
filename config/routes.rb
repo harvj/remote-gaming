@@ -37,6 +37,7 @@ Rails.application.routes.draw do
     if CanonicalAuth.enabled? || ProductionReplay.enabled? || HistoricalUserAdministration.enabled?
       constraints host: ProductionReplay::HOST do
         get "auth/callback", to: "auth#callback", as: :auth_callback
+        delete "logout", to: "auth#end_session", as: :canonical_logout
       end
     end
     next
@@ -102,8 +103,12 @@ Rails.application.routes.draw do
     match "auth/start", to: "auth#start", as: :auth_start, via: %i[get post]
     get "auth/callback", to: "auth#callback", as: :auth_callback
 
-    devise_scope :user do
-      delete "/logout", to: "users/sessions#destroy", as: :logout
+    if private_staging
+      delete "/logout", to: "auth#end_session", as: :logout
+    else
+      devise_scope :user do
+        delete "/logout", to: "users/sessions#destroy", as: :logout
+      end
     end
 
     get "s/:uid/replay", to: "session_replays#show", as: :session_replay
