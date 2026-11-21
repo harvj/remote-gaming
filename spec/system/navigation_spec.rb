@@ -56,7 +56,10 @@ RSpec.describe "Remote Gaming navigation", type: :system do
     expect(page).to have_no_css('nav[aria-label="Applications"]')
     expect(page.evaluate_script("document.documentElement.scrollWidth")).to eq(390)
 
-    visit game_path(create(:game, :modern_art).key)
+    game = create(:game, :modern_art)
+    GameSession::Create.!(game)
+    visit game_path(game.key)
+    expect(page).to have_css(".session-link")
     click_button username
     expect(page).to have_link("Remote Gaming settings")
     expect(page).to have_link("Account Settings", href: "#{issuer}/account?client_id=gaming")
