@@ -5,7 +5,7 @@ module Representers
       scalar = {
         name: game.name,
         key: game.key,
-        uri: game_path(game.key),
+        uri: (ModernArtStaging.enabled? ? "/" : game_path(game.key)),
         groupCardsBy: game.play_class::CONFIG[:groupCardsBy],
         sortCardsBy: game.play_class::CONFIG[:sortCardsBy]
       }

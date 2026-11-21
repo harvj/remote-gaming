@@ -1,7 +1,6 @@
 .navbar {
   width: 100%;
   background: var(--navbg);
-  border-bottom: 1px solid #d0d7de;
 }
 
 .nav-right {

@@ -7,16 +7,17 @@
     <%= stylesheet_link_tag "directory" %>
     <%= stylesheet_link_tag "application_shell" %>
     <%= vite_client_tag %>
+    <%= stylesheet_link_tag "oak_surfaces" %>
     <%= yield :head %>
     <%= vite_javascript_tag "navbar" %>
     <%= render "shared/site_art_head" %>
   </head>
-  <body class="directory-site">
+  <body class="directory-site oak-shell">
     <div id="site-art-background" aria-hidden="true"></div>
     <a class="shell-skip" href="#game-directory">Skip to content</a>
     <header class="directory-header shell-header-row" data-art-role="top">
       <%= content_tag(@game_page ? :div : :h1, class: "directory-brand shell-brand") do %>
-        <%= link_to "/", class: "directory-wordmark" do %>
+        <%= link_to NavigationLogin.directory_home(request.host), class: "directory-wordmark" do %>
           remote-gaming<span>.</span>
         <% end %>
       <% end %>

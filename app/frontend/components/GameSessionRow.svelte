@@ -72,12 +72,19 @@
     display: flex;
     align-items: center;
     gap: .5rem;
+    min-width: 0;
   }
+
+  .session-link { min-width: 0; overflow-wrap: anywhere; }
 
   .session-right {
     display: flex;
     align-items: center;
     gap: .75rem;
+  }
+
+  @media (max-width: 700px) {
+    .session-row { flex-wrap: wrap; gap: .25rem .75rem; }
   }
 
   .session-date {

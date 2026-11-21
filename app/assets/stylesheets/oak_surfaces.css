@@ -1,0 +1,115 @@
+.oak-shell {
+  color-scheme: dark;
+  --oak-floor: #251c16;
+  --oak-text: #fff3de;
+  --oak-muted: #ead4b5;
+  --oak-link: #ffe1a9;
+  --oak-outer: rgb(32 22 15 / 52%);
+  --oak-nested: rgb(20 14 10 / 32%);
+  --oak-raised: rgb(31 22 16 / 91%);
+  --oak-accent: rgb(80 51 22 / 44%);
+  --oak-line: #a28a6f;
+  --oak-radius-container: 12px;
+  --oak-radius-section: 8px;
+  --oak-radius-control: 6px;
+  --oak-focus: #ffdf9e;
+  --bg: var(--oak-floor);
+  --text: var(--oak-text);
+  --muted: var(--oak-muted);
+  --panel: var(--oak-raised);
+  --panel-hover: #583b25;
+  --border: var(--oak-line);
+  --link-hover-text: var(--oak-text);
+  --link-hover-bg: #583b25;
+  --directory-paper: var(--oak-raised);
+  --directory-ink: var(--oak-text);
+  --directory-link: var(--oak-link);
+  --directory-line: var(--oak-line);
+  background: var(--oak-floor);
+  color: var(--oak-text);
+}
+
+.oak-shell .navbar,
+.oak-shell .page { background: transparent; }
+
+.oak-shell .page { padding-block-start: 12px; }
+.oak-shell .directory-content,
+.oak-shell[data-site-art-background] .directory-content,
+.oak-shell .page .panel,
+.oak-shell .replay-content .panel {
+  background: var(--oak-outer);
+  color: var(--oak-text);
+  border-radius: var(--oak-radius-container);
+  text-shadow: none;
+}
+
+.oak-shell .directory-content { margin-inline: var(--shell-inset-left) var(--shell-inset-right); padding-inline: clamp(12px, 3vw, 30px); }
+.oak-shell .directory-content a { color: var(--oak-link); }
+
+.oak-shell[data-site-art-background] .directory-cards li,
+.oak-shell .directory-cards li,
+.oak-shell .historical-table,
+.oak-shell .historical-detail {
+  background: var(--oak-nested);
+  color: var(--oak-text);
+  border-color: var(--oak-line);
+  border-radius: var(--oak-radius-section);
+}
+
+.oak-shell .page :is(.panel-title, .panel.active .panel-title) { color: var(--oak-muted); }
+.oak-shell .page .panel.active a { color: var(--oak-link); }
+.oak-shell .shell-header-row .shell-panel {
+  background: var(--oak-raised);
+  color: var(--oak-text);
+  border-color: var(--oak-line);
+  border-radius: var(--oak-radius-section);
+}
+
+.oak-shell .shell-panel :is(a, button),
+.oak-shell .shell-header-row :is(.directory-login, .nav-login, .shell-trigger--identity) {
+  color: var(--oak-text);
+  border-radius: var(--oak-radius-control);
+  text-shadow: none;
+}
+
+.oak-shell .shell-header-row :is(.directory-login, .nav-login, .shell-trigger--identity, .shell-panel a, .shell-panel button):is(:hover, :active, :focus-visible),
+.oak-shell .shell-header-row :is(details[open] > summary, button[aria-expanded="true"]) {
+  color: var(--oak-text);
+  background: #4b3120;
+}
+
+.oak-shell :is(a, button, summary):focus-visible {
+  outline: 2px solid var(--oak-focus);
+  outline-offset: 2px;
+}
+
+.oak-shell > header {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  isolation: isolate;
+  background-color: rgb(32 22 15 / 49%);
+}
+
+.oak-shell :is(main, main [id], main :focus-visible, footer [id], footer :focus-visible) {
+  scroll-margin-top: calc(var(--shell-header-height, 70px) + 24px);
+}
+
+@media (forced-colors: none) {
+  .oak-shell [data-shell-fading]:not(:has(:focus-visible)):not(:focus-visible) {
+    mask-image: linear-gradient(to bottom, transparent var(--shell-cover), black calc(var(--shell-cover) + 24px));
+  }
+}
+
+@media (max-height: 300px) {
+  .oak-shell > header .shell-panel.shell-panel {
+    max-height: max(64px, calc(100dvh - 140px));
+    overflow-y: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .oak-shell > header,
+  .oak-shell .shell-header-row .shell-panel { background: Canvas; color: CanvasText; }
+  .oak-shell :is(a, button, summary):focus-visible { outline-color: Highlight; }
+}

@@ -16,13 +16,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
     <%= vite_client_tag %>
+    <%= stylesheet_link_tag "oak_surfaces" %>
     <%= stylesheet_link_tag :app, "application_shell" %>
     <script src="https://kit.fontawesome.com/c8fac941ce.js" crossorigin="anonymous"></script>
 
     <%= render "shared/site_art_head" %>
   </head>
 
-  <body>
+  <body class="oak-shell">
     <div id="site-art-background" aria-hidden="true"></div>
     <a class="shell-skip" href="#application-main">Skip to content</a>
     <header class="navbar" data-art-role="top">
@@ -30,6 +31,7 @@
 
       <script id="navbar-data" type="application/json">
         <%= raw json_escape({
+          directoryHome: NavigationLogin.directory_home(request.host),
           currentUser: current_user ? {
             name: CanonicalAuth.enabled? && !current_user.dummy? ? (session[:oidc_username].presence || "Signed in") : (current_user.username || current_user.name),
             applicationsPath: (shell_applications_path if CanonicalAuth.enabled? && !current_user.dummy?),
@@ -39,9 +41,9 @@
             logoutPath: current_user.dummy? ? dummy_logout_path : (respond_to?(:canonical_logout_path) ? canonical_logout_path : logout_path)
           } : nil,
           currentGame: @game ? {
-            uri: game_path(@game.key),
+            uri: (ModernArtStaging.enabled? ? "/" : game_path(@game.key)),
             name: @game.name,
-            current: request.path == game_path(@game.key)
+            current: request.path == (ModernArtStaging.enabled? ? "/" : game_path(@game.key))
           } : nil,
           loginPath: login_path,
           csrfToken: form_authenticity_token

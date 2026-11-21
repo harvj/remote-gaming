@@ -1,5 +1,5 @@
 class GamesController < ApplicationController
-  before_action :authenticate_user!, only: :show
+  before_action :authenticate_user!, only: :show, unless: :staging_public_entry?
   def index
     games = Game.all.order(:name)
 
@@ -11,11 +11,19 @@ class GamesController < ApplicationController
   end
 
   def show
+    return render :staging_entry if staging_public_entry?
+
     @game ||= Game.find_by!(key: params[:game_key])
     @rep_game = Representers::Game.(@game, viewer: current_user)
     respond_to do |format|
       format.html
       format.json { render json: { status: "success", content: { game: @rep_game } }.to_json }
     end
+  end
+
+  private
+
+  def staging_public_entry?
+    ModernArtStaging.enabled? && request.path == "/" && request.format.html? && !current_user
   end
 end

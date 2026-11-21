@@ -22,8 +22,7 @@ class AuthController < ApplicationController
   def end_session
     AuthLogin.end_session(session[:oidc_login])
     reset_session
-    destination = ModernArtStaging.enabled? ? staging_signed_out_path : root_path
-    redirect_to destination, status: :see_other
+    redirect_to "/", status: :see_other
   end
 
   def callback
