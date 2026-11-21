@@ -120,20 +120,13 @@ class CanonicalAuth
     else
       AuthIdentity.active.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
     end
-    username = claims["preferred_username"]
-    username = shell_username(access, claims.fetch("sub"), grant_deadline) unless valid_username?(username)
+    username = claims["preferred_username"] if valid_username?(claims["preferred_username"])
     [ identity, claims.fetch("acr"), access, [ grant_deadline, Time.current + SESSION_SECONDS ].min, username ]
   rescue Rack::OAuth2::Client::Error, Faraday::Error, JWT::DecodeError, KeyError, JSON::ParserError, ActiveRecord::RecordNotFound,
       IOError, SocketError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError
     raise InvalidLogin, cause: nil
   rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique, ReconcileAuthIdentity::Conflict
     raise InvalidLogin, cause: nil
-  end
-
-  private
-
-  def valid_username?(value)
-    value.is_a?(String) && /\A[a-z0-9][a-z0-9_-]{0,31}\z/.match?(value)
   end
 
   def shell_username(token, subject, grant_deadline)
@@ -158,6 +151,12 @@ class CanonicalAuth
     username if valid_username?(username)
   rescue InvalidLogin
     nil
+  end
+
+  private
+
+  def valid_username?(value)
+    value.is_a?(String) && /\A[a-z0-9][a-z0-9_-]{0,31}\z/.match?(value)
   end
 
   def oidc_client

@@ -7,6 +7,7 @@ module OidcJourney
     allow(provider).to receive(:authenticate).with(attempt, state: "fixture", code: code)
       .and_return([ identity, assurance, "fixture-access-token", 5.minutes.from_now, username ])
     allow(provider).to receive(:active_access_token?).with("fixture-access-token").and_return(true)
+    allow(provider).to receive(:shell_username).with("fixture-access-token", identity.subject, anything).and_return(nil)
     allow(provider).to receive(:revoke).with("fixture-access-token")
   end
 end

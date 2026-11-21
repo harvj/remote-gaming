@@ -33,7 +33,8 @@ class AuthController < ApplicationController
     attempt = AuthLoginAttempt.consume(state: state, browser: session[:oidc_browser])
     raise CanonicalAuth::InvalidLogin unless attempt && code.present? && !error
 
-    identity, assurance, grant, deadline, username = CanonicalAuth.new.authenticate(attempt.provider_attempt(state), state: state, code: code)
+    provider = CanonicalAuth.new
+    identity, assurance, grant, deadline, username = provider.authenticate(attempt.provider_attempt(state), state: state, code: code)
     raise CanonicalAuth::InvalidLogin unless deadline.future?
 
     admin_only = HistoricalUserAdministration.available_on?(request.host) && !ProductionReplay.enabled?
@@ -48,6 +49,7 @@ class AuthController < ApplicationController
     end
     reset_session
     session[:oidc_login] = login.id
+    username ||= provider.shell_username(login.grant_token, identity.subject, login.expires_at)
     session[:oidc_username] = username if username
     redirect_to attempt.destination
   rescue CanonicalAuth::InvalidLogin
