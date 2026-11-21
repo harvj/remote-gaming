@@ -1,4 +1,4 @@
-<nav class="directory-nav" aria-label="Applications">
+<nav class="directory-nav" aria-label="<%= directory_signed_in? ? "Applications" : "Account navigation" %>">
   <% if directory_signed_in? %>
     <details class="directory-apps">
       <summary>Apps <span aria-hidden="true">⌄</span></summary>
@@ -12,6 +12,6 @@
       </ul>
     </details>
   <% else %>
-    <%= link_to "Log in", login_path, class: "directory-login" %>
+    <%= link_to "Log In", login_path, class: "directory-login" %>
   <% end %>
 </nav>
