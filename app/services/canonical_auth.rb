@@ -103,7 +103,9 @@ class CanonicalAuth
     else
       AuthIdentity.active.find_by!(issuer: claims.fetch("iss"), subject: claims.fetch("sub"))
     end
-    [ identity, claims.fetch("acr"), access, [ seconds, SESSION_SECONDS ].min ]
+    username = claims["preferred_username"]
+    username = shell_username(access, claims.fetch("sub")) unless valid_username?(username)
+    [ identity, claims.fetch("acr"), access, [ seconds, SESSION_SECONDS ].min, username ]
   rescue Rack::OAuth2::Client::Error, Faraday::Error, JWT::DecodeError, KeyError, JSON::ParserError, ActiveRecord::RecordNotFound,
       IOError, SocketError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError
     raise InvalidLogin, cause: nil
@@ -112,6 +114,29 @@ class CanonicalAuth
   end
 
   private
+
+  def valid_username?(value)
+    value.is_a?(String) && /\A[a-z0-9][a-z0-9_-]{0,31}\z/.match?(value)
+  end
+
+  def shell_username(token, subject)
+    request = token_request("introspect", token)
+    request.set_form_data(token: token, token_type_hint: "access_token", application_shell_version: "1")
+    result = fetch_json(request.uri, request)
+    evidence = result["application_shell"]
+    return unless result["active"] == true && evidence.is_a?(Hash)
+    return unless evidence.values_at("version", "iss", "aud", "sub", "grant_binding") ==
+      [ "1", @issuer, @client_id, subject, Digest::SHA256.hexdigest(token) ]
+
+    issued, expires = evidence.values_at("iat", "exp")
+    return unless issued.is_a?(Integer) && expires.is_a?(Integer) &&
+      issued <= Time.current.to_i && Time.current.to_i < expires && (expires - issued).between?(1, 60)
+
+    username = evidence["preferred_username"]
+    username if valid_username?(username)
+  rescue InvalidLogin
+    nil
+  end
 
   def oidc_client
     Client.new(identifier: @client_id, secret: @client_secret, redirect_uri: @redirect_uri,

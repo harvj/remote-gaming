@@ -1,17 +1,13 @@
-<nav class="directory-nav" aria-label="Applications">
+<nav class="directory-nav" aria-label="Account navigation">
   <% if directory_signed_in? %>
     <details class="directory-apps">
-      <summary>Apps <span aria-hidden="true">⌄</span></summary>
+      <summary><%= session[:oidc_login] && session[:oidc_username].presence || "Signed in" %> <span aria-hidden="true">⌄</span></summary>
       <ul>
-        <li><a href="https://harvj.com/">harvj.</a></li>
-        <li><a href="https://auth.harvj.com/">Auth</a></li>
-        <li><a href="https://network.harvj.com/">Network</a></li>
-        <li><a href="https://library.harvj.com/">Library</a></li>
-        <li><a href="https://intelligence.harvj.com/">Intelligence</a></li>
-        <li><a href="https://muzeum.fm/">Muzeum</a></li>
+        <li><%= link_to "Account Settings", "https://auth.harvj.com/" %></li>
+        <% if respond_to?(:logout_path) %><li><%= button_to "Log Out", logout_path, method: :delete %></li><% end %>
       </ul>
     </details>
   <% else %>
-    <%= link_to "Log in", login_path, class: "directory-login" %>
+    <%= link_to "Log In", login_path, class: "directory-login" %>
   <% end %>
 </nav>

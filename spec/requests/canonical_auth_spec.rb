@@ -34,7 +34,7 @@ RSpec.describe "Canonical Auth", type: :request do
     URI.decode_www_form(URI(response.location).query).to_h
   end
 
-  def callback(authorization, claims = {})
+  def callback(authorization, shell_username: nil, **claims)
     attributes = { iss: issuer, aud: "gaming", sub: "canonical-subject", nonce: authorization.fetch("nonce"),
       iat: Time.current.to_i, exp: 5.minutes.from_now.to_i, acr: CanonicalAuth::PASSWORD }.merge(claims)
     token = JWT.encode(attributes, key, "RS256", kid: "auth-key")
@@ -46,9 +46,20 @@ RSpec.describe "Canonical Auth", type: :request do
       expect(form.fetch("redirect_uri")).to eq(authorization.fetch("redirect_uri"))
       { "id_token" => token, "access_token" => "fixture-grant", "expires_in" => 300, "token_type" => "Bearer" }
     end
-    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json) do |_provider, uri, _request|
+    allow_any_instance_of(CanonicalAuth).to receive(:fetch_json) do |_provider, uri, request|
       expect(uri.host).to eq(URI(issuer).host)
-      uri.path == "/introspect" ? { "active" => true, "client_id" => "gaming" } : jwks
+      next jwks unless uri.path == "/introspect"
+
+      result = { "active" => true, "client_id" => "gaming" }
+      if shell_username && URI.decode_www_form(request.body).to_h["application_shell_version"] == "1"
+        now = Time.current.to_i
+        result["application_shell"] = {
+          "version" => "1", "iss" => issuer, "aud" => "gaming", "sub" => attributes.fetch(:sub),
+          "grant_binding" => Digest::SHA256.hexdigest("fixture-grant"),
+          "preferred_username" => shell_username, "iat" => now, "exp" => now + 30
+        }
+      end
+      result
     end
     get "/auth/callback", params: { state: authorization.fetch("state"), code: "fixture-code" }
   end
@@ -68,14 +79,15 @@ RSpec.describe "Canonical Auth", type: :request do
     create(:game, key: "modern_art")
     AuthIdentity.create!(issuer: issuer, subject: "canonical-subject", user: profile, evidence_reference: "approval-123")
     expect(start.fetch("code_challenge_method")).to eq("S256")
-    callback(start)
+    callback(start, shell_username: "verified_name")
     expect(response).to have_http_status(:redirect)
     expect(AuthLogin.last.auth_identity.user_id).to eq(profile.id)
     expect(AuthLogin.last.assurance).to eq(CanonicalAuth::PASSWORD)
     get "/users/radio"
     expect(response).to have_http_status(:ok)
     get "/"
-    expect(response.body).to include('class="directory-apps"', 'href="https://intelligence.harvj.com/"')
+    expect(response.body).to include('class="directory-apps"', 'verified_name')
+    expect(response.body).not_to include('href="https://intelligence.harvj.com/"')
     expect(response.body).not_to include('class="directory-login"')
     expect(response.headers["Cache-Control"]).to eq("no-store")
     delete "/logout"
