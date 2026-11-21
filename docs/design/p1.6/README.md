@@ -80,6 +80,22 @@ Both columns are local Chromium captures using the same disposable table layout 
 
 The staging catalog contains color and icon values for all 25 Modern Art definitions. The scrolled captures show the header pinned and the fade at its lower edge. Outside that band the card renderer uses opaque sRGB colors. The browser regression checks the five artist swatches, the same card face in live play and replay, opacity and compositing properties, and the active fade at mobile width.
 
+## Final identifier check
+
+The corrected candidate lets the full tabletop identifier wrap beside the game status. The lobby keeps its existing wrapping behavior, with the session link clear of the date and player badge. These authenticated Chromium captures use a disposable table and the published oak artwork.
+
+| View | Desktop · 1440 CSS px | Mobile · 390 CSS px |
+| --- | --- | --- |
+| Tabletop before | [![Desktop tabletop before the identifier fix](modern-art-tabletop-desktop.png)](modern-art-tabletop-desktop.png) | [![Mobile tabletop with the clipped identifier](modern-art-tabletop-mobile.png)](modern-art-tabletop-mobile.png) |
+| Tabletop after | [![Desktop tabletop with the full identifier](identifier-tabletop-desktop.png)](identifier-tabletop-desktop.png) | [![Mobile tabletop with the complete wrapped identifier](identifier-tabletop-mobile.png)](identifier-tabletop-mobile.png) |
+| Lobby after | [![Desktop lobby session link](identifier-lobby-desktop.png)](identifier-lobby-desktop.png) | [![Mobile lobby session link wrapping clear of the badge and date](identifier-lobby-mobile.png)](identifier-lobby-mobile.png) |
+| Tabletop scrolled after | [![Desktop cards and the sticky navigation fade](identifier-tabletop-desktop-scrolled.png)](identifier-tabletop-desktop-scrolled.png) | [![Mobile cards and the sticky navigation fade](identifier-tabletop-mobile-scrolled.png)](identifier-tabletop-mobile-scrolled.png) |
+
+### Shell acceptance for the final candidate
+
+- **SH-01.** Browser checks cover initial header geometry at 320, 390, 700, 701 and 1440 CSS px, keyboard and touch access, and disclosures in narrow or short viewports. The selected mode is `header_scroll_mode=sticky`. Its header remains pinned above the content-only fade. Signed v1.1.0 requires the header to leave the reading area on scroll and grants Remote Gaming no exception. The selected mode therefore blocks production acceptance under that publication. [Infrastructure PR #8](https://github.com/harvj/infrastructure/pull/8)
+- **SH-06.** Chromium exercises art-load fallback, dark preference, reduced motion with a spatial fade, and forced colors with usable account controls and the fade disabled. The light hover and disclosure treatment measures 9.56:1. The published oak record still specifies a glyph shadow, while the candidate uses shadow-free navigation and footer text. Signed acceptance requires agreement on that Site Art treatment. [Site Art presentation contract](https://github.com/harvj/site-art/blob/544064a/ops/presentation-spec-v1.md)
+
 ## Verification and release dependencies
 
 - The candidate’s recorded application and Chrome suite passed 115 examples. Hosted Chromium checked the directory, Modern Art entry and Pandemic status at 320, 390, 700, 701 and 1440 CSS px. Browser accessibility checks covered keyboard focus and return, reduced motion, forced colors and disclosure in a short viewport. The candidate review recorded 39 passing Infrastructure Shell reference tests. [Candidate CI](https://github.com/harvj/remote-gaming/actions/runs/44959759471)

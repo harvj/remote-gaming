@@ -60,7 +60,19 @@ RSpec.describe "Remote Gaming navigation", type: :system do
     table = GameSession::Create.!(game).subject
     Player::Create.!(identity.user, session: table)
     visit game_path(game.key)
-    expect(page).to have_link(table.uid)
+    link = find_link(table.uid)
+    expect(page.evaluate_script(<<~JS, link)).to eq([ true, true, true ])
+      ((link) => {
+        const row = link.closest(".session-row");
+        const date = row.querySelector(".session-date").getBoundingClientRect();
+        const badge = row.querySelector(".badge").getBoundingClientRect();
+        const bounds = row.getBoundingClientRect();
+        const lines = Array.from(link.getClientRects());
+        const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+        return [lines.length > 1, lines.every(line => line.right <= bounds.right),
+          lines.every(line => !overlaps(line, badge) && !overlaps(line, date))];
+      })(arguments[0])
+    JS
     click_button username
     expect(page).to have_link("Remote Gaming settings")
     expect(page).to have_link("Account Settings", href: "#{issuer}/account?client_id=gaming")

@@ -90,7 +90,7 @@
   {#if actionPrompt}<p class="panel ghost" aria-live="polite">{actionPrompt}</p>{/if}
 
   <header class="page-header">
-    <h2 class="page-title"><a href={session.game.uri}>{session.game.name}</a> · <span class="name">{session.uid}</span></h2>
+    <h2 class="page-title session-title"><a href={session.game.uri}>{session.game.name}</a> · <span class="name">{session.uid}</span></h2>
     {#if session.canStart}
       <button class="btn btn-primary" disabled={busy} onclick={() => submit(session.uri)}>
         {session.nextActionPrompt}
@@ -164,3 +164,7 @@
       onrecord={(observation) => submit(session.physical.path, { observation }, "POST")} />
   {/if}
 </div>
+
+<style>
+  .session-title { min-width: 0; overflow-wrap: anywhere; }
+</style>

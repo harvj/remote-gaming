@@ -49,6 +49,21 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
       .to eq(palette.values.map { |rgb| "rgb(#{rgb.join(', ')})" })
     screenshot("live-desktop")
 
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 1, mobile: true)
+    expect(page).to have_css(".session-title .name", exact_text: table.uid)
+    expect(page.evaluate_script(<<~JS)).to eq([ 390, true, true ])
+      (() => {
+        const title = document.querySelector(".session-title");
+        const status = title.nextElementSibling.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(title.querySelector(".name"));
+        const lines = Array.from(range.getClientRects());
+        return [document.documentElement.scrollWidth, lines.length > 1,
+          lines.every(line => line.left >= 0 && line.right <= status.left)];
+      })()
+    JS
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 1440, height: 1250, deviceScaleFactor: 1, mobile: false)
+
     visit session_replay_path(table.uid, frame: after.sequence)
     within(board) do
       expect(page).to have_css("#{auction} #{face}")
