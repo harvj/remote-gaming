@@ -177,3 +177,13 @@ Three browser profiles connected to the hosted staging service through an SSH tu
 For the initial three-host rollout, run the current release’s loopback smoke on its first deployment. Then use Capistrano to roll back to the recorded, schema-compatible P1.2b release and verify its own loopback smoke. The predecessor serves Modern Art on the staging apex, so complete this rehearsal before exposing the new Caddy site.
 
 To deploy the three-host release again, follow the Capistrano runbook’s inactive-candidate procedure. Verify the predecessor is active and the candidate is not named in the active release’s rollback receipt. Move only that inactive candidate out of the releases directory to a retained location on the same filesystem, then run `cap staging deploy` with the exact same published SHA and migrations disabled. The helper will build a fresh release, verify another backup, and record the predecessor again.
+
+### Canonical navigation and P1.6 visual review
+
+The staging directory lives at `https://staging.radioactivita.com/directory`. Its root redirects there. Modern Art uses `https://modern-art.staging.radioactivita.com/` for its public entry and authenticated lobby. Pandemic has its own status root. The staging catalogue does not expose private game or player data. Table, replay and experimental endpoints stay on the Modern Art host behind their existing authorization.
+
+Existing `/staging/directory` and `/staging/pandemic` bookmarks redirect to their respective hosts. The Modern Art host redirects `/modern_art` to its root. The legacy `/signed-out` page remains available. Auth callbacks are only routed on the registered Modern Art host and are never redirected. Login starts on the clicked host, then forwards to the registered host before creating state. Login and logout land on the Modern Art host, and the existing host-only secure cookie is never shared with the directory or Pandemic hosts.
+
+The wordmark always returns to the explicit directory origin. Staging shows `Signed in` when the provider omits verified display identity. The Auth Shell eligibility contract excludes staging clients, so application code cannot use that endpoint to recover `jim`. A supported verified claim from Auth is needed for the staging control to show that exact name. The historical profile is not a display-identity source.
+
+The sticky header and gradient are staging-only visual previews. The signed Shell v1.1.0 baseline requires the header to leave the reading area as the page scrolls. Review the preview with Infrastructure before any adoption outside staging. The preview uses the existing Site Art publication; it adds no artwork to the repo.

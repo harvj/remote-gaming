@@ -37,19 +37,24 @@ for host in "$directory" "$pandemic"; do
   [[ $(location "$host" /login) == "https://$modern/login?"* ]]
   [[ $(status "$host" /s/staging-probe -H 'Accept: application/json') == 404 ]]
 done
-for host in "$directory" "$modern" "$pandemic"; do
+[[ $(status "$directory" /) == 302 ]]
+[[ $(location "$directory" /) == */directory ]]
+[[ $(status "$directory" /directory) == 200 ]]
+for host in "$modern" "$pandemic"; do
   [[ $(status "$host" / -H 'Accept: text/html') == 200 ]]
+  [[ $(status "$host" /directory) == 404 ]]
 done
 [[ $(status "$modern" /pandemic) == 404 ]]
 [[ $(status "$modern" /s/staging-probe -H 'Accept: application/json') == 401 ]]
 
 [[ $(status "$modern" /login) == 302 ]]
 [[ $(location "$modern" /login) == https://auth.harvj.com/authorize\?* ]]
-for path in /staging/directory /staging/pandemic; do
-  [[ $(status "$modern" "$path" -H 'Accept: text/html') == 302 ]]
-  [[ $(location "$modern" "$path" -H 'Accept: text/html') == */login ]]
-  [[ $(status "$modern" "$path" -H 'Accept: application/json') == 401 ]]
-done
+[[ $(location "$modern" /staging/directory) == "https://$directory/directory" ]]
+[[ $(location "$modern" /staging/pandemic) == "https://$pandemic/" ]]
+[[ $(location "$modern" /modern_art) == */ ]]
+[[ $(status "$modern" / -H 'Accept: application/json') == 401 ]]
+[[ $(status "$directory" /auth/callback) == 404 ]]
+[[ $(status "$pandemic" /auth/callback) == 404 ]]
 [[ $(status "$modern" /auth/callback) == 401 ]]
 [[ $(status "$modern" /login -X POST) != 200 ]]
 page=$(request "$modern" /dummy/login -f)

@@ -14,7 +14,7 @@ RSpec.describe "Game directory", type: :request do
       expect(page.at_css("#site-art-icon")["data-art-id"]).to eq("remote-gaming.favicon")
       expect(page.at_css("main").text).not_to include("What are we playing?")
       expect(response.body).to include('href="https://arkham.radioactivita.com/"')
-      expect(page.at_css(".directory-wordmark")["href"]).to eq("/")
+      expect(page.at_css(".directory-wordmark")["href"]).to eq("https://#{host}/")
       expect(page.at_css(".directory-nav a").text).to eq("Log In")
       expect(page.at_css(".directory-nav a")["href"]).to eq("/login")
       expect(page.at_css("footer a").text).to eq("Jim Harvey")
@@ -43,7 +43,7 @@ RSpec.describe "Game directory", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("<h1>#{title}</h1>", "Not yet available")
-      expect(Nokogiri::HTML5(response.body).at_css(".directory-wordmark")["href"]).to eq("/")
+      expect(Nokogiri::HTML5(response.body).at_css(".directory-wordmark")["href"]).to eq("https://radioactivita.com/")
     end
   end
 

@@ -1,7 +1,7 @@
 class DirectoryController < ActionController::Base
   layout "directory"
   helper_method :directory_signed_in?
-  before_action :keep_signed_in_navigation_private, only: %i[show staging staging_content]
+  before_action :keep_signed_in_navigation_private, only: %i[show staging]
 
   def show
     directory = GameDirectory.new
@@ -20,27 +20,16 @@ class DirectoryController < ActionController::Base
 
   def staging
     response.headers["Cache-Control"] = "no-store"
-    if request.host == ModernArtStaging::GAME_HOST && directory_signed_in?
-      return redirect_to "/modern_art"
-    end
-
-    @title = "Remote Gaming staging"
-    @games = GameDirectory.new.games.select { |game| %w[modernart pandemic].include?(game.fetch(:slug)) }
-    render :show
+    render_staging(pandemic: request.path_parameters[:staging_page] == "pandemic")
   end
 
   def staging_content
-    response.headers["Cache-Control"] = "no-store"
-    return head :not_found if session.key?(:dummy_browser)
-
-    unless directory_signed_in?
-      return head :unauthorized unless request.format.html?
-
-      session[:user_return_to] = request.path
-      return redirect_to "/login"
+    destination = if request.path_parameters[:staging_page] == "pandemic"
+      "https://#{ModernArtStaging::PANDEMIC_HOST}/"
+    else
+      "https://#{ModernArtStaging::DIRECTORY_HOST}/directory"
     end
-
-    render_staging(pandemic: request.path_parameters[:staging_page] == "pandemic")
+    redirect_to destination, allow_other_host: true
   end
 
   def ready
@@ -55,7 +44,7 @@ class DirectoryController < ActionController::Base
 
   def render_staging(pandemic:)
     directory = GameDirectory.new
-    @directory_url = "https://#{ModernArtStaging::DIRECTORY_HOST}/"
+    @directory_url = NavigationLogin.directory_home(request.host)
     @game_page = pandemic
     @title = @game_page ? "Pandemic" : "Remote Gaming staging"
     @games = directory.games.filter_map do |game|

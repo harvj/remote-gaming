@@ -45,7 +45,21 @@ Rails.application.routes.draw do
   end
 
   if private_staging
-    root "directory#staging", constraints: ->(request) { ModernArtStaging::HOSTS.include?(request.host) }, as: :root
+    constraints host: ModernArtStaging::DIRECTORY_HOST do
+      root to: redirect("/directory", status: 302), as: :root
+      get "directory", to: "directory#staging", as: :staging_directory
+    end
+    constraints host: ModernArtStaging::GAME_HOST do
+      root "games#show", as: :staging_modern_art
+      get "modern_art", to: redirect("/", status: 302)
+    end
+    constraints host: ModernArtStaging::PANDEMIC_HOST do
+      root "directory#staging", defaults: { staging_page: "pandemic" }, as: :staging_pandemic
+    end
+    constraints ->(request) { ModernArtStaging::HOSTS.include?(request.host) } do
+      get "staging/directory", to: "directory#staging_content"
+      get "staging/pandemic", to: "directory#staging_content", defaults: { staging_page: "pandemic" }
+    end
   else
     constraints ->(request) {
       GameDirectory::DIRECTORY_HOSTS.include?(request.host) ||
@@ -65,8 +79,6 @@ Rails.application.routes.draw do
   gameplay_host = ->(request) { !private_staging || request.host == ModernArtStaging::GAME_HOST }
   constraints gameplay_host do
     if private_staging
-      get "staging/directory", to: "directory#staging_content", defaults: { staging_page: "directory" }
-      get "staging/pandemic", to: "directory#staging_content", defaults: { staging_page: "pandemic" }
       get "signed-out", to: "auth#signed_out", as: :staging_signed_out
     end
 
@@ -119,7 +131,6 @@ Rails.application.routes.draw do
     patch "s/:uid" => "game_sessions#update"
     post "s/:uid/observations" => "game_sessions#observe", as: :session_observations
 
-    game_constraints = private_staging ? { game_key: ModernArtStaging::GAME_KEY } : {}
-    get ":game_key" => "games#show", as: :game, constraints: game_constraints
+    get ":game_key" => "games#show", as: :game unless private_staging
   end
 end

@@ -132,9 +132,9 @@
   .tabletop {
     --line: #b79c714d;
     color: #fff6e7;
-    background: #2b241d;
+    background: var(--oak-outer, #2b241d);
     border: 1px solid #867052;
-    border-radius: .8rem;
+    border-radius: var(--oak-radius-container, .8rem);
     padding: clamp(.7rem, 2.25vw, 1.35rem);
     font-family: "IBM Plex Sans", system-ui, sans-serif;
   }
@@ -150,9 +150,9 @@
   .artists li { display: flex; align-items: center; gap: .35rem; padding: .2rem .4rem; font-size: .74rem; }
   .swatch { width: .53rem; height: .53rem; border-radius: 50%; }
   .zones { display: grid; grid-template-columns: minmax(12rem, .8fr) minmax(0, 2fr); gap: .65rem; margin-top: .9rem; }
-  .zone, .seat { min-width: 0; border: 1px solid var(--line); border-radius: .5rem; background: #342b22; padding: .7rem; }
+  .zone, .seat { min-width: 0; border: 1px solid var(--line); border-radius: var(--oak-radius-section, .5rem); background: var(--oak-nested, #342b22); padding: .7rem; }
   .zone p, .cards, .backs { margin-top: .48rem; }
-  .auction { background: #473929; }
+  .auction { background: var(--oak-accent, #473929); }
   .sale { display: block; font-size: .7rem; margin-top: .25rem; }
   .seats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; margin-top: .65rem; }
   .seat.current { border-color: #e0b975; }

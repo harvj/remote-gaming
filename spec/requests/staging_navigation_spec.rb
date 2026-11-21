@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Staging navigation", type: :request do
-  it "keeps the staging directory protected and renders local navigation on the canonical host" do
+  it "keeps the three staging hosts canonical and the authenticated game on its registered callback host" do
     allow(Rails.env).to receive(:production?).and_return(true)
     allow(ModernArtStaging).to receive_messages(enabled?: true, owner_subject: "fixture-owner")
     allow(ENV).to receive(:[]).and_call_original
@@ -14,13 +14,31 @@ RSpec.describe "Staging navigation", type: :request do
 
     host! ModernArtStaging::DIRECTORY_HOST
     get "/"
+    expect(response).to redirect_to("/directory")
+    get "/directory"
     expect(response).to have_http_status(:ok)
+    directory = Nokogiri::HTML5(response.body)
+    expect(directory.at_css(".directory-wordmark")["href"]).to eq("https://#{ModernArtStaging::DIRECTORY_HOST}/")
+    expect(directory.at_css('a[href="https://modern-art.staging.radioactivita.com/"]')).to be_present
+    get "/auth/callback", params: { state: "fixture", code: "fixture" }
+    expect(response).to have_http_status(:not_found)
     get "/login"
-    expect(response).to redirect_to("https://#{game_host}/login?return_to=%2Fstaging%2Fdirectory")
+    expect(response).to redirect_to("https://#{game_host}/login?return_to=%2F")
 
     host! game_host
     get "/staging/directory"
-    expect(response).to redirect_to("/login")
+    expect(response).to redirect_to("https://#{ModernArtStaging::DIRECTORY_HOST}/directory")
+    get "/staging/pandemic"
+    expect(response).to redirect_to("https://#{ModernArtStaging::PANDEMIC_HOST}/")
+    get "/modern_art"
+    expect(response).to redirect_to("/")
+    get "/directory"
+    expect(response).to have_http_status(:not_found)
+    get "/"
+    expect(response.body).to include("<h1>Modern Art</h1>")
+    expect(response.body).not_to include("directory-cards", "games-show-data")
+    get "/", as: :json
+    expect(response).to have_http_status(:unauthorized)
     get "/signed-out"
     expect(response).to have_http_status(:ok)
     signed_out = Nokogiri::HTML5(response.body)
@@ -38,29 +56,24 @@ RSpec.describe "Staging navigation", type: :request do
     get "/login"
     expect(response).to redirect_to("https://auth.harvj.com/authorize")
     get "/auth/callback", params: { state: "fixture", code: "fixture" }
-    expect(response).to redirect_to("/staging/directory")
-    get "/staging/directory"
-    directory = Nokogiri::HTML5(response.body)
-    expect(directory.at_css(".directory-wordmark")["href"]).to eq("/")
-    expect(directory.at_css(".directory-apps summary").text).to include("auth_jim")
-    expect(directory.css(".directory-apps a").map { |link| link["href"] }).to eq(
-      [ "https://auth.harvj.com/account?client_id=staging-fixture-client" ]
-    )
-    expect(directory.at_css(".directory-login")).to be_nil
-    expect(directory.at_css("footer a")["href"]).to eq("https://harvj.com")
-
+    expect(response).to redirect_to("/")
     get "/"
-    expect(response).to redirect_to("/modern_art")
-    follow_redirect!
+    expect(response).to have_http_status(:ok)
     game = Nokogiri::HTML5(response.body)
     navbar = JSON.parse(game.at_css("#navbar-data").text)
+    expect(navbar.fetch("directoryHome")).to eq("https://#{ModernArtStaging::DIRECTORY_HOST}/")
+    expect(navbar.fetch("currentGame")).to include("uri" => "/", "current" => true)
     expect(navbar.fetch("currentUser")).to include("name" => "auth_jim", "logoutPath" => "/logout",
       "accountPath" => "https://auth.harvj.com/account?client_id=staging-fixture-client")
     expect(response.headers["Cache-Control"]).to eq("no-store")
     expect(game.at_css("footer a").text).to eq("Jim Harvey")
     delete "/logout"
-    expect(response).to redirect_to("/signed-out")
+    expect(response).to redirect_to("/")
     expect(AuthLogin.count).to eq(0)
+    host! ModernArtStaging::PANDEMIC_HOST
+    get "/"
+    expect(response.body).to include("<h1>Pandemic</h1>")
+    expect(response.body).not_to include("directory-cards", "games-show-data")
   ensure
     allow(Rails.env).to receive(:production?).and_call_original
     Rails.application.reload_routes!

@@ -137,6 +137,29 @@ RSpec.describe "Signed Application Shell acceptance", type: :system do
     browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
   end
 
+  it "keeps the oak account control readable and the staging header usable while scrolling" do
+    allow(ModernArtStaging).to receive_messages(enabled?: true, owner_subject: "owner")
+    create(:game, :modern_art)
+    sign_in
+    [ 320, 390, 700, 701, 1440 ].each do |width|
+      viewport(width)
+      visit root_path
+      trigger = find("summary", text: username)
+      expect_geometry(width)
+      trigger.hover
+      expect(trigger.style("color", "background-color")).to eq(
+        "color" => "rgba(255, 243, 222, 1)", "background-color" => "rgba(75, 49, 32, 1)"
+      )
+      browser.execute_script("document.querySelector('main').style.minHeight = '150vh'; window.scrollTo(0, 400)")
+      expect(page.evaluate_script("document.querySelector('header').getBoundingClientRect().top")).to eq(0)
+      expect(page.evaluate_script("getComputedStyle(document.querySelector('header'), '::after').pointerEvents")).to eq("none")
+      trigger.send_keys(:space)
+      expect(page).to have_link("Account Settings")
+      browser.action.send_keys(:escape).perform
+      expect(page).to have_css("summary:focus", text: username)
+    end
+  end
+
   def accessible_node(name)
     browser.execute_cdp("Accessibility.getFullAXTree").fetch("nodes").find do |node|
       node.dig("name", "value") == name && !node.fetch("ignored")

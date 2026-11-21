@@ -11,7 +11,7 @@ RSpec.describe "Production login navigation", type: :request do
       expect(response).to have_http_status(:ok)
       page = Nokogiri::HTML5(response.body)
       expect(page.at_css("header .directory-wordmark").text.strip).to eq("remote-gaming.")
-      expect(page.at_css("header .directory-wordmark")["href"]).to eq("/")
+      expect(page.at_css("header .directory-wordmark")["href"]).to eq(host == "gaming.harvj.com" ? "https://gaming.harvj.com/" : "https://radioactivita.com/")
       login = page.at_css('header nav[aria-label="Account navigation"] .directory-login')
       expect(login.text).to eq("Log In")
       expect(login["href"]).to eq("/login")
