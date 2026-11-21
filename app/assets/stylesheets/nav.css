@@ -36,10 +36,6 @@
   cursor: pointer;
 }
 
-.gear-button:hover {
-  background: var(--panel-hover);
-}
-
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -64,11 +60,6 @@
   background: transparent;
   border: none;
   text-align: left;
-}
-
-.dropdown-item:hover {
-  background: var(--panel-hover);
-  color: var(--text);
 }
 
 .dropdown-form {

@@ -12,6 +12,8 @@
   --oak-radius-container: 12px;
   --oak-radius-section: 8px;
   --oak-radius-control: 6px;
+  --oak-nav-hover: #e3e9e6;
+  --oak-nav-hover-ink: #243b44;
   --oak-focus: #ffdf9e;
   --bg: var(--oak-floor);
   --text: var(--oak-text);
@@ -40,7 +42,6 @@
   background: var(--oak-outer);
   color: var(--oak-text);
   border-radius: var(--oak-radius-container);
-  text-shadow: none;
 }
 
 .oak-shell .directory-content { margin-inline: var(--shell-inset-left) var(--shell-inset-right); padding-inline: clamp(12px, 3vw, 30px); }
@@ -65,17 +66,20 @@
   border-radius: var(--oak-radius-section);
 }
 
+.oak-shell .shell-header-row :is(a, button, summary) {
+  text-decoration: none;
+  border-radius: var(--oak-radius-control);
+}
+
 .oak-shell .shell-panel :is(a, button),
 .oak-shell .shell-header-row :is(.directory-login, .nav-login, .shell-trigger--identity) {
   color: var(--oak-text);
-  border-radius: var(--oak-radius-control);
-  text-shadow: none;
 }
 
-.oak-shell .shell-header-row :is(.directory-login, .nav-login, .shell-trigger--identity, .shell-panel a, .shell-panel button):is(:hover, :active, :focus-visible),
+.oak-shell .shell-header-row :is(a, button, summary):is(:hover, :active, :focus-visible),
 .oak-shell .shell-header-row :is(details[open] > summary, button[aria-expanded="true"]) {
-  color: var(--oak-text);
-  background: #4b3120;
+  color: var(--oak-nav-hover-ink);
+  background: var(--oak-nav-hover);
 }
 
 .oak-shell :is(a, button, summary):focus-visible {

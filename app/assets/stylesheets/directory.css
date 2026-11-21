@@ -66,7 +66,6 @@
   text-decoration: none;
 }
 
-.directory-apps :is(a, button):hover { background: #e3e9e6; }
 .directory-apps :is(a, button):focus-visible { outline-offset: -2px; }
 
 .directory-content {
@@ -94,12 +93,10 @@
   border-radius: 0.375rem;
 }
 
-.directory-login:hover { background: #e3e9e6; }
 
 @media (forced-colors: none) {
   .directory-site[data-site-art-background] [data-art-role] {
     color: var(--art-foreground, var(--directory-ink));
-    text-shadow: var(--art-text-shadow, none);
   }
 
   .directory-site[data-site-art-background] .directory-content[data-art-role] {
@@ -108,20 +105,13 @@
 
   .directory-site[data-site-art-background] .directory-cards li {
     color: var(--directory-ink);
-    text-shadow: none;
   }
 
   .directory-site[data-site-art-background] :is(.directory-content > p a, .replay-content a, .directory-wordmark span) {
     color: inherit;
   }
 
-  .directory-site[data-site-art-background] .directory-login:hover {
-    color: var(--directory-ink);
-  }
 
-  .directory-site[data-site-art-background] .directory-apps > .directory-account-controls {
-    text-shadow: none;
-  }
 }
 
 
