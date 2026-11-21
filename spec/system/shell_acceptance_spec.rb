@@ -159,7 +159,10 @@ RSpec.describe "Signed Application Shell acceptance", type: :system do
       browser.action.send_keys(:escape).perform
       expect(page).to have_css("summary:focus", text: username)
       browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-reduced-motion", value: "reduce" } ])
+      expect(page.evaluate_script("getComputedStyle(document.querySelector('main')).maskImage")).to include("linear-gradient")
+      browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "forced-colors", value: "active" } ])
       expect(page.evaluate_script("getComputedStyle(document.querySelector('main')).maskImage")).to eq("none")
+      expect(page.evaluate_script("document.querySelector('header').getBoundingClientRect().top")).to eq(0)
       browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
     end
   end

@@ -91,18 +91,21 @@
   background-color: rgb(32 22 15 / 49%);
 }
 
-.oak-shell :is(main, main :focus-visible, footer :focus-visible) {
+.oak-shell :is(main, main [id], main :focus-visible, footer [id], footer :focus-visible) {
   scroll-margin-top: calc(var(--shell-header-height, 70px) + 24px);
 }
 
-@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+@media (forced-colors: none) {
   .oak-shell [data-shell-fading]:not(:has(:focus-visible)):not(:focus-visible) {
     mask-image: linear-gradient(to bottom, transparent var(--shell-cover), black calc(var(--shell-cover) + 24px));
   }
 }
 
 @media (max-height: 300px) {
-  .oak-shell > header:has(details[open], [aria-expanded="true"]) { position: relative; }
+  .oak-shell > header .shell-panel.shell-panel {
+    max-height: max(64px, calc(100dvh - 140px));
+    overflow-y: auto;
+  }
 }
 
 @media (forced-colors: active) {
