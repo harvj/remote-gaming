@@ -106,10 +106,11 @@ RSpec.describe "Remote Gaming navigation", type: :system do
       end
     end
 
-    expires_at = -> { 1.second.from_now.to_i }
+    expires_at = -> { 2.seconds.from_now.to_i }
     click_button username
     click_button username
-    expect(page).to have_no_css('[aria-label="Applications"]', wait: 2)
+    expect(page).to have_css('[aria-label="Applications"]')
+    expect(page).to have_no_css('[aria-label="Applications"]', wait: 3)
     expect(page).to have_link("Account Settings", href: "#{issuer}/account?client_id=gaming")
   end
 
