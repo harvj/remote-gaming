@@ -90,7 +90,9 @@ RSpec.describe "Recorded human Modern Art", type: :request do
       .to include("open", "once_around", "sealed", "fixed_price", "fixed_offer", "pair")
 
     session = GameSession.find_by!(uid: table.uid)
-    delete session_dummy_path(table.uid, session.players.joins(:dummy_access).first.id)
+    alex = session.players.joins(:user, :dummy_access).find_by!(users: { name: "Alex" })
+    delete session_dummy_path(table.uid, alex.id)
+    expect(response).to have_http_status(:see_other)
     peers.first.patch endpoint, params: { command: "pass", revision: 4 }, as: :json
     expect(peers.first.response).to have_http_status(:not_found)
   end
