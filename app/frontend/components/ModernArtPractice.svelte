@@ -131,7 +131,7 @@
 {#if unavailable}
   <p class="panel" role="alert">This private table is no longer available. <a href={lobbyUrl}>{replay ? "Return to live table" : board.viewerSeat != null ? "Return to lobby" : "Return to practice tables"}</a>.</p>
 {:else}
-  <article class="practice tabletop" aria-label="Modern Art tabletop">
+  <article class="practice tabletop" class:complete={board.phase === "complete"} aria-label="Modern Art tabletop">
     <header class="heading">
       <div>
         {#if lobbyUrl}<a href={lobbyUrl}>{board.historical ? "Modern Art lobby" : replay ? "Live table" : board.viewerSeat != null ? "Modern Art lobby" : "Practice tables"}</a>{/if}
@@ -388,13 +388,13 @@
   .winner { font-size: 1.4rem; }
   .standings { list-style: none; margin: .6rem 0 1rem; padding: 0; }
   .standings li { display: flex; justify-content: space-between; padding: .45rem 0; border-bottom: 1px solid #ae93715c; }
-  .practice:has(.standings) { grid-template-areas: "title title" "seasons seasons" "auction market" "activity activity"; }
+  .practice.complete { grid-template-areas: "title title" "seasons seasons" "auction market" "activity activity"; }
   @media (max-width: 700px) {
     .practice {
       grid-template-columns: minmax(0, 1fr);
       grid-template-areas: "title" "seasons" "auction" "hand" "seats" "market" "activity";
     }
-    .practice:has(.standings) { grid-template-areas: "title" "seasons" "auction" "market" "activity"; }
+    .practice.complete { grid-template-areas: "title" "seasons" "auction" "market" "activity"; }
     .seats { grid-template-columns: 1fr; }
   }
 </style>

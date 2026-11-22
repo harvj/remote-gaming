@@ -177,7 +177,10 @@ class GameSession < ApplicationRecord
   end
 
   def historical_modern_art?
-    game.key == "modern_art" && (completed? || !replayable?)
+    return false unless game.key == "modern_art"
+    return true unless replayable?
+
+    completed? && (completed_at < 2.months.ago || players.where(score: nil).none?)
   end
 
   def digital_modern_art

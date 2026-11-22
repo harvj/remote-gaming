@@ -57,7 +57,11 @@ class GameSessionsController < ApplicationController
       response.headers["Cache-Control"] = "private, no-store"
       representer = Representers::GameSession.new(@game_session, viewer: current_user)
       @historical_board = representer.historical_board
-      return render json: @historical_board if request.format.json?
+      if request.format.json?
+        return render json: { status: "success", content: {
+          session: session_view(@game_session).merge(historicalTabletop: @historical_board)
+        } }
+      end
       return render :historical
     end
     respond_to do |format|
