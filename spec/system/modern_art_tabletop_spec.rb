@@ -32,6 +32,10 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
     board = "section[aria-label='Modern Art tabletop']"
     auction = "section[aria-label='Auction table']"
     face = "[data-card-id='#{card.id}']"
+    expect(page).to have_text("Not recorded")
+    click_button "Game Rules"
+    expect(page).to have_css("dialog[open] h2", text: "Modern Art rules")
+    find('dialog button[aria-label="Close game rules"]').click
     within(board) do
       expect(page).to have_css("#{auction} #{face}", text: "#{card.card.name.titleize}")
       expect(page).to have_css("#{face} .auction-type", text: card.card.value.titleize)
@@ -65,12 +69,20 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
     page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 1440, height: 1250, deviceScaleFactor: 1, mobile: false)
 
     visit session_replay_path(table.uid, frame: after.sequence)
+    click_button "Game Rules"
+    expect(page).to have_css("dialog[open] h2", text: "Modern Art rules")
+    find('dialog button[aria-label="Close game rules"]').click
+    expect(page).to have_text("Not recorded")
     within(board) do
       expect(page).to have_css("#{auction} #{face}")
       expect(page).to have_no_css("button[data-card-id]")
       expect(page).to have_no_css(hidden_ids.map { |id| "[data-card-id='#{id}']" }.join(","))
     end
     expect(card_style(find("#{auction} #{face}"))).to eq(live_style)
+    screenshot("replay-bids-not-recorded-desktop")
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 1, mobile: true)
+    screenshot("replay-bids-not-recorded-mobile")
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 1440, height: 1250, deviceScaleFactor: 1, mobile: false)
     screenshot("replay-checkpoint-desktop")
 
     visit session_replay_path(table.uid, frame: before.sequence)

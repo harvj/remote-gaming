@@ -2,7 +2,7 @@
 <script id="practice-table-data" type="application/json">
   <%= raw json_escape({
     board: @board, uid: @table.uid, endpoint: modern_art_practice_table_path(@table.uid),
-    rulesUrl: rules_modern_art_practice_tables_path, lobbyUrl: modern_art_practice_tables_path,
+    lobbyUrl: modern_art_practice_tables_path,
     token: form_authenticity_token
   }.to_json) %>
 </script>
@@ -11,3 +11,5 @@
   <summary>Remove this disposable table</summary>
   <%= button_to "Delete practice table", modern_art_practice_table_path(@table.uid), method: :delete %>
 </details>
+
+<%= render "shared/modern_art_rules_drawer" %>

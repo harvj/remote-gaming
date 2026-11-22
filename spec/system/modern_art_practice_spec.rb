@@ -40,6 +40,7 @@ RSpec.describe "Modern Art private practice", type: :system do
     metadata = JSON.parse(find("#practice-table-data", visible: false).native.attribute("textContent"))
     expect(metadata.fetch("board").fetch("players").drop(1).any? { |player| player.key?("cash") }).to be(false)
     path = current_path
+    verify_rules_drawer(browser)
     screenshot(browser, 1440, "hand-desktop")
     screenshot(browser, 390, "hand-mobile")
 
@@ -135,6 +136,50 @@ RSpec.describe "Modern Art private practice", type: :system do
     expect(ModernArtPracticeTable.exists?(in_table.id)).to be(false)
   ensure
     browser&.execute_cdp("Emulation.clearDeviceMetricsOverride")
+  end
+
+  def verify_rules_drawer(browser)
+    browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-reduced-motion", value: "reduce" } ])
+    [ 320, 390, 700, 701, 1440 ].each do |width|
+      browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: width, height: 740,
+        deviceScaleFactor: 1, mobile: width <= 700)
+      trigger = find_button("Game Rules")
+      trigger.send_keys(:enter)
+      dialog = find("dialog[open]")
+      expect(dialog).to have_css("h2", text: "Game completion", visible: :all)
+      measurements = page.evaluate_script(<<~JS)
+        (() => {
+          const box = document.querySelector("dialog").getBoundingClientRect();
+          const content = document.querySelector(".modern-art-rules-content");
+          return [Math.round(box.right), Math.round(box.height), Math.round(box.width),
+            getComputedStyle(document.querySelector("dialog")).animationName,
+            content.scrollHeight > content.clientHeight];
+        })()
+      JS
+      expect(measurements).to eq([ width, 740, width <= 700 ? (width * 0.9).round : 448, "none", true ])
+      expect(dialog).to have_css("button:focus", text: "×")
+      if [ 390, 1440 ].include?(width) && ENV["PRACTICE_SCREENSHOTS"]
+        viewport = width == 390 ? "mobile" : "desktop"
+        page.evaluate_async_script("document.fonts.ready.then(arguments[0])")
+        page.save_screenshot(File.join(ENV.fetch("PRACTICE_SCREENSHOTS"), "rules-drawer-#{viewport}.png"))
+      end
+      4.times { browser.action.send_keys(:tab).perform }
+      expect(page.evaluate_script("document.querySelector('dialog').contains(document.activeElement)")).to be(true)
+      browser.action.send_keys(:escape).perform
+      expect(page).to have_no_css("dialog[open]")
+      expect(page).to have_css("button[data-modern-art-rules-trigger]:focus")
+      if width == 390
+        trigger.click
+        expect(page).to have_css("dialog[open]")
+        browser.execute_cdp("Input.dispatchTouchEvent", type: "touchStart", touchPoints: [ { x: 8, y: 120 } ])
+        browser.execute_cdp("Input.dispatchTouchEvent", type: "touchEnd", touchPoints: [])
+        expect(page).to have_no_css("dialog[open]")
+        expect(page).to have_css("button[data-modern-art-rules-trigger]:focus")
+      end
+    end
+    browser.execute_cdp("Emulation.setEmulatedMedia", features: [])
+    browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 1440, height: 940,
+      deviceScaleFactor: 1, mobile: false)
   end
 
   def screenshot(browser, width, name)

@@ -16,3 +16,14 @@ The legacy tabletop records card plays and observations from physical auctions. 
 Sign into the staging Modern Art lobby as the owner and choose **Modern Art practice tables**. Start a table or resume one from the list. The table provides phase guidance and a separate rules reference. Use **Remove this disposable table** to delete its state and command history.
 
 The practice link, routes, and Cable subscription require the designated private staging host, verified owner login, and staging opt-in. The feature uses its own table and does not affect an existing physical or historical session.
+
+## Shared game rules and historical market
+
+These Chromium captures use disposable practice and historical replay fixtures.
+
+| View | Desktop | Mobile |
+| --- | --- | --- |
+| Game Rules drawer | [![Rules drawer over the desktop tabletop](rules-drawer-desktop.png)](rules-drawer-desktop.png) | [![Rules drawer over the mobile tabletop](rules-drawer-mobile.png)](rules-drawer-mobile.png) |
+| Replay and missing bid history | [![Historical replay with bid history marked Not recorded](replay-bids-not-recorded-desktop.png)](replay-bids-not-recorded-desktop.png) | [![Mobile historical replay with the recorded market](replay-bids-not-recorded-mobile.png)](replay-bids-not-recorded-mobile.png) |
+
+[Rules audit and historical compatibility](rules-and-history.md)

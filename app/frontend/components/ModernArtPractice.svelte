@@ -3,8 +3,10 @@
   import { cable } from "../lib/cable"
   import { artistColors } from "../lib/modernArtPalette"
   import ModernArtCard from "./ModernArtCard.svelte"
+  import ModernArtSeasonRail from "./ModernArtSeasonRail.svelte"
+  import ModernArtMarket from "./ModernArtMarket.svelte"
 
-  let { board: initial, uid, endpoint, rulesUrl, lobbyUrl, token } = $props()
+  let { board: initial, uid, endpoint, lobbyUrl, token } = $props()
   const initialBoard = () => initial
   let board = $state(initialBoard())
   let amount = $state("")
@@ -106,14 +108,10 @@
         <a href={lobbyUrl}>Practice tables</a>
         <h1>Modern Art</h1>
       </div>
-      <a class="rules" href={rulesUrl}>Rules reference</a>
+      <button type="button" data-modern-art-rules-trigger aria-haspopup="dialog" aria-controls="modern-art-rules-drawer">Game Rules</button>
     </header>
 
-    <ol class="seasons" aria-label="Seasons">
-      {#each [1, 2, 3, 4] as season}
-        <li aria-current={season === board.season ? "step" : undefined} class:current={season === board.season}>Season {season}</li>
-      {/each}
-    </ol>
+    <div class="seasons"><ModernArtSeasonRail season={board.season} /></div>
 
     <section class="auction" aria-labelledby="auction-heading">
       <p class="turn">{board.turn == null ? (board.auction ? (board.auction.seller === 0 ? "You’re selling" : `${label(board.auction.seller)} is selling`) : "The bank") : `${label(board.turn)} · ${board.phase === "scoring" ? "next seller" : "active seat"}`}</p>
@@ -173,20 +171,8 @@
       {/if}
     </section>
 
-    <aside class="market" aria-labelledby="market-heading">
-      <h2 id="market-heading">Artist market</h2>
-      <table>
-        <thead><tr><th scope="col">Artist</th><th scope="col">Played</th><th scope="col">Tiles</th></tr></thead>
-        <tbody>
-          {#each artists as [key, name, color]}
-            <tr>
-              <th scope="row"><span class="marker" style:background={artistColors[color]}></span>{name}</th>
-              <td>{board.market[key] ?? 0}</td>
-              <td>{board.seasons.map(season => season.tiles[key]).filter(Boolean).join(" + ") || "—"}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+    <aside class="market" aria-label="Market board">
+      <ModernArtMarket artists={artists.map(([key, name, color]) => ({ key, name, color }))} counts={board.market} seasons={board.seasons} />
     </aside>
 
     {#if board.phase !== "complete"}
@@ -249,10 +235,6 @@
   .heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
   .heading h1, .practice h2, .winner { font-family: Fraunces, Georgia, serif; }
   .heading h1 { margin: .15rem 0; font-size: clamp(2.2rem, 5vw, 3.45rem); line-height: 1; }
-  .rules { padding: .65rem .85rem; border: 1px solid var(--oak-line); border-radius: var(--oak-radius-control); }
-  .seasons { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; padding: 0; margin: 0; list-style: none; }
-  .seasons li { border-radius: var(--oak-radius-control); background: var(--oak-nested); padding: .55rem .3rem; text-align: center; font-size: .83rem; }
-  .seasons .current { background: #e4c593; color: #322116; font-weight: 700; }
   .auction, .market, .hand, .activity, .seats article {
     background: var(--oak-outer); border: 1px solid #b0926b99; border-radius: var(--oak-radius-container);
     padding: clamp(.7rem, 2.4vw, 1.25rem); min-width: 0;
@@ -272,9 +254,6 @@
   .practice input { width: 7rem; }
   .practice button.action { background: #efd29f; color: #2c1b12; font-weight: 700; }
   .practice button:disabled { cursor: wait; }
-  .practice th, .practice td { text-align: left; padding: .45rem .22rem; border-bottom: 1px solid #ae93715c; }
-  .practice table { width: 100%; border-collapse: collapse; font-size: .84rem; margin-block-start: .45rem; }
-  .practice th[scope="row"] { font-weight: 600; }
   .marker { display: inline-block; width: .56em; height: .56em; border-radius: 50%; margin-inline-end: .42em; vertical-align: .12em; }
   .hand-heading small { font: 500 .78rem system-ui; margin-inline-start: .3rem; }
   .seats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; }

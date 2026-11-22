@@ -1,0 +1,16 @@
+<% if local_assigns[:trigger] %>
+  <p><button type="button" class="btn" data-modern-art-rules-trigger aria-haspopup="dialog"
+    aria-controls="modern-art-rules-drawer">Game Rules</button></p>
+<% end %>
+<dialog id="modern-art-rules-drawer" aria-labelledby="modern-art-rules-title">
+  <header>
+    <h2 id="modern-art-rules-title">Modern Art rules</h2>
+    <form method="dialog">
+      <button type="submit" aria-label="Close game rules" autofocus>×</button>
+    </form>
+  </header>
+  <div class="modern-art-rules-content" tabindex="0" role="region" aria-label="Game rules reference">
+    <%= render "shared/modern_art_rules" %>
+  </div>
+</dialog>
+<%= vite_javascript_tag "modern_art_rules" %>

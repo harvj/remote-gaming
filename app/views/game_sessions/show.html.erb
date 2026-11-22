@@ -1,3 +1,4 @@
+<%= render "shared/modern_art_rules_drawer", trigger: true if @game_session.game.key == "modern_art" %>
 <% if @game_session.can_replay?(current_user) %>
   <p><%= link_to "Replay history", session_replay_path(@game_session.uid) %></p>
 <% end %>

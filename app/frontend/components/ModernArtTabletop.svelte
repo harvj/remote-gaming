@@ -1,6 +1,8 @@
 <script>
   import { artistColors } from "../lib/modernArtPalette"
   import ModernArtCard from "./ModernArtCard.svelte"
+  import ModernArtSeasonRail from "./ModernArtSeasonRail.svelte"
+  import ModernArtMarket from "./ModernArtMarket.svelte"
 
   export let board
   export let liveHand = null
@@ -12,6 +14,10 @@
   $: offerIds = new Set(board.offer.map(card => card.id))
   $: sales = new Map((board.sales ?? []).map(sale => [sale.cardId, sale]))
   $: playersById = new Map(board.players.map(player => [player.id, player.name]))
+  $: recordedPlays = board.played.filter(card => card.season === board.phase).reduce((counts, card) => {
+    counts[card.name] = (counts[card.name] ?? 0) + 1
+    return counts
+  }, {})
   $: played = board.played.filter(card => !offerIds.has(card.id) && !sales.has(card.id))
 
   function phaseName(phase) {
@@ -33,6 +39,7 @@
       </ul>
     {/if}
   </header>
+  <div class="season-rail"><ModernArtSeasonRail season={seasons.includes(board.phase) ? seasons.indexOf(board.phase) + 1 : null} /></div>
 
   <div class="zones">
     <section class="auction zone" aria-label="Auction table">
@@ -43,11 +50,19 @@
             <li><ModernArtCard {card} /><span class="sale">{playersById.get(card.playerId) ?? ""}</span></li>
           {/each}
         </ul>
-        <p>Latest digital offer · physical bidding is untracked</p>
+        <p>Latest recorded offer</p>
       {:else}
         <p>No unsettled offer is represented here.</p>
       {/if}
+      <p>Bid history <strong>Not recorded</strong></p>
     </section>
+
+    {#if board.artists.length}
+      <div class="zone">
+        <ModernArtMarket artists={board.artists.map(artist => ({ ...artist, key: artist.name }))}
+          counts={seasons.includes(board.phase) ? recordedPlays : null} />
+      </div>
+    {/if}
 
     <section class="zone" aria-label="Played paintings">
       <h4>Played paintings</h4>
@@ -149,6 +164,7 @@
   .artists, .cards { padding: 0; margin: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .4rem; }
   .artists li { display: flex; align-items: center; gap: .35rem; padding: .2rem .4rem; font-size: .74rem; }
   .swatch { width: .53rem; height: .53rem; border-radius: 50%; }
+  .season-rail { margin-block-start: .75rem; }
   .zones { display: grid; grid-template-columns: minmax(12rem, .8fr) minmax(0, 2fr); gap: .65rem; margin-top: .9rem; }
   .zone, .seat { min-width: 0; border: 1px solid var(--line); border-radius: var(--oak-radius-section, .5rem); background: var(--oak-nested, #342b22); padding: .7rem; }
   .zone p, .cards, .backs { margin-top: .48rem; }

@@ -1,0 +1,72 @@
+html:has(#modern-art-rules-drawer[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+#modern-art-rules-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: 448px;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-inline-start: 1px solid var(--oak-line, #a28a6f);
+  color: var(--oak-text, #fff3de);
+  background: rgb(37 28 22 / 97%);
+  text-shadow: none;
+}
+
+#modern-art-rules-drawer[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  animation: modern-art-rules-enter 180ms ease-out;
+}
+
+#modern-art-rules-drawer::backdrop { background: rgb(22 14 9 / 48%); }
+#modern-art-rules-drawer header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: max(1rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right)) 1rem 1.25rem;
+  border-bottom: 1px solid var(--oak-line, #a28a6f);
+}
+
+#modern-art-rules-drawer h2 { margin: 0; font-family: Fraunces, Georgia, serif; }
+#modern-art-rules-drawer header button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--oak-line, #a28a6f);
+  border-radius: var(--oak-radius-control, 6px);
+  color: inherit;
+  background: #493628;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.modern-art-rules-content {
+  padding: 1rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  line-height: 1.55;
+}
+
+.modern-art-rules-content h2 { font-size: 1.15rem; }
+.modern-art-rules-content p { margin: .5rem 0 1.25rem; }
+.modern-art-rules-content dt { font-weight: 700; }
+.modern-art-rules-content dd { margin: .2rem 0 .9rem; }
+.modern-art-rules-content a { color: var(--oak-link, #ffe1a9); }
+
+@media (max-width: 700px) {
+  #modern-art-rules-drawer { width: 90vw; }
+}
+
+@keyframes modern-art-rules-enter { from { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  #modern-art-rules-drawer[open] { animation: none; }
+}

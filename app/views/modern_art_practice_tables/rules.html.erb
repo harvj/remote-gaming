@@ -1,20 +1,5 @@
 <article class="panel">
   <p><%= link_to "Practice tables", modern_art_practice_tables_path %></p>
   <h1>Modern Art rules</h1>
-  <h2>Your museum</h2>
-  <p>Each museum starts with $100k and ten paintings to offer. Your hand and cash are private. Paintings bought at auction go on public display, separate from the cards in your hand. The practice table gives you the first offer.</p>
-  <h2>At auction</h2>
-  <dl>
-    <dt>Open</dt><dd>Anyone can raise, including the seller. A new bid gives everyone else another chance. The lot closes once nobody wants to raise.</dd>
-    <dt>Once Around</dt><dd>Each seat gets one chance to raise or pass, clockwise from the seat beside the seller. The seller acts last.</dd>
-    <dt>Sealed</dt><dd>Choose one hidden bid. Bid zero to pass. Once all bids are in, they are revealed together. A tie favors the seller, then the closest seat clockwise.</dd>
-    <dt>Fixed Price</dt><dd>The seller names an affordable price. Other seats get one chance each to buy at that price in clockwise order. If everyone declines, the seller pays the bank and keeps the lot. A seller with no cash can only set zero.</dd>
-    <dt>Double</dt><dd>The seller can add a non-double painting from the same artist. If they decline, each other player gets a chance. Whoever adds it sells both paintings together using the second painting’s auction type and receives the proceeds. If nobody adds a painting, the first seller keeps their painting for free.</dd>
-  </dl>
-  <p>Bids are whole thousands and must fit in your cash balance. The winner pays the seller, or pays the bank when buying their own lot. With no bids, the seller normally takes the lot for free. The next offer starts clockwise from the seller, skipping empty hands.</p>
-  <h2>Seasons and bank payouts</h2>
-  <p>An artist’s fifth painting ends the season immediately. It counts in the artist rankings but is unsold, along with the first painting if it was part of that double lot. The top three artists by number played gain $30k, $20k and $10k respectively. Ties follow the artist order on the market board.</p>
-  <p>For an artist ranked this season, add their current tile to all their earlier tiles. An unranked artist pays nothing this season. The bank buys each acquired painting at that rate, then those paintings leave the table. Keep the cards in your hand and receive six more in seasons two and three, with no deal in season four.</p>
-  <p>The game ends after season four or if all hands run out. The final painting that exhausts the hands counts for scoring and is unsold. At the end, cash is revealed and the richest museum wins.</p>
-  <p><a href="https://www.cmon.com/wp-content/uploads/2023/06/MA_Rulebbok_Artbook_v18-low.pdf">Publisher’s Modern Art rulebook</a></p>
+  <%= render "shared/modern_art_rules" %>
 </article>

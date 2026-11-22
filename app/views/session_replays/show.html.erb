@@ -6,6 +6,7 @@
   <p><%= link_to ProductionReplay.enabled? ? "My replays" : "Live table",
     ProductionReplay.enabled? ? replays_path : game_session_path(@replay_session.uid) %></p>
   <h2>Modern Art replay</h2>
+  <%= render "shared/modern_art_rules_drawer", trigger: true %>
   <div id="session-replay"></div>
   <script id="session-replay-data" type="application/json"><%= raw json_escape({
     initial: @replay, replayPath: session_replay_path(@replay_session.uid), lineage: @lineage,

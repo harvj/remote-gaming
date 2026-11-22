@@ -1,5 +1,6 @@
 <main id="game-directory" class="directory-content replay-content" data-art-role="default" tabindex="-1">
   <h2>Replay unavailable</h2>
+  <%= render "shared/modern_art_rules_drawer", trigger: true if @replay_session.game.key == "modern_art" %>
   <p>This session does not have a complete, supported frame history for deterministic replay.</p>
   <%= link_to "Back", ProductionReplay.enabled? ? replays_path : game_session_path(@replay_session.uid) %>
 </main>
