@@ -10,8 +10,10 @@ if (drawer) {
     if (!trigger || drawer.open) return
 
     opener = trigger
-    drawer.querySelector(".modern-art-rules-content").scrollTop = 0
+    const root = document.documentElement
+    root.style.setProperty("--modern-art-rules-scrollbar", `${innerWidth - root.clientWidth}px`)
     drawer.showModal()
+    drawer.querySelector(".modern-art-rules-content").scrollTop = 0
   })
 
   function outside(event) {
@@ -37,5 +39,8 @@ if (drawer) {
     target.focus()
   })
 
-  drawer.addEventListener("close", () => opener?.focus({ preventScroll: true }))
+  drawer.addEventListener("close", () => {
+    document.documentElement.style.removeProperty("--modern-art-rules-scrollbar")
+    opener?.focus({ preventScroll: true })
+  })
 }

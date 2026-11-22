@@ -1,6 +1,9 @@
 html:has(#modern-art-rules-drawer[open]) {
   overflow: hidden;
-  scrollbar-gutter: stable;
+}
+
+html:has(#modern-art-rules-drawer[open]) body {
+  padding-inline-end: var(--modern-art-rules-scrollbar, 0px);
 }
 
 #modern-art-rules-drawer {
