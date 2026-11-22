@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { applyPresentation, createBackgroundPresenter, presentationFor } from "../../app/frontend/lib/site_art_presentation.js"
+import { applyPresentation, createBackgroundPresenter, presentationFor, presentationOverrides } from "../../app/frontend/lib/site_art_presentation.js"
 
 const shadow = { color: "#160D08", opacity_percent: 85, blur_px: 2, x_px: 0, y_px: 1 }
 const oak = { url: "oak.png", presentation: { foreground: "#fff3de", text_shadow: shadow } }
@@ -38,6 +38,7 @@ test("uses only the latest treatment when a decode is pending and clears it on f
   await select(oak)
   assert.equal(decodes, 1)
   assert.equal(properties.get("--art-foreground"), "#FFF3DE")
+  assert.equal(properties.get("--art-text-shadow"), presentationOverrides.default.text_shadow)
   await select(undefined)
   assert.equal(displayed, undefined)
   assert.equal(properties.size, 0)
@@ -62,4 +63,15 @@ test("a failed decode retains the fallback until the record changes", async () =
   await select(regionalOak)
   assert.equal(displayed, "decoded oak")
   assert.equal(applied, regionalOak)
+})
+
+test("the approved override suppresses the inherited oak shadow across rendered roles", () => {
+  assert.equal(presentationFor(oak).top["--art-text-shadow"], "0px 1px 2px rgb(22 13 8 / 85%)")
+  for (const role of ["default", "top", "bottom"]) {
+    const values = new Map()
+    const style = { setProperty: (...args) => values.set(...args), removeProperty: key => values.delete(key) }
+    applyPresentation({ [role]: { style } }, oak)
+    assert.equal(values.get("--art-text-shadow"), "none")
+    assert.equal(values.get("--art-foreground"), "#FFF3DE")
+  }
 })
