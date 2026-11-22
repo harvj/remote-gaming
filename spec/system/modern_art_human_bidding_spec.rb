@@ -3,7 +3,8 @@ require "rails_helper"
 RSpec.describe "Human Modern Art auction presentation", type: :system do
   it "renders the legal human controls for every auction on the shared tabletop" do
     game = create(:game, :modern_art)
-    owner = create(:user, id: 1)
+    owner = create(:user)
+    stub_const("ModernArtStaging::OWNER_PROFILE_ID", owner.id)
     issuer = "https://auth.harvj.com"
     identity = AuthIdentity.create!(user: owner, issuer: issuer, subject: "human-owner", evidence_reference: "fixture")
     provider = instance_double(CanonicalAuth)
@@ -60,7 +61,8 @@ RSpec.describe "Human Modern Art auction presentation", type: :system do
       [ 1440, 390 ].each do |width|
         browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: width, height: 940,
           deviceScaleFactor: 1, mobile: width <= 700)
-        expect(page.evaluate_script("document.documentElement.scrollWidth")).to eq(width)
+        expect(page.evaluate_script("innerWidth")).to eq(width)
+        expect(page.evaluate_script("document.documentElement.scrollWidth === document.documentElement.clientWidth")).to be(true)
         next unless ENV["PRACTICE_SCREENSHOTS"]
 
         expect(page).to have_css("body[data-site-art-background]")

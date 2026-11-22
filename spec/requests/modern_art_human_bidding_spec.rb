@@ -3,7 +3,8 @@ require "rails_helper"
 RSpec.describe "Recorded human Modern Art", type: :request do
   it "isolates seat grants and records sealed bidding from three independent sessions" do
     game = create(:game, :modern_art)
-    owner = create(:user, id: 1)
+    owner = create(:user)
+    stub_const("ModernArtStaging::OWNER_PROFILE_ID", owner.id)
     issuer = "https://auth.harvj.com"
     identity = AuthIdentity.create!(user: owner, issuer: issuer, subject: "human-owner", evidence_reference: "fixture")
     provider = instance_double(CanonicalAuth)
