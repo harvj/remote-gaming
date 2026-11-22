@@ -1,5 +1,5 @@
 <script>
-  import ModernArtTabletop from "./ModernArtTabletop.svelte"
+  import ModernArtPractice from "./ModernArtPractice.svelte"
   import { onDestroy } from "svelte"
 
   export let initial
@@ -98,16 +98,12 @@
         <h3>{timeline.title} {timeline.state.cursor}</h3>
         {#if timeline.state.available}
           <p>{timeline.state.played.length} {timeline.state.played.length === 1 ? "painting" : "paintings"} played</p>
-          <ModernArtTabletop board={timeline.state} />
         {:else}<p>Digital state unavailable for this frame.</p>{/if}
       </div>
     {/each}
   </section>
-{:else if frame.available}
-  <ModernArtTabletop board={frame} />
-{:else}
-  <p role="status" class="missing">Digital state unavailable at this frame. The recorded events and checkpoints do not establish the full state. Use the replay controls to inspect another frame.</p>
 {/if}
+<ModernArtPractice board={frame.tabletop} replay={true} />
 
 <details class="history" open>
   <summary>Recorded event and table-captain observations</summary>
@@ -164,7 +160,7 @@
   dt { font-weight: 600; }
   h3, dt { text-transform: capitalize; }
   section { margin-top: 1.5rem; }
-  .history, .missing { border-radius: .55rem; padding: .75rem 1rem; background: #fff9eb; color: #30251a; margin-top: 1rem; }
+  .history { border-radius: .55rem; padding: .75rem 1rem; background: #fff9eb; color: #30251a; margin-top: 1rem; }
   summary { font-weight: 600; cursor: pointer; }
   .comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 32rem), 1fr)); gap: 1rem; }
 </style>

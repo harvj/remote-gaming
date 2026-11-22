@@ -7,7 +7,7 @@ class Games::ModernArt::PracticeRules
     3 => [ 10, 6, 6, 0 ], 4 => [ 9, 4, 4, 0 ], 5 => [ 8, 3, 3, 0 ]
   }.freeze
 
-  attr_reader :state
+  attr_reader :state, :command_notes
 
   def self.start(cards, seed:, first_seat:, seat_count: 3, recorded: false)
     shuffled = cards.shuffle(random: Random.new(seed))
@@ -53,6 +53,7 @@ class Games::ModernArt::PracticeRules
   end
 
   def command(seat, action, value = nil)
+    @command_notes = []
     choices = legal(seat)
     case action
     when "play"
@@ -253,7 +254,9 @@ class Games::ModernArt::PracticeRules
   def hands_empty? = state.fetch("hands").all?(&:empty?)
 
   def note(type, **fields)
-    state.fetch("recent") << fields.stringify_keys.merge("type" => type)
+    event = fields.stringify_keys.merge("type" => type)
+    @command_notes << event
+    state.fetch("recent") << event
     state.fetch("recent").shift while state.fetch("recent").length > 8
   end
 end

@@ -41,3 +41,17 @@ These desktop and mobile Chromium captures use private human-table fixtures. The
 | Double | [![Double auction desktop](human-double-desktop.png)](human-double-desktop.png) | [![Double auction mobile](human-double-mobile.png)](human-double-mobile.png) |
 
 **Create New** in the staging Modern Art lobby starts a human-bidding table. The host can add named acceptance seats with the existing revocable staging grants. Start the game once three to five seats are present. **Replay history** opens the recorded command timeline with the authenticated player’s visibility applied at each action. AI practice remains a separate owner-only option. Production human gameplay stays disabled until separately approved.
+
+## Historical tabletop comparison
+
+These Chromium captures use the read-only presentation data from staging session `kesir-ample-gifa-ghnw` with a disposable local sign-in. The original renderer and the canonical tabletop receive the same recorded source data. The record contains 117 unversioned frames, so the tabletop shows the stored result without reconstructing a bid history or inventing action numbers.
+
+| View | Desktop | Mobile |
+| --- | --- | --- |
+| Historical table before | [![Legacy historical view on desktop](kesir-before-desktop.png)](kesir-before-desktop.png) | [![Legacy historical view on mobile](kesir-before-mobile.png)](kesir-before-mobile.png) |
+| Historical table after | [![Canonical historical tabletop on desktop](kesir-after-desktop.png)](kesir-after-desktop.png) | [![Canonical historical tabletop on mobile](kesir-after-mobile.png)](kesir-after-mobile.png) |
+| Bob McMurray’s badges | [![Recorded badges and German flag on desktop](kesir-bob-badges-desktop.png)](kesir-bob-badges-desktop.png) | [![Bob’s badges wrap in the mobile player box](kesir-bob-badges-mobile.png)](kesir-bob-badges-mobile.png) |
+
+Compare the **Opening hand** practice screens above for the season rail, auction, market, hand, and player-box composition. Historical market valuations, bid history, and cash display **Not recorded** where unsupported. The rank, role flag, score, winner status, profile statistics, and last win come from the record and its existing player metadata.
+
+Digital practice and human games number committed player commands in their durable order. Each command retains its number in Recent Actions, full history, and replay. Settlement and reveal detail stay grouped with the command that caused them. A sealed bid retains its place while its amount and bidder stay private until reveal. Historical entries use their existing frame references when available.

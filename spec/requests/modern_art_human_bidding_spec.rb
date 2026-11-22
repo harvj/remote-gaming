@@ -49,6 +49,9 @@ RSpec.describe "Recorded human Modern Art", type: :request do
     expect(table.reload.commands.last).to eq([ peers.first.response.parsed_body.fetch("viewerSeat"), "bid", 14, 1, "sealed" ])
     get endpoint, as: :json
     expect(response.parsed_body.fetch("bidHistory")).to be_empty
+    sealed = response.parsed_body.fetch("recent").last
+    expect(sealed).to include("number" => 2, "sealed" => true)
+    expect(sealed).not_to include("amount", "seat")
     peers.last.patch endpoint, params: { command: "bid", value: 16, revision: 1 }, as: :json
     expect(peers.last.response).to have_http_status(:conflict)
     peers.last.patch endpoint, params: { command: "bid", value: 16, revision: 2 }, as: :json
@@ -59,6 +62,7 @@ RSpec.describe "Recorded human Modern Art", type: :request do
     expect(table.reload.replay).to eq(table.position)
     get session_replay_path(table.uid), params: { frame: 2 }, as: :json
     expect(response.parsed_body.values_at("legal", "bidHistory")).to eq([ {}, [] ])
+    expect(response.parsed_body.fetch("recent").last).to eq(sealed)
 
     receivers = [ self, *peers ]
     500.times do

@@ -21,6 +21,11 @@ module Representers
     end
 
     def role_image_path
+      if role.game.key == "modern_art"
+        return asset_path(role_image_filename) if %w[berlin bilbao new-york paris tokyo].include?(role.name.parameterize)
+        return
+      end
+
       return unless File.exist?(File.join(Rails.root, "app/assets/", image_path(role_image_filename)))
       "/assets#{asset_path(role_image_filename)}"
     end

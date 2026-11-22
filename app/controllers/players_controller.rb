@@ -6,7 +6,7 @@ class PlayersController < ApplicationController
     session = scoped_sessions.find_by!(uid: params[:uid])
     raise ActiveRecord::RecordNotFound unless session.can_view?(current_user)
 
-    raise ActiveRecord::RecordNotFound if session.digital_modern_art
+    raise ActiveRecord::RecordNotFound if session.digital_modern_art || session.historical_modern_art?
 
     SessionFrame::Record.call(session, action: "join") do
       if (player = session.all_players.find_by(user: current_user))
@@ -44,6 +44,6 @@ class PlayersController < ApplicationController
 
   def load_player
     @player = Player.joined.where(game_session_id: scoped_sessions.select(:id)).find_by!(id: params[:id], user: current_user)
-    raise ActiveRecord::RecordNotFound if @player.session.digital_modern_art
+    raise ActiveRecord::RecordNotFound if @player.session.digital_modern_art || @player.session.historical_modern_art?
   end
 end

@@ -25,13 +25,18 @@ RSpec.describe ModernArtPracticeTable do
           Games::ModernArt::PracticeOpponent.choose(rules, 0)
         end
         expect(choice).to be_present
+        previous = table.owner_view.fetch(:actionHistory).map { |event| event.fetch(:number) }
         table.act!(table.commands.size, *choice)
+        view = table.reload.owner_view
+        expect(view.fetch(:actionHistory).first(previous.length).pluck(:number)).to eq(previous)
+        expect(view.fetch(:recent).pluck(:number)).to eq((1..table.commands.length).to_a.last(8))
       end
       phases.concat(table.commands.select { |_, action, _| action == "play" }.map do |_, _, id|
         table.position.fetch("cards").fetch(id.to_s).fetch("kind")
       end)
       expect(table.reload.position.fetch("phase")).to eq("complete")
       expect(table.replay).to eq(table.position)
+      expect(table.owner_view.fetch(:actionHistory).pluck(:number)).to eq((1..table.commands.length).to_a)
       expect(table.position.fetch("cash")).to all(be >= 0)
       expect(table.owner_view.fetch(:players)).to all(include(:cash))
     end

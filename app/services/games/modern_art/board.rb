@@ -64,7 +64,7 @@ class Games::ModernArt::Board
       frame = entries.first
       card_id, buyer_id, amount = frame.payload.values_at("card_id", "buyer_id", "winning_bid")
       buyer = @players.find { |player| player["id"] == buyer_id }
-      { cardId: card_id, buyer: buyer.dig("identity", "name"), amount: amount } if buyer && played_ids.include?(card_id)
+      { cardId: card_id, buyer: buyer.dig("identity", "name"), buyerId: buyer_id, amount: amount } if buyer && played_ids.include?(card_id)
     end
   end
 

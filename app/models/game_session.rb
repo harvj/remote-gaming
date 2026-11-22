@@ -176,6 +176,10 @@ class GameSession < ApplicationRecord
     experimental? || (!viewer.dummy? && players.exists?(user_id: viewer.id))
   end
 
+  def historical_modern_art?
+    game.key == "modern_art" && (completed? || !replayable?)
+  end
+
   def digital_modern_art
     return unless ModernArtStaging.enabled? && game.key == "modern_art"
 

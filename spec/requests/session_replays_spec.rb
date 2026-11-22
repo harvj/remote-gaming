@@ -117,7 +117,11 @@ RSpec.describe "Session replay", type: :request do
     sign_in members.first
 
     get session_replay_path(legacy.uid)
-    expect(response.body).to include("Replay unavailable")
+    expect(response.body).to include("Replay unavailable", "practice-table-data")
+    get game_session_path(legacy.uid), as: :json
+    expect(response.parsed_body).to include("historical" => true, "completeReplay" => false,
+      "legal" => {}, "actionHistory" => [])
+    expect(response.parsed_body.fetch("players")).not_to be_empty
     get session_replay_path(legacy.uid), as: :json
     expect(response).to have_http_status(:unprocessable_entity)
     get session_replay_path(table.uid), params: { frame: 1_000_000 }, as: :json

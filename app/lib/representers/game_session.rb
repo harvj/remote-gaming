@@ -59,6 +59,26 @@ module Representers
       scalar
     end
 
+    def historical_metadata
+      @session ||= record
+      players.index_by(&:id).transform_values do |player|
+        person = Representers::Player.(player)
+        person.slice(:turnOrder, :role, :badges, :lastWinDate, :lastWinDateClass)
+      end
+    end
+
+    def historical_board
+      @session ||= record
+      frames = session.frames.order(:sequence).to_a
+      board = tabletop
+      complete = board.present? && board[:phase] == session.state
+      unless complete
+        board = Games::ModernArt::Board.new(::SessionFrame::Snapshot.call(session), frames, viewer).call
+      end
+      Games::ModernArt::HistoricalTable.call(board, roster: board.fetch(:players), metadata: historical_metadata,
+        frames: frames, complete: complete, viewer_id: session.players.find_by(user: viewer)&.id)
+    end
+
     def tabletop
       frames = session.frames.order(:sequence).to_a
       state = ::SessionFrame::Replay.call(frames)

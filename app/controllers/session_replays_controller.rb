@@ -35,6 +35,11 @@ class SessionReplaysController < ApplicationController
 
     view = SessionFrame::View.new(frames, cursor:, validated: true)
     @replay = view.for_viewer(current_user)
+    metadata = Representers::GameSession.new(@replay_session, viewer: current_user)
+    roster = @replay.fetch(:players, [])
+    @replay[:tabletop] = Games::ModernArt::HistoricalTable.call(@replay, roster: roster,
+      metadata: metadata.historical_metadata, frames: frames.take(cursor), complete: @replay.fetch(:available),
+      viewer_id: @replay_session.players.find_by(user: current_user)&.id)
     @can_branch = !current_user.dummy? && BrowserIdentity.oidc_user(session) == current_user &&
       SessionFrame::Branch.allowed?(@replay_session, current_user)
     @replay[:branchable] = @can_branch && SessionFrame::Branch.supported?(view, current_user)
@@ -44,6 +49,7 @@ class SessionReplaysController < ApplicationController
       format.json { render json: @replay }
     end
   rescue SessionFrame::Replay::Unavailable
+    @historical_board = Representers::GameSession.new(@replay_session, viewer: current_user).historical_board
     respond_to do |format|
       format.html { render :unavailable }
       format.json { render json: { error: "Deterministic replay is unavailable for this history." }, status: :unprocessable_entity }

@@ -60,6 +60,7 @@ RSpec.describe "Modern Art private practice", type: :system do
     end
     first("button[data-card-id]").click
     expect(page).to have_text("Recent actions")
+    expect(page).to have_css(".activity [data-action-number='1']", text: "#1")
     screenshot(browser, 390, "auction-mobile")
     screenshot(browser, 1440, "auction-desktop")
 
@@ -75,7 +76,7 @@ RSpec.describe "Modern Art private practice", type: :system do
       JS
       expect(stale_status).to eq(409)
       refresh
-      expect(page).to have_text("Recent actions")
+      expect(page).to have_css(".activity [data-action-number='1']", text: "#1")
     end
 
     within_window(another) do

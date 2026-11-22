@@ -53,6 +53,13 @@ class GameSessionsController < ApplicationController
       return render :show
     end
 
+    if @game_session.historical_modern_art?
+      response.headers["Cache-Control"] = "private, no-store"
+      representer = Representers::GameSession.new(@game_session, viewer: current_user)
+      @historical_board = representer.historical_board
+      return render json: @historical_board if request.format.json?
+      return render :historical
+    end
     respond_to do |format|
       format.html do
         response.headers["Cache-Control"] = "no-store"
@@ -63,7 +70,7 @@ class GameSessionsController < ApplicationController
   end
 
   def observe
-    return head :not_found if @digital_table
+    return head :not_found if @digital_table || @game_session.historical_modern_art?
 
     SessionFrame::Observe.call(@game_session, current_user,
       params.require(:observation).permit(:type, :context_frame_id, :corrects_frame_id, :occurred_at,

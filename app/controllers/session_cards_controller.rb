@@ -3,7 +3,7 @@ class SessionCardsController < ApplicationController
 
   def update
     card = SessionCard.where(game_session_id: scoped_sessions.select(:id)).find(params[:id])
-    raise ActiveRecord::RecordNotFound if card.session.digital_modern_art
+    raise ActiveRecord::RecordNotFound if card.session.digital_modern_art || card.session.historical_modern_art?
 
     SessionFrame::Record.call(card.session, action: "play_card") do
       card.reload

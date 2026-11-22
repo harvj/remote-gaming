@@ -1,0 +1,11 @@
+<% if @game_session.can_replay?(current_user) %>
+  <p><%= link_to "Replay history", session_replay_path(@game_session.uid) %></p>
+<% end %>
+<%= render "shared/modern_art_digital_table", board: @historical_board, uid: @game_session.uid,
+  endpoint: game_session_path(@game_session.uid), lobby_url: root_path, replay: true %>
+<details class="panel">
+  <summary>Historical session details</summary>
+  <p>Table <%= @game_session.uid %></p>
+  <% if @game_session.started_at %><p>Started <%= l(@game_session.started_at) %></p><% end %>
+  <% if @game_session.completed_at %><p>Completed <%= l(@game_session.completed_at) %></p><% end %>
+</details>

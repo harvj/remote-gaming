@@ -83,7 +83,7 @@ class ModernArtPracticeTable < ApplicationRecord
   end
 
   def owner_view
-    Games::ModernArt::PracticeRules.new(position).projection(0).merge(revision: commands.length, names: NAMES)
+    numbered_projection(0, commands.length).merge(names: NAMES)
   end
 
   def human_view(user, revision: nil)
@@ -102,11 +102,40 @@ class ModernArtPracticeTable < ApplicationRecord
 
       { sequence: index + 1, seat: bidder, action: action, amount: amount, auction: auction }
     end
-    rules.projection(seat).merge(revision: revision || commands.length, names: names, viewerSeat: seat,
+    numbered_projection(seat, revision || commands.length).merge(names: names, viewerSeat: seat,
       bidHistory: visible_commands, settlements: settlements)
   end
 
   private
+
+  def numbered_projection(seat, revision)
+    rules = self.class.rules_for(setup)
+    hidden = []
+    history = commands.first(revision).each_with_index.map do |entry, index|
+      actor, action, value = entry
+      sealed = rules.state.fetch("phase") == "sealed" && action == "bid"
+      rules.command(actor, action, value)
+      event = { number: index + 1, action: action, seat: actor, notes: rules.command_notes }
+      if sealed
+        event[:amount] = value
+        hidden << event
+        if rules.state.fetch("phase") == "sealed"
+          event[:sealed] = true
+        else
+          hidden.each { |bid| bid.delete(:sealed) }
+          hidden.clear
+        end
+      end
+      event
+    end
+    history.each do |event|
+      next unless event[:sealed]
+
+      event.delete(:amount)
+      event.delete(:seat)
+    end
+    rules.projection(seat).merge(revision: revision, recent: history.last(8), actionHistory: history)
+  end
 
   def apply(rules, seat, action, value)
     phase = rules.state.fetch("phase")

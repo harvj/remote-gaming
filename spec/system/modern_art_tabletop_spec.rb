@@ -68,6 +68,7 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
     JS
     page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 1440, height: 1250, deviceScaleFactor: 1, mobile: false)
 
+    board = "article[aria-label='Modern Art tabletop']"
     visit session_replay_path(table.uid, frame: after.sequence)
     click_button "Game Rules"
     expect(page).to have_css("dialog[open] h2", text: "Modern Art rules")
@@ -87,12 +88,12 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
 
     visit session_replay_path(table.uid, frame: before.sequence)
     expect(page).to have_no_css("#{auction} #{face}")
-    expect(page).to have_css("#{board} [aria-label='#{viewer.name}’s hand'] #{face}")
+    expect(page).to have_css("#{board} .hand #{face}")
     fill_in "Frame", with: played.sequence
     click_button "Go"
     expect(page).to have_css("#{auction} #{face}")
-    expect(page).to have_no_css("#{board} [aria-label='#{viewer.name}’s hand'] #{face}")
-    expect(find("#{board} .seat.current")).to have_text(viewer.name)
+    expect(page).to have_no_css("#{board} .hand #{face}")
+    expect(find("#{board} .seats article.active")).to have_text(viewer.name)
     expect(page).to have_text("card played (engine)", exact: false)
     screenshot("replay-intermediate-desktop")
 
@@ -113,11 +114,12 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
     game.play_class.(table, table.players.find_by!(table_captain: true).user)
     transition = table.frames.engine_events.find_by!(action: "season_two")
     visit session_replay_path(table.uid, frame: transition.sequence)
-    expect(page).to have_css("#{board} h3", text: "Season Two")
+    expect(page).to have_css("#{board} [aria-current='step']", text: "Season 2")
     expect(page).to have_no_css("#{auction} #{face}")
-    expect(page).to have_css("section[aria-label='Played paintings'] #{face}")
+    find("summary", text: "Recorded paintings").click
+    expect(page).to have_css("details[aria-label='Played paintings'] #{face}")
     click_button "Next"
-    expect(page).to have_css("#{board} h3", text: "Season Two")
+    expect(page).to have_css("#{board} [aria-current='step']", text: "Season 2")
     expect(page).to have_text("card dealt (engine)")
 
   ensure
