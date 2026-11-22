@@ -12,7 +12,15 @@ class ModernArtPracticeTablesController < ApplicationController
   end
 
   def show
-    @board = @table.owner_view
+    if params.key?(:frame)
+      @cursor = Integer(params[:frame].to_s, 10, exception: false)
+      return head :bad_request unless @cursor&.between?(0, @table.commands.length)
+
+      @board = @table.owner_view(revision: @cursor)
+      @board[:legal] = {}
+    else
+      @board = @table.owner_view
+    end
     respond_to do |format|
       format.html
       format.json { render json: @board }

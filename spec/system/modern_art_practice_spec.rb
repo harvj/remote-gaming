@@ -130,6 +130,12 @@ RSpec.describe "Modern Art private practice", type: :system do
     expect(in_table.reload.replay).to eq(in_table.position)
     screenshot(browser, 1440, "results-desktop")
     screenshot(browser, 390, "results-mobile")
+    visit "#{path}?frame=1"
+    expect(page).to have_css(".activity [data-action-number='1']", text: "#1")
+    expect(page).to have_no_css("button[data-card-id]")
+    click_link "Next action"
+    expect(page).to have_css(".activity [data-action-number='1']", text: "#1")
+    expect(page).to have_css(".activity [data-action-number='2']", text: "#2")
     visit path
     find("summary", text: "Remove this disposable table").click
     click_button "Delete practice table"

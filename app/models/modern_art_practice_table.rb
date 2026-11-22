@@ -82,8 +82,8 @@ class ModernArtPracticeTable < ApplicationRecord
     rules.state
   end
 
-  def owner_view
-    numbered_projection(0, commands.length).merge(names: NAMES)
+  def owner_view(revision: commands.length)
+    numbered_projection(0, revision).merge(names: NAMES)
   end
 
   def human_view(user, revision: nil)
