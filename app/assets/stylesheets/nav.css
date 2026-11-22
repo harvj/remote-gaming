@@ -43,7 +43,7 @@
   z-index: 1000;
 
   min-width: 160px;
-  padding: 8px 0;
+  padding: 8px .5rem;
 
   background: var(--bg);
   border: 1px solid var(--border);
@@ -72,7 +72,6 @@
 }
 
 .nav-login { white-space: nowrap; }
-.navbar .shell-account-button { padding-inline: .25rem; }
 
 .directory-footer a { padding: 0; }
 

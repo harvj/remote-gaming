@@ -102,7 +102,10 @@
 
 .shell-header-row .shell-username { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shell-header-row .shell-session-dot { width: 8px; height: 8px; flex: none; background: #238636; border-radius: 50%; }
-.shell-header-row .shell-trigger--identity { max-width: min(14rem, 34vw); }
+.shell-header-row .shell-trigger--identity {
+  max-width: min(14rem, 34vw);
+  padding-inline: .625rem;
+}
 
 .directory-footer {
   display: flex;

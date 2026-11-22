@@ -190,6 +190,12 @@ RSpec.describe "Signed Application Shell acceptance", type: :system do
       expect_light_navigation(trigger)
       browser.action.release.perform
       expect(page).to have_link("Account Settings")
+      expect(trigger.style("padding-left", "padding-right")).to eq(
+        "padding-left" => "10px", "padding-right" => "10px"
+      )
+      expect(find(".navbar .shell-panel").style("padding-left", "padding-right")).to eq(
+        "padding-left" => "8px", "padding-right" => "8px"
+      )
       expect_light_navigation(trigger)
       find_link("Account Settings").send_keys(:shift, :tab)
       expect_plain_navigation(trigger)
