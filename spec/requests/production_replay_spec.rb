@@ -30,7 +30,7 @@ RSpec.describe "Production replay route boundaries", type: :request do
   end
 
   it "leaves the public directory's production routes alone by default" do
-    expect(production_routes(false)).not_to match(/session_replays#|session_branches#|dummy_accesses#|game_sessions#|historical_users#/)
+    expect(production_routes(false)).not_to match(/session_replays#|session_branches#|dummy_accesses#|game_sessions#|historical_users#|modern_art_practice_tables#/)
   end
 
   it "mounts owner administration independently of replay and gameplay" do

@@ -5,6 +5,7 @@ SET LOCAL datestyle = 'ISO, YMD';
 
 -- Compare these fingerprints before and after migrations. New nullable columns
 -- and hostname metadata are intentionally excluded from the historical payload.
+-- Disposable practice tables and their sequence are outside historical gameplay.
 SELECT format(
   'SELECT %L AS relation, count(*), md5(coalesce(string_agg(md5((to_jsonb(row) - %L::text[])::text), '''' ORDER BY id), '''')) FROM public.%I AS row',
   tablename,
@@ -16,7 +17,7 @@ SELECT format(
 )
 FROM pg_tables
 WHERE schemaname = 'public'
-  AND tablename NOT IN ('schema_migrations', 'ar_internal_metadata', 'auth_identities', 'auth_identity_decisions', 'auth_logins', 'dummy_accesses', 'historical_user_claims', 'auth_login_attempts')
+  AND tablename NOT IN ('schema_migrations', 'ar_internal_metadata', 'auth_identities', 'auth_identity_decisions', 'auth_logins', 'dummy_accesses', 'historical_user_claims', 'auth_login_attempts', 'modern_art_practice_tables')
 ORDER BY tablename
 \gexec
 
@@ -24,7 +25,7 @@ SELECT format(
   'SELECT %L AS sequence, last_value, is_called FROM public.%I',
   sequencename, sequencename
 )
-FROM pg_sequences WHERE schemaname = 'public' AND sequencename NOT IN ('auth_identities_id_seq', 'auth_identity_decisions_id_seq', 'auth_logins_id_seq', 'dummy_accesses_id_seq', 'historical_user_claims_id_seq', 'auth_login_attempts_id_seq')
+FROM pg_sequences WHERE schemaname = 'public' AND sequencename NOT IN ('auth_identities_id_seq', 'auth_identity_decisions_id_seq', 'auth_logins_id_seq', 'dummy_accesses_id_seq', 'historical_user_claims_id_seq', 'auth_login_attempts_id_seq', 'modern_art_practice_tables_id_seq')
 ORDER BY sequencename
 \gexec
 COMMIT;

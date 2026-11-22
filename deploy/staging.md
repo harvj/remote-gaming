@@ -187,3 +187,14 @@ Existing `/staging/directory` and `/staging/pandemic` bookmarks redirect to thei
 The wordmark always returns to the explicit directory origin. Staging shows `Signed in` when the provider omits verified display identity. The Auth Shell eligibility contract excludes staging clients, so application code cannot use that endpoint to recover `jim`. A supported verified claim from Auth is needed for the staging control to show that exact name. The historical profile is not a display-identity source.
 
 The shared header uses sticky positioning and a viewport-aligned content fade in both environments. Record `header_scroll_mode=sticky` for the directory, historical administration, Modern Art and the game status surfaces in SH-01 evidence. The spatial fade remains under reduced motion, with anchor and focus clearance also available in forced colors. Deploy it only to staging for review while Infrastructure updates the signed v1.1.0 scrolling requirement. Production activation requires approval and the applicable signed preflight. The header uses the existing Site Art publication.
+
+
+## Owner practice tables
+
+Once the additive practice-table migration is approved for staging, set
+`REMOTE_GAMING_MODERN_ART_PRACTICE=1` in the dedicated staging environment file.
+The existing private staging and Canonical Auth gates still apply. The verified
+owner can open **Modern Art practice tables** from the Modern Art lobby and
+remove disposable tables from within each session. Leave the practice opt-in
+unset in production. The historical integrity fingerprint excludes only the new
+disposable table and its sequence in addition to the existing exclusions.

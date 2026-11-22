@@ -409,6 +409,41 @@ ALTER SEQUENCE public.historical_user_claims_id_seq OWNED BY public.historical_u
 
 
 --
+-- Name: modern_art_practice_tables; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.modern_art_practice_tables (
+    id bigint NOT NULL,
+    owner_id bigint NOT NULL,
+    uid character varying NOT NULL,
+    setup jsonb NOT NULL,
+    "position" jsonb NOT NULL,
+    commands jsonb DEFAULT '[]'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: modern_art_practice_tables_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.modern_art_practice_tables_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: modern_art_practice_tables_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.modern_art_practice_tables_id_seq OWNED BY public.modern_art_practice_tables.id;
+
+
+--
 -- Name: players; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -788,6 +823,13 @@ ALTER TABLE ONLY public.historical_user_claims ALTER COLUMN id SET DEFAULT nextv
 
 
 --
+-- Name: modern_art_practice_tables id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.modern_art_practice_tables ALTER COLUMN id SET DEFAULT nextval('public.modern_art_practice_tables_id_seq'::regclass);
+
+
+--
 -- Name: players id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -929,6 +971,14 @@ ALTER TABLE ONLY public.games
 
 ALTER TABLE ONLY public.historical_user_claims
     ADD CONSTRAINT historical_user_claims_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: modern_art_practice_tables modern_art_practice_tables_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.modern_art_practice_tables
+    ADD CONSTRAINT modern_art_practice_tables_pkey PRIMARY KEY (id);
 
 
 --
@@ -1162,6 +1212,20 @@ CREATE INDEX index_historical_user_claims_on_proposed_by_id ON public.historical
 --
 
 CREATE UNIQUE INDEX index_historical_user_claims_on_user_id ON public.historical_user_claims USING btree (user_id);
+
+
+--
+-- Name: index_modern_art_practice_tables_on_owner_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_modern_art_practice_tables_on_owner_id ON public.modern_art_practice_tables USING btree (owner_id);
+
+
+--
+-- Name: index_modern_art_practice_tables_on_uid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_modern_art_practice_tables_on_uid ON public.modern_art_practice_tables USING btree (uid);
 
 
 --
@@ -1417,6 +1481,14 @@ CREATE TRIGGER immutable_session_frames BEFORE DELETE OR UPDATE ON public.sessio
 
 
 --
+-- Name: modern_art_practice_tables fk_rails_0eb49d6e8f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.modern_art_practice_tables
+    ADD CONSTRAINT fk_rails_0eb49d6e8f FOREIGN KEY (owner_id) REFERENCES public.users(id);
+
+
+--
 -- Name: historical_user_claims fk_rails_10fb6962db; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1511,6 +1583,7 @@ ALTER TABLE ONLY public.auth_identities
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261122000001'),
 ('20261120000003'),
 ('20261120000002'),
 ('20261120000001'),

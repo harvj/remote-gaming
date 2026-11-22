@@ -1,3 +1,7 @@
+<% if ModernArtPractice.owner?(request.host, current_user) %>
+  <p class="panel"><%= link_to "Modern Art practice tables", modern_art_practice_tables_path %></p>
+<% end %>
+
 <div id="games-show"></div>
 
 <script id="games-show-data" type="application/json">

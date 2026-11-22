@@ -19,6 +19,11 @@ module ApplicationCable
       end
     end
 
+    def practice_owner?
+      live_user = BrowserIdentity.oidc_user(request.session)
+      live_user == current_user && ModernArtPractice.owner?(request.host, live_user)
+    end
+
     private
 
     def find_verified_user

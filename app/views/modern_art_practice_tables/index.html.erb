@@ -1,0 +1,19 @@
+<section class="panel">
+  <h1>Modern Art practice</h1>
+  <p>Play a three-seat game with Maya Chen and Daniel Reyes. Practice tables are private and disposable.</p>
+  <%= button_to "Start a practice game", modern_art_practice_tables_path, class: "btn btn-primary" %>
+  <p><%= link_to "Read the rules", rules_modern_art_practice_tables_path %></p>
+</section>
+<% if @tables.any? %>
+  <section class="panel">
+    <h2>Your tables</h2>
+    <ul>
+      <% @tables.each do |table| %>
+        <li>
+          <%= link_to "Table created #{l(table.created_at, format: :short)}", modern_art_practice_table_path(table.uid) %>
+          <span>· <%= table.position.fetch("phase") == "complete" ? "Finished" : "Season #{table.position.fetch('season')}" %></span>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

@@ -82,6 +82,12 @@ Rails.application.routes.draw do
       get "signed-out", to: "auth#signed_out", as: :staging_signed_out
     end
 
+    constraints ->(request) { ModernArtPractice.enabled_on?(request.host) } do
+      resources :modern_art_practice_tables, path: "practice", only: %i[index create show update destroy] do
+        get :rules, on: :collection
+      end
+    end
+
     resources :game_sessions, only: %i[create]
 
     resources :players, only: %i[create update] do
