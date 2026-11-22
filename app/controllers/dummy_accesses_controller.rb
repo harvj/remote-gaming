@@ -3,7 +3,7 @@ class DummyAccessesController < ApplicationController
 
   before_action :require_experiments
   before_action :authenticate_user!, only: %i[create rotate revoke]
-  before_action :load_experiment, only: %i[create rotate revoke]
+  before_action :load_human_table, only: %i[create rotate revoke]
   before_action :private_response
 
   def new
@@ -19,18 +19,14 @@ class DummyAccessesController < ApplicationController
   end
 
   def create
-    SessionFrame::Record.call(@experiment, action: "dummy_added") do
-      raise SessionFrame::Record::InvalidAction, "Seats can only be added before the game starts" unless @experiment.joinable?
+    SessionFrame::Record.call(@human_session, action: "dummy_added") do
+      raise SessionFrame::Record::InvalidAction, "Seats can only be added before the game starts" unless @human_session.joinable?
 
       handle = SecureRandom.hex(12)
-      default_name = "Dummy #{@experiment.all_players.count + 1} (#{handle.first(6)})"
-      if @experiment.digital_modern_art
-        default_name = "Guest #{@experiment.all_players.count}"
-        default_name = params[:seat_name].to_s.strip.first(60).presence || default_name
-      end
-      user = User.create!(name: default_name,
+      name = params[:seat_name].to_s.strip.first(60).presence || "Guest #{@human_session.all_players.count}"
+      user = User.create!(name: name,
         username: "dummy_#{handle}", dummy: true)
-      player = Player::Create.!(user, session: @experiment, recorded_by: owner_player).subject
+      player = Player::Create.!(user, session: @human_session, recorded_by: owner_player).subject
       @credential = player.create_dummy_access!(expires_at: Time.current).issue!
     end
     render :issued, status: :created
@@ -43,7 +39,7 @@ class DummyAccessesController < ApplicationController
 
   def revoke
     access_for_seat.revoke!
-    redirect_to game_session_path(@experiment.uid), status: :see_other
+    redirect_to game_session_path(@human_session.uid), status: :see_other
   end
 
   def logout
@@ -60,18 +56,19 @@ class DummyAccessesController < ApplicationController
     head :not_found unless ExperimentalAccess.enabled?
   end
 
-  def load_experiment
-    raise ActiveRecord::RecordNotFound unless current_user && !current_user.dummy?
+  def load_human_table
+    raise ActiveRecord::RecordNotFound unless ModernArtPractice.owner?(request.host, current_user)
 
-    @experiment = scoped_sessions.where(experimental: true, experiment_owner: current_user).find_by!(uid: params[:uid])
+    @human_session = scoped_sessions.where(experimental: true, experiment_owner: current_user).find_by!(uid: params[:uid])
+    raise ActiveRecord::RecordNotFound unless @human_session.digital_modern_art
   end
 
   def access_for_seat
-    @experiment.all_players.find(params[:player_id]).dummy_access || raise(ActiveRecord::RecordNotFound)
+    @human_session.all_players.find(params[:player_id]).dummy_access || raise(ActiveRecord::RecordNotFound)
   end
 
   def owner_player
-    @experiment.players.find_by!(user: current_user)
+    @human_session.players.find_by!(user: current_user)
   end
 
   def private_response

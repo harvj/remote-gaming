@@ -55,3 +55,14 @@ These Chromium captures use the read-only presentation data from staging session
 Compare the **Opening hand** practice screens above for the season rail, auction, market, hand, and player-box composition. Historical market valuations, bid history, and cash display **Not recorded** where unsupported. The rank, role flag, score, winner status, profile statistics, and last win come from the record and its existing player metadata.
 
 Digital practice and human games number committed player commands in their durable order. Each command retains its number in Recent Actions, full history, and replay. Settlement and reveal detail stay grouped with the command that caused them. A sealed bid retains its place while its amount and bidder stay private until reveal. Historical entries use their existing frame references when available.
+
+## Hand sorting
+
+These Chromium captures use the same deterministic opening deal in a disposable practice table with fixture Auth and the published oak artwork. The earlier opening-hand captures show the presentation before the shared controls. The new captures are scrolled to the hand with **Artist** sorting and **Group by artist** enabled.
+
+| State | Desktop, 1440 CSS px | Mobile, 390 CSS px |
+| --- | --- | --- |
+| Before | [![Desktop opening hand before the shared sorting controls](hand-desktop.png)](hand-desktop.png) | [![Mobile opening hand before the shared sorting controls](hand-mobile.png)](hand-mobile.png) |
+| After | [![Desktop hand sorted and grouped by artist](hand-sort-desktop.png)](hand-sort-desktop.png) | [![Mobile hand sorted and grouped by artist](hand-sort-mobile.png)](hand-sort-mobile.png) |
+
+**Sort hand** cycles through Recorded order, Artist, and Auction type. Grouping is independent. Both preferences are local to the table and browser tab, and the hand retains its authoritative order in the game record.

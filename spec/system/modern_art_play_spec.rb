@@ -42,45 +42,6 @@ RSpec.describe "Modern Art multiplayer", type: :system do
     play_game(table, members)
   end
 
-  it "plays and replays a private experiment from one real browser and two separately redeemed dummy browsers" do
-    owner = create(:user)
-    issuer = "https://auth.fixture.test"
-    allow(ENV).to receive(:[]).and_call_original
-    allow(ENV).to receive(:[]).with("REMOTE_GAMING_OIDC_ISSUER").and_return(issuer)
-    allow(CanonicalAuth).to receive(:enabled?).and_return(true)
-    allow(ExperimentalAccess).to receive(:enabled?).and_return(true)
-    identity = AuthIdentity.create!(user: owner, issuer: issuer, subject: "owner", evidence_reference: "fixture")
-    provider = instance_double(CanonicalAuth)
-    allow(CanonicalAuth).to receive(:new).and_return(provider)
-    stub_oidc_journey(provider, identity, assurance: CanonicalAuth::MFA)
-
-    experiment = nil
-    seats = []
-    using_session(owner.id) do
-      visit "/login"
-      visit "/auth/callback?state=fixture&code=fixture"
-      visit game_path(game.key)
-      click_button "Create private experiment"
-      expect(page).to have_text("Private experiment")
-      experiment = GameSession.find_by!(experiment_owner: owner)
-      2.times do
-        click_button "Add dummy player"
-        secret = find("#dummy-credential").text
-        seats << experiment.players.joins(:dummy_access).order(:id).last.user
-        using_session(seats.last.id) do
-          visit dummy_login_path
-          fill_in "One-time access code", with: secret
-          click_button "Open private table"
-          expect(page).to have_text("Private experiment")
-        end
-        click_link "Return to the private table"
-      end
-    end
-    play_game(experiment, [ owner, *seats ])
-    expect(experiment.frames.where(actor_kind: "dummy", action: "card_played")).to exist
-    expect(experiment.frames.observations.pluck(:actor_kind)).to eq([ "person", "person" ])
-  end
-
   def play_game(table, members)
     using_session(members.first.id) do
       expect(page).to have_text("3 players")

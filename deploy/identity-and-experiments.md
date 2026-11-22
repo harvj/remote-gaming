@@ -1,4 +1,4 @@
-# P1.3 identity and private experiments
+# Staging identity and seat access
 
 P1.3 keeps the production directory and its gameplay route gate. Test the release on private staging with a disposable restored database before requesting any production activation.
 
@@ -17,7 +17,7 @@ REMOTE_GAMING_OIDC_CLIENT_SECRET=PRIVATE_STAGING_CLIENT_SECRET
 REMOTE_GAMING_OIDC_REDIRECT_URI=https://modern-art.staging.radioactivita.com/auth/callback
 ```
 
-The issuer setting selects OIDC and disables the legacy login POST. Keep the Caddy access gate. Leaving the variables unset retains the existing isolated staging-account flow, and private experiments remain unavailable in that mode. Local OIDC sessions last at most eight hours. Remote Gaming logout revokes its local session, including permissions on existing Cable connections, and clears the browser cookie. Auth has no advertised RP-initiated logout endpoint. The application logout is `DELETE https://modern-art.staging.radioactivita.com/logout` and returns to the local `/login`. No provider logout callback or post-logout redirect needs registration. Use the Auth account controls for provider-wide logout, client membership removal, or grant revocation. Removing membership at Auth blocks new Remote Gaming logins. To end existing Remote Gaming sessions immediately, revoke the affected `AuthLogin` rows in Remote Gaming through an approved operator change.
+The issuer setting selects OIDC and disables the legacy login POST. Keep the Caddy access gate. Leaving the variables unset retains the existing isolated staging-account flow, and staging seat grants and practice tables remain unavailable in that mode. Local OIDC sessions last at most eight hours. Remote Gaming logout revokes its local session, including permissions on existing Cable connections, and clears the browser cookie. Auth has no advertised RP-initiated logout endpoint. The application logout is `DELETE https://modern-art.staging.radioactivita.com/logout` and returns to the local `/login`. No provider logout callback or post-logout redirect needs registration. Use the Auth account controls for provider-wide logout, client membership removal, or grant revocation. Removing membership at Auth blocks new Remote Gaming logins. To end existing Remote Gaming sessions immediately, revoke the affected `AuthLogin` rows in Remote Gaming through an approved operator change.
 
 The Auth handoff must confirm the confidential staging client ID, registered callback, selected assurance policy, approved memberships, and secret delivery through the existing secret channel. Public discovery confirms the endpoint URLs only. It cannot verify client registration or policy. Keep the candidate unpublished and the deployed staging version unchanged until the registration and policy are verified and the dependency review has passed. Confirm actual ID-token claims and browser behavior in a live staging integration test after authorization. Use a password-only member, a voluntarily enrolled member, and a member of an unrelated high-assurance client. Confirm the low-assurance sign-in cannot acquire that client's grant. No provider configuration changed during implementation.
 
@@ -38,17 +38,13 @@ Set `RG_VERIFIED_SUBJECT` to the attested subject and `RG_EVIDENCE_REFERENCE` to
 After migrating the disposable restore, run `bin/rails runner deploy/check-historical-sessions.rb` to verify that all 104 recovered sessions still render read-only for existing members. Compare the historical fingerprints using the deployment runbook.
 
 
-## Private experiments and rollback
+## Staging tables and historical experiments
 
-Create a private experiment from the Modern Art lobby. The creator joins as captain, can issue one-time codes for dummy seats before play begins, and can rotate or revoke them at any stage. Enter a code through the dedicated access form in a separate browser profile. Codes are displayed on a non-cacheable page with no third-party scripts, travel in the POST body, and are consumed once. The code and the issued browser access expire eight hours after issuance. Rotation and revocation invalidate previous browser access and prevent further Cable delivery. A dummy's local profile is an internal seat identity with no password, email, or Auth account.
+Use **Create New** to start a human-only Modern Art table in staging. Its owner can issue one-time codes for named guest seats before play and rotate or revoke the codes during play. Redeem a code in a separate browser profile. The code is consumed once and the browser access expires eight hours after issuance. Rotation and revocation invalidate existing browser access. A guest profile is an internal seat identity without an Auth account.
 
-Private tables are listed separately for their creator and excluded from ordinary statistics and badge inputs. Frame checkpoints capture experiment ownership and seat kind, and attributed events record whether the actor was a person or dummy. Physical reports and corrections continue to use existing captain rules.
+Use **Modern Art practice tables** for automated play. Previous private experiments and branches are read-only through their existing authorized URLs. Replay keeps the original frames, observations, corrections, and branch lineage. The capability to create experiments or branches and manage their seats has been retired. Preserve the stored records.
 
-For a later authorized staging rollout, run `cap staging deploy:check` and then `APPROVED_COMMIT=REVIEWED_SHA ALLOW_MIGRATIONS=1 bundle exec cap staging deploy` with the isolated Auth variables still unset. Review the backup and historical fingerprints before enabling the Auth environment values and restarting only the staging service.
-
-The Capistrano compatibility gate blocks rollback to a release recorded before the new migrations. Keep the pre-migration backup and exact historical fingerprint receipts. Use a compatible forward fix if needed. Do not run an older app against experimental data since its visibility rules predate experiments.
-
-P1.4 should build viewer-specific replay projections from immutable snapshots, preserving the experimental flag and dummy attribution. Branch from explicitly supported checkpoints and provision fresh seat credentials independently from the parent.
+The Capistrano compatibility gate blocks rollback across incompatible migrations. Retain the backup and historical fingerprint receipts and use a compatible forward fix if needed.
 
 ## Owner-only staging cutover
 

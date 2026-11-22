@@ -3,12 +3,10 @@ class GameSessionsController < ApplicationController
   before_action :load_game_session, except: :create
 
   def create
-    game = @game || Game.find_by!(key: params[:game_key])
-    experimental = params[:experimental] == "1"
-    return head :forbidden if experimental && !(ExperimentalAccess.enabled? && BrowserIdentity.oidc_user(session))
-    return head :not_found if experimental && game.key != "modern_art"
+    return head :forbidden if params[:experimental] == "1"
 
-    if game.key == "modern_art" && !experimental && ModernArtPractice.enabled_on?(request.host)
+    game = @game || Game.find_by!(key: params[:game_key])
+    if game.key == "modern_art" && ModernArtPractice.enabled_on?(request.host)
       return head :not_found unless ModernArtPractice.owner?(request.host, current_user)
       table = GameSession.transaction do
         game_session = GameSession::Create.!(game, experimental: true, experiment_owner: current_user).subject
@@ -19,20 +17,13 @@ class GameSessionsController < ApplicationController
       return redirect_to game_session_path(table.uid)
     end
 
-    if experimental
-      table = GameSession.transaction do
-        table = GameSession::Create.!(game, experimental: true, experiment_owner: current_user).subject
-        Player::Create.!(current_user, session: table)
-        table
-      end
-    else
-      table = GameSession::Create.!(game).subject
-    end
+    table = GameSession::Create.!(game).subject
     redirect_to game_session_path(table.uid)
   end
 
   def update
     return update_digital if @digital_table
+    return head :not_found if @game_session.historical_modern_art?
 
     SessionFrame::Record.call(@game_session, action: "advance_phase") do
       captain = @game_session.players.find_by!(user: current_user, table_captain: true)

@@ -2,6 +2,7 @@
   import { onMount } from "svelte"
   import { cable } from "../lib/cable"
   import { artistColors } from "../lib/modernArtPalette"
+  import ModernArtHand from "./ModernArtHand.svelte"
   import ModernArtCard from "./ModernArtCard.svelte"
   import ModernArtSeasonRail from "./ModernArtSeasonRail.svelte"
   import ModernArtMarket from "./ModernArtMarket.svelte"
@@ -15,24 +16,6 @@
   let busy = $state(false)
   let message = $state("")
   let unavailable = $state(false)
-  let handSort = $state("recorded")
-  let groupHand = $state(false)
-  const handGroups = $derived.by(() => {
-    const cards = [...board.hand]
-    if (handSort !== "recorded") {
-      const field = handSort === "artist" ? "name" : "value"
-      cards.sort((first, second) => first[field].localeCompare(second[field]))
-    }
-    if (!board.historical || !groupHand) return [["", cards]]
-
-    const groups = new Map()
-    for (const card of cards) {
-      if (!groups.has(card.name)) groups.set(card.name, [])
-      groups.get(card.name).push(card)
-    }
-    return [...groups]
-  })
-
   const artists = [
     ["lite_metal", "Lite Metal", "yellow"], ["yoko", "Yoko", "light-green"],
     ["cristin_p", "Cristin P", "dark-pink"], ["karl_gitter", "Karl Gitter", "light-purple"],
@@ -235,27 +218,19 @@
           <h2 id="hand-heading">Your hand <small>{board.hand.length} paintings</small></h2>
           {#if board.historical}<strong>{board.concluded ? "Final cash" : "Cash balance"} · {recordedCash(historicalViewer?.finalCash)}</strong>{:else}<strong>{cash(board.players[viewerSeat].cash)} available</strong>{/if}
         </div>
-        {#if board.historical && board.hand.length > 1}
-          <div class="hand-options">
-            <label>Sort hand
-              <select bind:value={handSort}>
-                <option value="recorded">Recorded order</option>
-                <option value="artist">Artist</option>
-                <option value="auction">Auction type</option>
-              </select>
-            </label>
-            <label><input type="checkbox" bind:checked={groupHand} /> Group by artist</label>
-          </div>
-        {/if}
-        {#each handGroups as [group, cards] (group)}
-          {#if group}<h3>{group}</h3>{/if}
-          <div class="cards">
-            {#each cards as card (card.id)}
-              {@const playable = board.legal.card_ids?.includes(card.id)}
-              <ModernArtCard {card} onplay={playable ? () => send("play", card.id) : null} disabled={busy} />
+        <ModernArtHand {uid} cards={board.hand} known={!board.historical || board.handKnown}>
+          {#snippet children(groups)}
+            {#each groups as [group, cards] (group)}
+              {#if group}<h3>{group}</h3>{/if}
+              <div class="cards">
+                {#each cards as card (card.id)}
+                  {@const playable = board.legal.card_ids?.includes(card.id)}
+                  <ModernArtCard {card} onplay={playable ? () => send("play", card.id) : null} disabled={busy} />
+                {/each}
+              </div>
             {/each}
-          </div>
-        {/each}
+          {/snippet}
+        </ModernArtHand>
         {#if board.historical && !board.handKnown}<p>Hand <strong>Not recorded</strong></p>{:else if board.hand.length === 0}<p>{board.historical ? "No paintings recorded in this hand." : "No cards in hand. You can still bid when eligible."}</p>{/if}
       </section>
 
@@ -366,13 +341,11 @@
   .lot, .bid-form, .actions:not(:empty), .cards { margin-block-start: .75rem; }
   .bid-form { align-items: end; }
   .bid-form label { display: grid; gap: .25rem; }
-  .practice button:not([data-card-id]), .bid-form input, .hand-options select {
+  .practice button:not([data-card-id]), .bid-form input {
     min-height: 44px; padding: .45rem .65rem; border: 1px solid var(--oak-line);
     border-radius: var(--oak-radius-control); color: var(--oak-text); background: #493628; font: inherit;
   }
   .bid-form input { width: 7rem; }
-  .hand-options { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .5rem; }
-  .hand-options label { display: inline-flex; align-items: center; gap: .35rem; }
   .practice button.action { background: #efd29f; color: #2c1b12; font-weight: 700; }
   .practice button:disabled { cursor: wait; }
   .marker { display: inline-block; width: .56em; height: .56em; border-radius: 50%; margin-inline-end: .42em; vertical-align: .12em; }

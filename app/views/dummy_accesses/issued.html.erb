@@ -2,4 +2,4 @@
 <p>Open the access form in a separate browser profile or incognito window and paste this one-time code. The code and browser access expire eight hours after issuance.</p>
 <p><%= link_to "Dummy access form", dummy_login_path, target: "_blank", rel: "noopener noreferrer" %></p>
 <p><code id="dummy-credential"><%= @credential %></code></p>
-<p><%= link_to "Return to the private table", game_session_path(@experiment.uid) %></p>
+<p><%= link_to "Return to the private table", game_session_path(@human_session.uid) %></p>

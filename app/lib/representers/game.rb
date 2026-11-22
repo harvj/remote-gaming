@@ -12,24 +12,23 @@ module Representers
       return scalar if scalar_only?
 
       scalar.merge(
-        sessions: Representers::GameSessionRow.(game_sessions),
-        experiments: ExperimentalAccess.enabled? ? Representers::GameSessionRow.(experiments) : nil
+        sessions: Representers::GameSessionRow.(game_sessions)
       )
     end
 
     attr_reader :game
 
-    def experiments
-      return [] unless viewer && !viewer.dummy?
-
-      game.sessions.where(experimental: true, experiment_owner: viewer).order(id: :desc)
-    end
-
     def game_sessions
       return [] unless viewer
 
-      ::GameSession.ordinary.where(id: ::Player.joined.where(user_id: viewer.id).select(:game_session_id))
-        .where(game: game).order(id: :desc).includes(:game, winner: %i[role user])
+      visible = ::GameSession.ordinary
+      if game.key == "modern_art" && ModernArtPractice.owner?(ModernArtStaging::GAME_HOST, viewer)
+        human_tables = ModernArtPracticeTable.where("setup ->> 'mode' = 'human'").select(:uid)
+        visible = visible.or(::GameSession.where(experiment_owner: viewer, uid: human_tables))
+      end
+
+      visible.where(id: ::Player.joined.where(user_id: viewer.id).select(:game_session_id), game: game)
+        .order(id: :desc).includes(:game, winner: %i[role user])
     end
   end
 end

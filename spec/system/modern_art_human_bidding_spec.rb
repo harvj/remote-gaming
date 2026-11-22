@@ -72,6 +72,13 @@ RSpec.describe "Human Modern Art auction presentation", type: :system do
       end
       next unless kind == "sealed"
 
+      click_button "Sort hand: Recorded order"
+      click_button "Sort hand: Artist"
+      check "Group by artist"
+      expect(page).to have_button("Sort hand: Auction type")
+      own_cards = table.human_view(owner).fetch(:hand).pluck("id").map(&:to_s)
+      expect(all(".hand [data-card-id]").map { |card| card["data-card-id"] }).to match_array(own_cards)
+
       another = open_new_window
       within_window(another) do
         visit game_session_path(session.uid)
@@ -80,6 +87,8 @@ RSpec.describe "Human Modern Art auction presentation", type: :system do
       fill_in "Amount in $k", with: 12
       click_button "Seal bid"
       expect(page).to have_no_button("Seal bid")
+      expect(page).to have_button("Sort hand: Auction type")
+      expect(page).to have_checked_field("Group by artist")
       within_window(another) { expect(page).to have_no_button("Seal bid", wait: 5) }
       table.reload
       expect(table.commands.length).to eq(2)
@@ -94,6 +103,10 @@ RSpec.describe "Human Modern Art auction presentation", type: :system do
         find("summary", text: "Recorded bidding and outcomes").click
         expect(page).to have_text("No bidding is visible yet.")
       end
+      visit session_replay_path(session.uid, frame: 2)
+      expect(page).to have_button("Sort hand: Auction type")
+      expect(page).to have_checked_field("Group by artist")
+      expect(page).to have_no_css(".hand button[data-card-id]")
     end
   ensure
     browser&.execute_cdp("Emulation.clearDeviceMetricsOverride")

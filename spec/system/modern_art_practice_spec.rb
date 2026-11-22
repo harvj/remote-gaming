@@ -44,6 +44,24 @@ RSpec.describe "Modern Art private practice", type: :system do
     screenshot(browser, 1440, "hand-desktop")
     screenshot(browser, 390, "hand-mobile")
 
+    hand = metadata.dig("board", "hand")
+    expect(rendered_hand_ids).to eq(hand.pluck("id").map(&:to_s))
+    check "Group by artist"
+    expect(rendered_hand_ids).to eq(hand.group_by { |card| card.fetch("name") }.values.flatten.pluck("id").map(&:to_s))
+    uncheck "Group by artist"
+    click_button "Sort hand: Recorded order"
+    expect(rendered_hand_ids).to eq(sorted_hand_ids(hand, "name"))
+    click_button "Sort hand: Artist"
+    expect(rendered_hand_ids).to eq(sorted_hand_ids(hand, "value"))
+    click_button "Sort hand: Auction type"
+    expect(rendered_hand_ids).to eq(hand.pluck("id").map(&:to_s))
+    click_button "Sort hand: Recorded order"
+    check "Group by artist"
+    expect(page).to have_checked_field("Group by artist")
+    expect(page).to have_button("Sort hand: Artist")
+    screenshot(browser, 1440, "hand-sort-desktop", focus: ".hand-options")
+    screenshot(browser, 390, "hand-sort-mobile", focus: ".hand-options")
+
     another = open_new_window
     within_window(another) do
       browser.execute_cdp("Page.addScriptToEvaluateOnNewDocument", source: <<~JS)
@@ -57,8 +75,10 @@ RSpec.describe "Modern Art private practice", type: :system do
       JS
       visit path
       expect(page).to have_css("h2", text: "Choose a painting")
+      click_button "Sort hand: Recorded order"
+      click_button "Sort hand: Artist"
     end
-    first("button[data-card-id]").click
+    find("button[data-card-id='#{hand.first.fetch('id')}']").click
     expect(page).to have_text("Recent actions")
     expect(page).to have_css(".activity [data-action-number='1']", text: "#1")
     screenshot(browser, 390, "auction-mobile")
@@ -76,6 +96,7 @@ RSpec.describe "Modern Art private practice", type: :system do
       JS
       expect(stale_status).to eq(409)
       refresh
+      expect(page).to have_button("Sort hand: Auction type")
       expect(page).to have_css(".activity [data-action-number='1']", text: "#1")
     end
 
@@ -94,6 +115,7 @@ RSpec.describe "Modern Art private practice", type: :system do
         page.evaluate_script("window.practiceSockets.length > 1 && window.practiceSockets.at(-1).readyState === WebSocket.OPEN")
       end
       expect(page).to have_text("Daniel Reyes acquired one painting for $19k.")
+      expect(page).to have_button("Sort hand: Auction type")
     end
 
     in_table = ModernArtPracticeTable.find_by!(uid: metadata.fetch("uid"))
@@ -102,6 +124,7 @@ RSpec.describe "Modern Art private practice", type: :system do
     browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 1440, height: 940,
       deviceScaleFactor: 1, mobile: false)
     captured_score = false
+    checked_new_cards = false
     225.times do
       in_table.reload
       rules = Games::ModernArt::PracticeRules.new(in_table.position)
@@ -125,12 +148,23 @@ RSpec.describe "Modern Art private practice", type: :system do
       revision = in_table.commands.length
       Selenium::WebDriver::Wait.new(timeout: 5).until { in_table.reload.commands.length > revision }
       expect(page).to have_no_css(".auction button:disabled")
+      if command == "advance" && !checked_new_cards
+        next_hand = in_table.owner_view.fetch(:hand)
+        expect(next_hand.pluck("id") - hand.pluck("id")).not_to be_empty
+        expect(page).to have_button("Sort hand: Artist")
+        expect(page).to have_checked_field("Group by artist")
+        expect(rendered_hand_ids).to eq(sorted_hand_ids(next_hand, "name"))
+        checked_new_cards = true
+      end
     end
+    expect(checked_new_cards).to be(true)
     expect(page).to have_css("h2", text: "Final results")
     expect(in_table.reload.replay).to eq(in_table.position)
     screenshot(browser, 1440, "results-desktop")
     screenshot(browser, 390, "results-mobile")
     visit "#{path}?frame=1"
+    expect(page).to have_button("Sort hand: Artist")
+    expect(page).to have_checked_field("Group by artist")
     expect(page).to have_css(".activity [data-action-number='1']", text: "#1")
     expect(page).to have_no_css("button[data-card-id]")
     click_link "Next action"
@@ -143,6 +177,15 @@ RSpec.describe "Modern Art private practice", type: :system do
     expect(ModernArtPracticeTable.exists?(in_table.id)).to be(false)
   ensure
     browser&.execute_cdp("Emulation.clearDeviceMetricsOverride")
+  end
+
+  def sorted_hand_ids(hand, field)
+    hand.each_with_index.sort_by { |card, index| [ card.fetch(field), index ] }
+      .map { |card, _| card.fetch("id").to_s }
+  end
+
+  def rendered_hand_ids
+    all(".hand [data-card-id]").map { |card| card["data-card-id"] }
   end
 
   def verify_rules_drawer(browser)
@@ -189,7 +232,7 @@ RSpec.describe "Modern Art private practice", type: :system do
       deviceScaleFactor: 1, mobile: false)
   end
 
-  def screenshot(browser, width, name)
+  def screenshot(browser, width, name, focus: nil)
     return unless ENV["PRACTICE_SCREENSHOTS"]
 
     browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: width, height: 940,
@@ -197,6 +240,13 @@ RSpec.describe "Modern Art private practice", type: :system do
     expect(page).to have_css("body[data-site-art-background]")
     expect(page.evaluate_script("document.documentElement.scrollWidth")).to eq(width)
     page.evaluate_async_script("document.fonts.ready.then(arguments[0])")
+    if focus
+      find(focus).execute_script(<<~JS)
+        const inset = document.querySelector("body > header").getBoundingClientRect().height + 60;
+        window.scrollBy({ top: this.getBoundingClientRect().top - inset, behavior: "instant" });
+      JS
+      browser.execute_cdp("Input.dispatchMouseEvent", type: "mouseMoved", x: 3, y: 3)
+    end
     page.save_screenshot(File.join(ENV.fetch("PRACTICE_SCREENSHOTS"), "#{name}.png"))
   end
 end

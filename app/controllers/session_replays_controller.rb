@@ -41,9 +41,6 @@ class SessionReplaysController < ApplicationController
       metadata: metadata.historical_metadata, frames: frames.take(cursor), complete: @replay.fetch(:available),
       viewer_id: @replay_session.players.find_by(user: current_user)&.id)
     @replay[:sales]&.each { |sale| sale.delete(:buyerId) }
-    @can_branch = !current_user.dummy? && BrowserIdentity.oidc_user(session) == current_user &&
-      SessionFrame::Branch.allowed?(@replay_session, current_user)
-    @replay[:branchable] = @can_branch && SessionFrame::Branch.supported?(view, current_user)
     @lineage = replay_lineage
     respond_to do |format|
       format.html

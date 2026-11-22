@@ -77,6 +77,9 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
       "light-purple" => [ 192, 175, 239 ], "light-brown" => [ 215, 174, 133 ]
     }
     artist = palette.fetch(card.card.color)
+    click_button "Sort hand: Recorded order"
+    check "Group by artist"
+    expect(page).to have_button("Sort hand: Artist")
     live_style = card_style(find("#{auction} #{face}"))
     expect(live_style).to eq(expected_card_style(artist))
     expect(all("#{board} .swatch").map { |swatch| swatch.evaluate_script("getComputedStyle(this).backgroundColor") })
@@ -100,6 +103,8 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
 
     board = "article[aria-label='Modern Art tabletop']"
     visit session_replay_path(table.uid, frame: after.sequence)
+    expect(page).to have_button("Sort hand: Artist")
+    expect(page).to have_checked_field("Group by artist")
     click_button "Game Rules"
     expect(page).to have_css("dialog[open] h2", text: "Modern Art rules")
     find('dialog button[aria-label="Close game rules"]').click
@@ -121,6 +126,7 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
     expect(page).to have_css("#{board} .hand #{face}")
     fill_in "Frame", with: played.sequence
     click_button "Go"
+    expect(page).to have_button("Sort hand: Artist")
     expect(page).to have_css("#{auction} #{face}")
     expect(page).to have_no_css("#{board} .hand #{face}")
     expect(find("#{board} .seats article.active")).to have_text(viewer.name)

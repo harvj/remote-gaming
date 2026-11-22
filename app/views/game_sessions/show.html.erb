@@ -2,38 +2,22 @@
 <% if @game_session.can_replay?(current_user) %>
   <% if !@digital_table || @digital_board %><p><%= link_to "Replay history", session_replay_path(@game_session.uid) %></p><% end %>
 <% end %>
-<% if ExperimentalAccess.enabled? && @game_session.experimental? && (!@digital_board || @digital_table.owner_id == current_user.id) %>
-  <% if @digital_board %>
-    <details class="panel"><summary>Manage staging seats</summary>
-  <% else %>
-    <section class="panel">
-      <h2><%= @digital_table ? "Private human game" : (@game_session.parent_session_id? ? "Private experimental branch" : "Private experiment") %></h2>
-  <% end %>
-    <% if @game_session.parent_session_id? %>
-      <p>Forked at frame <%= @game_session.fork_frame.sequence %> · Rules v<%= @game_session.branch_rules_version %></p>
-      <% if @game_session.parent_session.can_replay?(current_user) %>
-        <p><%= link_to "Original timeline", session_replay_path(@game_session.parent_session.uid, frame: @game_session.fork_frame.sequence) %></p>
+<% if ExperimentalAccess.enabled? && @digital_table&.owner_id == current_user.id %>
+  <details class="panel" <%= "open" unless @digital_board %>>
+    <summary>Manage staging seats</summary>
+    <% if @game_session.joinable? %>
+      <%= form_with url: session_dummies_path(@game_session.uid), local: true do |f| %>
+        <%= f.label :seat_name, "Guest display name" %>
+        <%= f.text_field :seat_name, maxlength: 60 %>
+        <%= f.submit "Add human seat" %>
       <% end %>
     <% end %>
-    <% if @game_session.experiment_owner_id == current_user.id %>
-      <% if @game_session.joinable? %>
-        <% if @digital_table %>
-          <%= form_with url: session_dummies_path(@game_session.uid), local: true do |f| %>
-            <%= f.label :seat_name, "Guest display name" %>
-            <%= f.text_field :seat_name, maxlength: 60 %>
-            <%= f.submit "Add human seat" %>
-          <% end %>
-        <% else %>
-          <%= button_to "Add dummy player", session_dummies_path(@game_session.uid) %>
-        <% end %>
-      <% end %>
-      <% @game_session.all_players.joins(:dummy_access).includes(:user).each do |seat| %>
-        <p><%= seat.user.name %></p>
-        <%= button_to "Issue new code", rotate_session_dummy_path(@game_session.uid, seat.id) %>
-        <%= button_to "Revoke access", session_dummy_path(@game_session.uid, seat.id), method: :delete %>
-      <% end %>
+    <% @game_session.all_players.joins(:dummy_access).includes(:user).each do |seat| %>
+      <p><%= seat.user.name %></p>
+      <%= button_to "Issue new code", rotate_session_dummy_path(@game_session.uid, seat.id) %>
+      <%= button_to "Revoke access", session_dummy_path(@game_session.uid, seat.id), method: :delete %>
     <% end %>
-  <% if @digital_board %></details><% else %></section><% end %>
+  </details>
 <% end %>
 <% if @digital_board %>
   <%= render "shared/modern_art_digital_table", board: @digital_board, uid: @game_session.uid,

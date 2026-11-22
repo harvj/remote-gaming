@@ -24,6 +24,8 @@ RSpec.describe "Recorded human Modern Art", type: :request do
     table = ModernArtPracticeTable.find_by!(owner: owner)
     expect(table).to be_human
     endpoint = game_session_path(table.uid)
+    expect(response).to redirect_to(endpoint)
+    expect(Representers::Game.(game, viewer: owner).fetch(:sessions).pluck(:uid)).to include(table.uid)
 
     peers = %w[Alex Morgan].map do |name|
       post session_dummies_path(table.uid), params: { seat_name: name }
@@ -42,6 +44,14 @@ RSpec.describe "Recorded human Modern Art", type: :request do
     expect(response.parsed_body.fetch("phase")).to eq("sealed")
     expect(table.reload.commands.size).to eq(1)
 
+    alex = GameSession.find_by!(uid: table.uid).players.joins(:user, :dummy_access).find_by!(users: { name: "Alex" })
+    post rotate_session_dummy_path(table.uid, alex.id)
+    expect(response).to have_http_status(:ok)
+    replacement = Nokogiri::HTML(response.body).at_css("#dummy-credential").text
+    peers.first.get endpoint, as: :json
+    expect(peers.first.response).to have_http_status(:not_found)
+    peers.first.post(dummy_login_path, params: { dummy_credential: replacement })
+    expect(peers.first.response).to have_http_status(:see_other)
     peers.first.get endpoint, as: :json
     expect(peers.first.response.parsed_body.fetch("players").select { |player| player.key?("cash") }.size).to eq(1)
     peers.first.patch endpoint, params: { command: "bid", value: 14, revision: 1, seat: 0 }, as: :json
@@ -89,8 +99,6 @@ RSpec.describe "Recorded human Modern Art", type: :request do
     expect(table.commands.filter_map { |_, action, _, _, phase| phase if %w[bid pass buy price].include?(action) })
       .to include("open", "once_around", "sealed", "fixed_price", "fixed_offer", "pair")
 
-    session = GameSession.find_by!(uid: table.uid)
-    alex = session.players.joins(:user, :dummy_access).find_by!(users: { name: "Alex" })
     delete session_dummy_path(table.uid, alex.id)
     expect(response).to have_http_status(:see_other)
     peers.first.patch endpoint, params: { command: "pass", revision: 4 }, as: :json

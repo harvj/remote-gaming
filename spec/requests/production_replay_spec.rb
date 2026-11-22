@@ -58,7 +58,7 @@ RSpec.describe "Production replay route boundaries", type: :request do
     get "/auth/callback", params: { state: "fixture", code: "fixture" }
 
     expect do
-      post session_branches_path(table.uid), params: { frame: 1 }
+      post "/s/#{table.uid}/branches", params: { frame: 1 }
       expect(response).to have_http_status(:not_found)
       post session_dummies_path(table.uid)
       expect(response).to have_http_status(:not_found)

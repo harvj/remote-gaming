@@ -131,8 +131,6 @@ Rails.application.routes.draw do
     end
 
     get "s/:uid/replay", to: "session_replays#show", as: :session_replay
-    post "s/:uid/branches", to: "session_branches#create", as: :session_branches,
-      constraints: ->(_request) { ExperimentalAccess.enabled? }
     get "s/:uid" => "game_sessions#show", as: :game_session
     patch "s/:uid" => "game_sessions#update"
     post "s/:uid/observations" => "game_sessions#observe", as: :session_observations

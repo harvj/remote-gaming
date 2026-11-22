@@ -4,8 +4,7 @@
 
   export let initial
   export let replayPath
-  export let branchPath = null
-  export let branchToken = null
+  export let uid
   export let lineage = null
   let frame = initial
   let jump = initial.cursor
@@ -83,13 +82,6 @@
 </nav>
 <p aria-live="polite">Frame {frame.cursor} of {frame.last}{pending ? " · Loading" : ""}</p>
 {#if error}<p role="alert">{error}</p>{/if}
-{#if branchPath && frame.branchable}
-  <form method="post" action={branchPath}>
-    <input type="hidden" name="authenticity_token" value={branchToken}>
-    <input type="hidden" name="frame" value={frame.cursor}>
-    <button type="submit" disabled={pending}>Create private branch</button>
-  </form>
-{/if}
 {#if comparisonError}<p role="alert">{comparisonError}</p>{/if}
 {#if original}
   <section aria-label="Timeline comparison" class="comparison">
@@ -103,7 +95,7 @@
     {/each}
   </section>
 {/if}
-<ModernArtPractice board={frame.tabletop} replay={true} />
+<ModernArtPractice {uid} board={frame.tabletop} replay={true} />
 
 <details class="history" open>
   <summary>Recorded event and table-captain observations</summary>
