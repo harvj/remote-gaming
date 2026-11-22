@@ -22,7 +22,7 @@ module Representers
 
     def role_image_path
       if role.game.key == "modern_art"
-        return asset_path(role_image_filename) if %w[berlin bilbao new-york paris tokyo].include?(role.name.parameterize)
+        return ActionController::Base.helpers.asset_path(role_image_filename) if %w[berlin bilbao new-york paris tokyo].include?(role.name.parameterize)
         return
       end
 

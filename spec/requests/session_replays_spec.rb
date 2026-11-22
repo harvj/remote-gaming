@@ -120,6 +120,8 @@ RSpec.describe "Session replay", type: :request do
     expect(response.body).to include("Replay unavailable", "practice-table-data")
     get game_session_path(legacy.uid), as: :json
     board = response.parsed_body.dig("content", "session", "historicalTabletop")
+    role = game.roles.create!(name: "berlin")
+    expect(Representers::Role.(role).fetch(:imagePath)).to match(%r{\A/assets/modern_art/berlin(?:-[a-f0-9]+)?\.png\z})
     expect(board).to include("historical" => true, "completeReplay" => false, "legal" => {}, "actionHistory" => [])
     expect(board.fetch("players")).not_to be_empty
     get session_replay_path(legacy.uid), as: :json
