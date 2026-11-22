@@ -1,0 +1,9 @@
+<div id="practice-table"></div>
+<script id="practice-table-data" type="application/json">
+  <%= raw json_escape({
+    board: board, uid: uid, endpoint: endpoint, lobbyUrl: lobby_url,
+    token: form_authenticity_token, channel: local_assigns[:channel], replay: local_assigns[:replay] || false
+  }.to_json) %>
+</script>
+<%= vite_javascript_tag "modern_art_practice" %>
+<%= render "shared/modern_art_rules_drawer" %>

@@ -7,6 +7,8 @@ class SessionBranchesController < ApplicationController
     return head :not_found unless ExperimentalAccess.enabled? && BrowserIdentity.oidc_user(session) == current_user
 
     source = GameSession.find_by!(uid: params[:uid])
+    raise ActiveRecord::RecordNotFound if source.digital_modern_art
+
     cursor = Integer(params[:frame].to_s, 10, exception: false)
     return head :bad_request unless cursor&.positive?
 

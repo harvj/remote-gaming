@@ -27,3 +27,17 @@ These Chromium captures use disposable practice and historical replay fixtures.
 | Replay and missing bid history | [![Historical replay with bid history marked Not recorded](replay-bids-not-recorded-desktop.png)](replay-bids-not-recorded-desktop.png) | [![Mobile historical replay with the recorded market](replay-bids-not-recorded-mobile.png)](replay-bids-not-recorded-mobile.png) |
 
 [Rules audit and historical compatibility](rules-and-history.md)
+
+## Recorded human auctions
+
+These desktop and mobile Chromium captures use private human-table fixtures. The live human table, recorded replay and AI practice reuse the same auction layout, rules drawer, artist market, cards, and settlement and standings components.
+
+| Auction | Desktop | Mobile |
+| --- | --- | --- |
+| Open | [![Open auction desktop](human-open-desktop.png)](human-open-desktop.png) | [![Open auction mobile](human-open-mobile.png)](human-open-mobile.png) |
+| Once Around | [![Once Around desktop](human-once-around-desktop.png)](human-once-around-desktop.png) | [![Once Around mobile](human-once-around-mobile.png)](human-once-around-mobile.png) |
+| Sealed | [![Sealed auction desktop](human-sealed-desktop.png)](human-sealed-desktop.png) | [![Sealed auction mobile](human-sealed-mobile.png)](human-sealed-mobile.png) |
+| Fixed Price | [![Fixed Price desktop](human-fixed-desktop.png)](human-fixed-desktop.png) | [![Fixed Price mobile](human-fixed-mobile.png)](human-fixed-mobile.png) |
+| Double | [![Double auction desktop](human-double-desktop.png)](human-double-desktop.png) | [![Double auction mobile](human-double-mobile.png)](human-double-mobile.png) |
+
+**Create New** in the staging Modern Art lobby starts a human-bidding table. The host can add named acceptance seats with the existing revocable staging grants. Start the game once three to five seats are present. **Replay history** opens the recorded command timeline with the authenticated player’s visibility applied at each action. AI practice remains a separate owner-only option. Production human gameplay stays disabled until separately approved.

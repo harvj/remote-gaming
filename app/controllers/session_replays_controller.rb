@@ -15,6 +15,19 @@ class SessionReplaysController < ApplicationController
   def show
     @title = "Modern Art replay"
     @replay_session = find_replay_session
+    if (digital = @replay_session.digital_modern_art)
+      raise ActiveRecord::RecordNotFound unless ModernArtPractice.enabled_on?(request.host) && digital.position.present?
+
+      @last_frame = digital.commands.length
+      @cursor = params.key?(:frame) ? Integer(params[:frame].to_s, 10, exception: false) : @last_frame
+      return head :bad_request unless @cursor&.between?(0, @last_frame)
+
+      @digital_board = digital.human_view(current_user, revision: @cursor)
+      @digital_board[:legal] = {}
+      return render json: @digital_board if request.format.json?
+      return render :digital
+    end
+
     frames = @replay_session.frames.order(:sequence).to_a
     SessionFrame::Replay.validate!(frames)
     cursor = params.key?(:frame) ? Integer(params[:frame].to_s, 10, exception: false) : frames.size

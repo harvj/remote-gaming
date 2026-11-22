@@ -1,0 +1,14 @@
+<% content_for :head do %>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/c8fac941ce.js" crossorigin="anonymous"></script>
+<% end %>
+<main id="game-directory" class="directory-content replay-content" data-art-role="default" tabindex="-1">
+  <h2>Recorded Modern Art replay</h2>
+  <nav aria-label="Recorded actions">
+    <%= link_to "Previous action", session_replay_path(@replay_session.uid, frame: @cursor - 1) if @cursor.positive? %>
+    <span>Action <%= @cursor %> of <%= @last_frame %></span>
+    <%= link_to "Next action", session_replay_path(@replay_session.uid, frame: @cursor + 1) if @cursor < @last_frame %>
+  </nav>
+  <%= render "shared/modern_art_digital_table", board: @digital_board, uid: @replay_session.uid,
+    endpoint: game_session_path(@replay_session.uid), lobby_url: game_session_path(@replay_session.uid), replay: true %>
+</main>

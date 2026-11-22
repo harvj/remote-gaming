@@ -3,19 +3,21 @@
 class Games::ModernArt::PracticeRules
   class IllegalCommand < StandardError; end
 
-  SEATS = [ 0, 1, 2 ].freeze
-  DEAL = [ 10, 6, 6, 0 ].freeze
+  DEAL = {
+    3 => [ 10, 6, 6, 0 ], 4 => [ 9, 4, 4, 0 ], 5 => [ 8, 3, 3, 0 ]
+  }.freeze
 
   attr_reader :state
 
-  def self.start(cards, seed:, first_seat:)
+  def self.start(cards, seed:, first_seat:, seat_count: 3, recorded: false)
     shuffled = cards.shuffle(random: Random.new(seed))
     game = new({
       "cards" => cards.index_by { |card| card.fetch("id").to_s },
-      "deck" => shuffled.pluck("id"), "hands" => [ [], [], [] ], "cash" => [ 100, 100, 100 ],
-      "holdings" => [ [], [], [] ], "market" => {}, "seasons" => [], "season" => 1,
+      "deck" => shuffled.pluck("id"), "hands" => Array.new(seat_count) { [] }, "cash" => Array.new(seat_count, 100),
+      "holdings" => Array.new(seat_count) { [] }, "market" => {}, "seasons" => [], "season" => 1,
       "phase" => "offer", "turn" => first_seat, "recent" => []
     })
+    game.state.merge!("auction_number" => 0, "settlements" => []) if recorded
     game.deal
     game
   end
@@ -44,7 +46,7 @@ class Games::ModernArt::PracticeRules
     when "sealed"
       auction.fetch("bids").key?(seat.to_s) ? {} : { "bid" => [ 0, cash(seat) ] }
     when "scoring"
-      seat.zero? ? { "advance" => true } : {}
+      seat.zero? || state.key?("settlements") ? { "advance" => true } : {}
     else
       {}
     end
@@ -73,7 +75,7 @@ class Games::ModernArt::PracticeRules
   end
 
   def deal
-    state.fetch("hands").each { |cards| cards.concat(state.fetch("deck").shift(DEAL.fetch(state.fetch("season") - 1))) }
+    state.fetch("hands").each { |cards| cards.concat(state.fetch("deck").shift(DEAL.fetch(seats.length).fetch(state.fetch("season") - 1))) }
   end
 
   def projection(seat)
@@ -84,7 +86,7 @@ class Games::ModernArt::PracticeRules
       season: state.fetch("season"), phase: phase, turn: state["turn"], auction: listing,
       hand: hand(seat).map { |id| card(id) }, legal: legal(seat), market: state.fetch("market"),
       seasons: state.fetch("seasons"), recent: state.fetch("recent"),
-      players: SEATS.map do |position|
+      players: seats.map do |position|
         details = { seat: position, handCount: hand(position).size, holdings: state.fetch("holdings")[position].map { |id| card(id) } }
         details[:cash] = cash(position) if position == seat || ending
         details
@@ -103,7 +105,8 @@ class Games::ModernArt::PracticeRules
   def card(id) = state.fetch("cards").fetch(id.to_s)
   def artist(id) = card(id).fetch("artist")
   def kind(id) = card(id).fetch("kind")
-  def next_seat(seat) = (seat + 1) % SEATS.length
+  def seats = state.fetch("hands").each_index.to_a
+  def next_seat(seat) = (seat + 1) % seats.length
 
   def require_choice(condition)
     raise IllegalCommand unless condition
@@ -112,7 +115,10 @@ class Games::ModernArt::PracticeRules
   def play(seat, id)
     pairing = phase == "pair"
     hand(seat).delete(id)
-    state["auction"] = { "seller" => seat, "lot" => [] } unless pairing
+    unless pairing
+      state["auction"] = { "seller" => seat, "lot" => [] }
+      state["auction_number"] += 1 if state.key?("auction_number")
+    end
     auction["seller"] = seat
     lot << id
     counts = state.fetch("market")
@@ -150,11 +156,11 @@ class Games::ModernArt::PracticeRules
     if phase == "sealed"
       bids = auction.fetch("bids")
       bids[seat.to_s] = amount
-      return unless bids.size == SEATS.size
+      return unless bids.size == seats.size
 
-      priority = [ seller, next_seat(seller), next_seat(next_seat(seller)) ]
+      priority = seats.rotate(seller)
       winner = priority.max_by { |position| bids.fetch(position.to_s) }
-      note("revealed", amounts: SEATS.map { |position| bids.fetch(position.to_s) })
+      note("revealed", amounts: seats.map { |position| bids.fetch(position.to_s) })
       return settle(winner, bids.fetch(winner.to_s))
     end
 
@@ -171,14 +177,14 @@ class Games::ModernArt::PracticeRules
     case phase
     when "pair"
       auction.fetch("passed") << seat
-      auction.fetch("passed").size == SEATS.size ? settle(seller, 0) : state["turn"] = next_seat(seat)
+      auction.fetch("passed").size == seats.size ? settle(seller, 0) : state["turn"] = next_seat(seat)
     when "fixed_offer"
       next_seat(seat) == seller ? settle(seller, auction.fetch("price")) : state["turn"] = next_seat(seat)
     when "once_around"
       once_around(seat)
     when "open"
       auction.fetch("passed") << seat
-      challengers = SEATS - [ auction["leader"] ]
+      challengers = seats - [ auction["leader"] ]
       settle(auction["leader"] || seller, auction.fetch("high")) if (challengers - auction.fetch("passed")).empty?
     end
   end
@@ -191,6 +197,10 @@ class Games::ModernArt::PracticeRules
     state.fetch("cash")[winner] -= price
     state.fetch("cash")[seller] += price unless winner == seller
     state.fetch("holdings")[winner].concat(lot)
+    if state.key?("settlements")
+      state.fetch("settlements") << { "auction" => state.fetch("auction_number"), "winner" => winner,
+        "seller" => seller, "amount" => price, "cards" => lot.dup }
+    end
     note("sold", seat: winner, seller: seller, amount: price, cards: lot.map { |id| card(id) })
     resume_from(seller)
   end
@@ -206,6 +216,9 @@ class Games::ModernArt::PracticeRules
     payouts = state.fetch("holdings").map { |cards| cards.sum { |id| values.fetch(artist(id), 0) } }
     payouts.each_with_index { |payout, seat| state.fetch("cash")[seat] += payout }
     seasons << { "tiles" => tiles, "values" => values, "payouts" => payouts }
+    if state.key?("settlements")
+      state.fetch("settlements") << { "auction" => state.fetch("auction_number"), "cards" => lot.dup, "outcome" => "unsold" }
+    end
     state["ended"] = state.fetch("season") == 4 || hands_empty?
     state["auction"] = nil
     state["phase"] = "scoring"
@@ -225,15 +238,15 @@ class Games::ModernArt::PracticeRules
     end
 
     state["season"] += 1
-    state.merge!("market" => {}, "holdings" => [ [], [], [] ])
+    state.merge!("market" => {}, "holdings" => Array.new(seats.length) { [] })
     deal
-    resume_from((state.fetch("turn") - 1) % SEATS.length)
+    resume_from((state.fetch("turn") - 1) % seats.length)
   end
 
   def resume_from(seat)
     state["auction"] = nil
     state["phase"] = "offer"
-    next_player = (1..SEATS.length).map { |step| (seat + step) % SEATS.length }.find { |position| hand(position).any? }
+    next_player = (1..seats.length).map { |step| (seat + step) % seats.length }.find { |position| hand(position).any? }
     state["turn"] = next_player
   end
 

@@ -23,7 +23,12 @@ class DummyAccessesController < ApplicationController
       raise SessionFrame::Record::InvalidAction, "Seats can only be added before the game starts" unless @experiment.joinable?
 
       handle = SecureRandom.hex(12)
-      user = User.create!(name: "Dummy #{@experiment.all_players.count + 1} (#{handle.first(6)})",
+      default_name = "Dummy #{@experiment.all_players.count + 1} (#{handle.first(6)})"
+      if @experiment.digital_modern_art
+        default_name = "Guest #{@experiment.all_players.count}"
+        default_name = params[:seat_name].to_s.strip.first(60).presence || default_name
+      end
+      user = User.create!(name: default_name,
         username: "dummy_#{handle}", dummy: true)
       player = Player::Create.!(user, session: @experiment, recorded_by: owner_player).subject
       @credential = player.create_dummy_access!(expires_at: Time.current).issue!

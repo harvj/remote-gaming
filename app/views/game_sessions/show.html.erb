@@ -1,10 +1,14 @@
-<%= render "shared/modern_art_rules_drawer", trigger: true if @game_session.game.key == "modern_art" %>
+<%= render "shared/modern_art_rules_drawer", trigger: true if @game_session.game.key == "modern_art" && !@digital_board %>
 <% if @game_session.can_replay?(current_user) %>
-  <p><%= link_to "Replay history", session_replay_path(@game_session.uid) %></p>
+  <% if !@digital_table || @digital_board %><p><%= link_to "Replay history", session_replay_path(@game_session.uid) %></p><% end %>
 <% end %>
-<% if ExperimentalAccess.enabled? && @game_session.experimental? %>
-  <section class="panel">
-    <h2><%= @game_session.parent_session_id? ? "Private experimental branch" : "Private experiment" %></h2>
+<% if ExperimentalAccess.enabled? && @game_session.experimental? && (!@digital_board || @digital_table.owner_id == current_user.id) %>
+  <% if @digital_board %>
+    <details class="panel"><summary>Manage staging seats</summary>
+  <% else %>
+    <section class="panel">
+      <h2><%= @digital_table ? "Private human game" : (@game_session.parent_session_id? ? "Private experimental branch" : "Private experiment") %></h2>
+  <% end %>
     <% if @game_session.parent_session_id? %>
       <p>Forked at frame <%= @game_session.fork_frame.sequence %> · Rules v<%= @game_session.branch_rules_version %></p>
       <% if @game_session.parent_session.can_replay?(current_user) %>
@@ -13,7 +17,15 @@
     <% end %>
     <% if @game_session.experiment_owner_id == current_user.id %>
       <% if @game_session.joinable? %>
-        <%= button_to "Add dummy player", session_dummies_path(@game_session.uid) %>
+        <% if @digital_table %>
+          <%= form_with url: session_dummies_path(@game_session.uid), local: true do |f| %>
+            <%= f.label :seat_name, "Guest display name" %>
+            <%= f.text_field :seat_name, maxlength: 60 %>
+            <%= f.submit "Add human seat" %>
+          <% end %>
+        <% else %>
+          <%= button_to "Add dummy player", session_dummies_path(@game_session.uid) %>
+        <% end %>
       <% end %>
       <% @game_session.all_players.joins(:dummy_access).includes(:user).each do |seat| %>
         <p><%= seat.user.name %></p>
@@ -21,8 +33,21 @@
         <%= button_to "Revoke access", session_dummy_path(@game_session.uid, seat.id), method: :delete %>
       <% end %>
     <% end %>
-  </section>
+  <% if @digital_board %></details><% else %></section><% end %>
 <% end %>
+<% if @digital_board %>
+  <%= render "shared/modern_art_digital_table", board: @digital_board, uid: @game_session.uid,
+    endpoint: game_session_path(@game_session.uid), lobby_url: root_path, channel: "GameSessionChannel" %>
+<% elsif @digital_table %>
+  <section class="panel">
+    <h2>Waiting for human players</h2>
+    <p><%= @game_session.players.count %> seats joined. Start with three to five. Each guest uses a private seat grant.</p>
+    <% if @digital_table.owner_id == current_user.id && @game_session.playable? %>
+      <%= button_to "Start human game", game_session_path(@game_session.uid), method: :patch, params: { command: "start" } %>
+    <% end %>
+    <p><%= link_to "Refresh table", game_session_path(@game_session.uid) %></p>
+  </section>
+<% else %>
 <div id="game-sessions-show"></div>
 
 <script id="game-sessions-show-data" type="application/json">
@@ -35,3 +60,5 @@
 </script>
 
 <%= vite_javascript_tag "game_session" %>
+
+<% end %>

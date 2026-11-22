@@ -45,7 +45,7 @@ class ModernArtPracticeTablesController < ApplicationController
   end
 
   def owned_tables
-    ModernArtPracticeTable.where(owner: current_user)
+    ModernArtPracticeTable.where(owner: current_user).where("setup ->> 'mode' IS DISTINCT FROM 'human'")
   end
 
   def load_table

@@ -176,6 +176,12 @@ class GameSession < ApplicationRecord
     experimental? || (!viewer.dummy? && players.exists?(user_id: viewer.id))
   end
 
+  def digital_modern_art
+    return unless ModernArtStaging.enabled? && game.key == "modern_art"
+
+    ModernArtPracticeTable.where("setup ->> 'mode' = 'human'").find_by(uid: uid)
+  end
+
   def broadcast_live!
     GameSessionChannel.broadcast_to(self, { event: "session_changed" })
   end

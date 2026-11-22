@@ -37,7 +37,7 @@
 
   {#if game.experiments?.length}
     <section class="panel">
-      <h2>My private experiments</h2>
+      <h2>My private tables</h2>
       {#each game.experiments as session (session.uid)}
         <GameSessionRow {session}/>
       {/each}

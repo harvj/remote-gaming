@@ -112,6 +112,7 @@
   </div>
 
   {#if board.players.length}
+    <p class="historical-balances">Cash balances <strong>Not recorded</strong></p>
     <div class="seats" aria-label="Player hands">
       {#each board.players as player (player.id)}
         <section class="seat" class:current={player.id === board.currentPlayerId} class:visible-hand={player.hand?.length > 0} aria-label={`${player.name}’s hand`}>
@@ -164,6 +165,7 @@
   .artists, .cards { padding: 0; margin: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .4rem; }
   .artists li { display: flex; align-items: center; gap: .35rem; padding: .2rem .4rem; font-size: .74rem; }
   .swatch { width: .53rem; height: .53rem; border-radius: 50%; }
+  .tabletop .historical-balances { margin-block-start: .65rem; }
   .season-rail { margin-block-start: .75rem; }
   .zones { display: grid; grid-template-columns: minmax(12rem, .8fr) minmax(0, 2fr); gap: .65rem; margin-top: .9rem; }
   .zone, .seat { min-width: 0; border: 1px solid var(--line); border-radius: var(--oak-radius-section, .5rem); background: var(--oak-nested, #342b22); padding: .7rem; }

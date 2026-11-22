@@ -41,6 +41,10 @@ class ApplicationController < ActionController::Base
     return unless CanonicalAuth.enabled? && session.key?(:dummy_browser)
     permitted = DUMMY_ACTIONS.fetch(controller_path, []).include?(action_name)
     return if permitted && (controller_path == "dummy_accesses" || dummy_access)
+    if controller_path == "game_sessions" && action_name == "update"
+      table = dummy_access&.player&.session
+      return if table && table.uid == params[:uid] && table.digital_modern_art
+    end
 
     head :not_found
   end

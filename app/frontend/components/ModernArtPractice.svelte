@@ -6,7 +6,7 @@
   import ModernArtSeasonRail from "./ModernArtSeasonRail.svelte"
   import ModernArtMarket from "./ModernArtMarket.svelte"
 
-  let { board: initial, uid, endpoint, lobbyUrl, token } = $props()
+  let { board: initial, uid, endpoint, lobbyUrl, token, channel, replay = false } = $props()
   const initialBoard = () => initial
   let board = $state(initialBoard())
   let amount = $state("")
@@ -32,6 +32,7 @@
   }
   const cash = value => `$${value}k`
   const label = seat => board.names[seat]
+  const viewerSeat = $derived(board.viewerSeat ?? 0)
   const bounds = $derived(board.legal.price ?? board.legal.bid)
   const summary = $derived(board.seasons.at(-1))
   const standings = $derived([...board.players].sort((a, b) => (b.cash ?? 0) - (a.cash ?? 0)))
@@ -53,7 +54,7 @@
   }
 
   async function send(command, value = null) {
-    if (busy || unavailable) return
+    if (busy || unavailable || replay) return
 
     busy = true
     message = ""
@@ -82,7 +83,8 @@
   }
 
   onMount(() => {
-    const subscription = cable.subscriptions.create({ channel: "ModernArtPracticeChannel", uid }, {
+    if (replay || !channel) return
+    const subscription = cable.subscriptions.create({ channel, uid }, {
       connected: refresh, received: refresh
     })
     const interval = setInterval(refresh, 10000)
@@ -100,12 +102,12 @@
 </script>
 
 {#if unavailable}
-  <p class="panel" role="alert">This private table is no longer available. <a href={lobbyUrl}>Return to practice tables</a>.</p>
+  <p class="panel" role="alert">This private table is no longer available. <a href={lobbyUrl}>{replay ? "Return to live table" : board.viewerSeat != null ? "Return to lobby" : "Return to practice tables"}</a>.</p>
 {:else}
   <article class="practice">
     <header class="heading">
       <div>
-        <a href={lobbyUrl}>Practice tables</a>
+        <a href={lobbyUrl}>{replay ? "Live table" : board.viewerSeat != null ? "Modern Art lobby" : "Practice tables"}</a>
         <h1>Modern Art</h1>
       </div>
       <button type="button" data-modern-art-rules-trigger aria-haspopup="dialog" aria-controls="modern-art-rules-drawer">Game Rules</button>
@@ -114,7 +116,7 @@
     <div class="seasons"><ModernArtSeasonRail season={board.season} /></div>
 
     <section class="auction" aria-labelledby="auction-heading">
-      <p class="turn">{board.turn == null ? (board.auction ? (board.auction.seller === 0 ? "You’re selling" : `${label(board.auction.seller)} is selling`) : "The bank") : `${label(board.turn)} · ${board.phase === "scoring" ? "next seller" : "active seat"}`}</p>
+      <p class="turn">{board.turn == null ? (board.auction ? (board.auction.seller === viewerSeat ? "You’re selling" : `${label(board.auction.seller)} is selling`) : "The bank") : `${label(board.turn)} · ${board.phase === "scoring" ? "next seller" : "active seat"}`}</p>
       <h2 id="auction-heading">{phases[board.phase][0]}</h2>
       <p aria-live="polite">{phases[board.phase][1]}</p>
 
@@ -156,18 +158,18 @@
             {/if}
           {/each}
         </ul>
-        <p>Your bank payout <strong>{cash(summary.payouts[0])}</strong></p>
-        <button class="action" disabled={busy} onclick={() => send("advance")}>{board.season === 4 || board.players.every(player => player.handCount === 0) ? "Reveal results" : "Continue to next season"}</button>
+        <p>Your bank payout <strong>{cash(summary.payouts[viewerSeat])}</strong></p>
+        {#if board.legal.advance}<button class="action" disabled={busy} onclick={() => send("advance")}>{board.season === 4 || board.players.every(player => player.handCount === 0) ? "Reveal results" : "Continue to next season"}</button>{/if}
       {/if}
 
       {#if board.phase === "complete"}
-        <p class="winner">{winners.map(player => label(player.seat)).join(" and ")} {winners.length > 1 ? "tie" : winners[0].seat === 0 ? "win" : "wins"} with {cash(winners[0].cash)}.</p>
+        <p class="winner">{winners.map(player => label(player.seat)).join(" and ")} {winners.length > 1 ? "tie" : winners[0].seat === viewerSeat ? "win" : "wins"} with {cash(winners[0].cash)}.</p>
         <ol class="standings" aria-label="Final cash balances">
           {#each standings as player (player.seat)}
             <li><span>{label(player.seat)}</span><strong>{cash(player.cash)}</strong></li>
           {/each}
         </ol>
-        <a href={lobbyUrl}>Return to practice tables</a>
+        <a href={lobbyUrl}>{replay ? "Return to live table" : board.viewerSeat != null ? "Return to lobby" : "Return to practice tables"}</a>
       {/if}
     </section>
 
@@ -179,7 +181,7 @@
       <section class="hand" aria-labelledby="hand-heading">
         <div class="heading hand-heading">
           <h2 id="hand-heading">Your hand <small>{board.hand.length} paintings</small></h2>
-          <strong>{cash(board.players[0].cash)} available</strong>
+          <strong>{cash(board.players[viewerSeat].cash)} available</strong>
         </div>
         <div class="cards">
           {#each board.hand as card (card.id)}
@@ -215,6 +217,25 @@
         </ol>
       </section>
     {/if}
+    {#if board.bidHistory}
+      <details class="ledger">
+        <summary>Recorded bidding and outcomes</summary>
+        {#if board.bidHistory.length === 0}<p>No bidding is visible yet.</p>{/if}
+        <ol>
+          {#each board.bidHistory as entry (entry.sequence)}
+            <li>Action {entry.sequence} · Auction {entry.auction} · {label(entry.seat)} · {entry.action}{entry.amount != null ? ` ${cash(entry.amount)}` : ""}</li>
+          {/each}
+        </ol>
+        {#if board.settlements.length}
+          <h2>Auction outcomes</h2>
+          <ul>
+            {#each board.settlements as outcome (outcome.auction)}
+              <li>Auction {outcome.auction} · {outcome.outcome === "unsold" ? "Unsold · season ended" : `${label(outcome.winner)} acquired the lot for ${cash(outcome.amount)}`}</li>
+            {/each}
+          </ul>
+        {/if}
+      </details>
+    {/if}
   </article>
 {/if}
 
@@ -231,11 +252,12 @@
   .hand { grid-area: hand; }
   .seats { grid-area: seats; }
   .activity { grid-area: activity; }
+  .ledger { grid-column: 1 / -1; }
   .practice a { color: var(--oak-link); }
   .heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
   .heading h1, .practice h2, .winner { font-family: Fraunces, Georgia, serif; }
   .heading h1 { margin: .15rem 0; font-size: clamp(2.2rem, 5vw, 3.45rem); line-height: 1; }
-  .auction, .market, .hand, .activity, .seats article {
+  .auction, .market, .hand, .activity, .ledger, .seats article {
     background: var(--oak-outer); border: 1px solid #b0926b99; border-radius: var(--oak-radius-container);
     padding: clamp(.7rem, 2.4vw, 1.25rem); min-width: 0;
   }
