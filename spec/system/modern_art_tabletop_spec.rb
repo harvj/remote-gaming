@@ -5,6 +5,36 @@ RSpec.describe "Modern Art tabletop replay", type: :system do
 
   after { Warden.test_reset! }
 
+  it "shows the recorded final cash for kesir-ample-gifa-ghnw on the completed tabletop and replay fallback" do
+    game = create(:game, :modern_art)
+    table = game.sessions.create!(uid: "kesir-ample-gifa-ghnw", state: "completed")
+    names = [ "Jim Harvey", "Robert McMurray", "Bob McMurray" ]
+    scores = [ 543, 658, 586 ]
+    members = names.map { |name| create(:user, name: name) }
+    players = members.map.with_index do |member, index|
+      table.all_players.create!(user: member, game_id: game.id, action_phase: "idle",
+        turn_order: index + 1, score: scores[index], winner: index == 1)
+    end
+    login_as(members.first, scope: :user)
+
+    [ game_session_path(table.uid), session_replay_path(table.uid) ].each do |path|
+      visit path
+      within("ol[aria-label='Recorded final cash standings']") do
+        expect(all("li").map { |row| row.text.squish }).to eq([ "Jim Harvey $543k", "Robert McMurray · Winner $658k", "Bob McMurray $586k" ])
+      end
+      expect(page).to have_css(".hand-heading strong", text: "Final cash · $543k")
+      expect(page).to have_text("Bid history Not recorded")
+      expect(page).to have_no_text("Final cash standings Not recorded")
+      players.each_with_index do |player, index|
+        within(find(".seats article", text: names[index])) do
+          expect(page).to have_css(".badge.black", exact_text: scores[index].to_s)
+          expect(page).to have_text("Final cash $#{scores[index]}k")
+        end
+        expect(player.reload.score).to eq(scores[index])
+      end
+    end
+  end
+
   it "shares card faces across live and historical boards without exposing other hands or enabling gameplay in replay" do
     game = create(:game, :modern_art)
     table = GameSession::Create.!(game).subject

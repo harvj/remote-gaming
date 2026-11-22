@@ -50,6 +50,8 @@
     complete: ["Final results", "The museum with the most cash wins."]
   }
   const cash = value => `$${value}k`
+  const recordedCash = value => value == null ? "Not recorded" : cash(value)
+  const historicalViewer = $derived(board.historical ? board.players.find(player => player.seat === board.viewerSeat) : null)
   const label = seat => board.names[seat]
   const viewerSeat = $derived(board.viewerSeat ?? 0)
   const bounds = $derived(board.legal.price ?? board.legal.bid)
@@ -213,12 +215,12 @@
       {#if board.historical && board.concluded}
         <div class="historical-results">
           <h2>Recorded results</h2>
-          <ol class="standings" aria-label="Recorded standings">
+          <p>Final cash</p>
+          <ol class="standings" aria-label="Recorded final cash standings">
             {#each board.players as player (player.seat)}
-              <li><span>{player.name}{player.winner ? " · Winner" : ""}</span><strong>{player.score == null ? "Score not recorded" : player.score}</strong></li>
+              <li><span>{player.name}{player.winner ? " · Winner" : ""}</span><strong>{recordedCash(player.finalCash)}</strong></li>
             {/each}
           </ol>
-          <p>Final cash standings <strong>Not recorded</strong></p>
         </div>
       {/if}
     </section>
@@ -231,7 +233,7 @@
       <section class="hand" aria-labelledby="hand-heading">
         <div class="heading hand-heading">
           <h2 id="hand-heading">Your hand <small>{board.hand.length} paintings</small></h2>
-          {#if board.historical}<strong>Cash balance · Not recorded</strong>{:else}<strong>{cash(board.players[viewerSeat].cash)} available</strong>{/if}
+          {#if board.historical}<strong>{board.concluded ? "Final cash" : "Cash balance"} · {recordedCash(historicalViewer?.finalCash)}</strong>{:else}<strong>{cash(board.players[viewerSeat].cash)} available</strong>{/if}
         </div>
         {#if board.historical && board.hand.length > 1}
           <div class="hand-options">
@@ -263,7 +265,7 @@
             <h2>{label(player.seat)}</h2>
             <ModernArtPlayerBadges metadata={player.badges} />
             {#if board.historical}
-              <p>{player.handCount ?? "Not recorded"} in hand · Cash <strong>Not recorded</strong></p>
+              <p>{player.handCount ?? "Not recorded"} in hand · {board.concluded ? "Final cash" : "Cash"} <strong>{recordedCash(player.finalCash)}</strong></p>
               <p>{player.holdings.length > 0 ? "Recorded acquisitions" : "Acquisitions · Not recorded"}</p>
               {#if player.hand?.length}
                 <details>

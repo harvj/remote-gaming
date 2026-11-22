@@ -121,6 +121,7 @@ RSpec.describe "Modern Art multiplayer", type: :system do
     expect(table.reload).to be_completed
     expect(table.transition_actions).to eq(%w[started season_one season_two season_three season_four completed])
 
+    before_scores = table.frames.last.sequence
     members.each_with_index do |member, index|
       using_session(member.id) do
         expect(page).to have_text("Completed")
@@ -133,5 +134,16 @@ RSpec.describe "Modern Art multiplayer", type: :system do
 
     expect(table.reload.winner.user).to eq(members.last)
     expect(SessionFrame::Replay.call(table.frames.order(:sequence))).to eq(SessionFrame::Snapshot.call(table))
+
+    using_session(members.first.id) do
+      standings = "ol[aria-label='Recorded final cash standings']"
+      visit session_replay_path(table.uid, frame: before_scores)
+      expect(page).to have_css("#{standings} li strong", text: "Not recorded", count: 3)
+      visit session_replay_path(table.uid, frame: table.frames.last.sequence)
+      expect(find(standings)).to have_text("$32k")
+      expect(find(standings)).to have_no_text("Not recorded")
+      visit session_replay_path(table.uid, frame: 1)
+      expect(page).to have_no_css(standings)
+    end
   end
 end
