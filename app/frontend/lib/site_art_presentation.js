@@ -4,6 +4,10 @@ const hex = value => typeof value === "string" && value.length === 7 && /^#[0-9a
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value)
 const shadowBounds = { opacity_percent: [0, 100], blur_px: [0, 8], x_px: [-4, 4], y_px: [-4, 4] }
 const backingBounds = { opacity_percent: [0, 50] }
+// Approved Remote Gaming design. The declaration applies to all artwork roles.
+export const presentationOverrides = Object.freeze({
+  default: Object.freeze({ text_shadow: "none" })
+})
 const legacyColors = { light: "#FFF3DE", dark: "#243B44" }
 
 function effect(value, bounds) {
@@ -43,10 +47,12 @@ export function presentationFor(asset) {
 
 export function applyPresentation(elements, asset) {
   const presentation = presentationFor(asset)
+  const shadow = asset && presentationOverrides.default.text_shadow
   for (const role of roles) {
     if (!elements[role]) continue
     for (const property of ["--art-foreground", "--art-text-shadow", "--art-backing"]) {
-      const value = presentation[role][property]
+      const value = property === "--art-text-shadow" && shadow === "none"
+        ? shadow : presentation[role][property]
       if (value) elements[role].style.setProperty(property, value)
       else elements[role].style.removeProperty(property)
     }
