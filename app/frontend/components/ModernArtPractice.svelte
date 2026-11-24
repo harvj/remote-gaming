@@ -16,6 +16,10 @@
   let busy = $state(false)
   let message = $state("")
   let unavailable = $state(false)
+  let selectedPublicSeat = $state(null)
+  const publicPlayer = $derived(board.publicHands
+    ? board.players.find(player => player.seat === selectedPublicSeat) ?? board.players[0] : null)
+  const visibleHand = $derived(board.publicHistory ? publicPlayer?.hand ?? [] : board.hand)
   const artists = [
     ["lite_metal", "Lite Metal", "yellow"], ["yoko", "Yoko", "light-green"],
     ["cristin_p", "Cristin P", "dark-pink"], ["karl_gitter", "Karl Gitter", "light-purple"],
@@ -119,7 +123,7 @@
   <article class="practice tabletop" class:complete={board.phase === "complete"} aria-label="Modern Art tabletop">
     <header class="heading">
       <div>
-        {#if lobbyUrl}<a href={lobbyUrl}>{board.historical ? "Modern Art lobby" : replay ? "Live table" : board.viewerSeat != null ? "Modern Art lobby" : "Practice tables"}</a>{/if}
+        {#if lobbyUrl}<a href={lobbyUrl}>{board.publicHistory ? "Historical games" : board.historical ? "Modern Art lobby" : replay ? "Live table" : board.viewerSeat != null ? "Modern Art lobby" : "Practice tables"}</a>{/if}
         <h1>Modern Art</h1>
       </div>
       <button type="button" data-modern-art-rules-trigger aria-haspopup="dialog" aria-controls="modern-art-rules-drawer">Game Rules</button>
@@ -131,7 +135,8 @@
       {#if board.historical}
         <p class="turn">Historical record · Read only</p>
         <h2 id="auction-heading">Auction table</h2>
-        {#if !board.completeReplay}<p>The available record cannot reconstruct a complete deterministic replay.</p>{/if}
+        {#if !board.completeReplay}<p>The available record cannot reconstruct a complete deterministic replay.</p>
+        {:else if board.publicHistory}<p>This tabletop shows the completed game and its published historical records.</p>{/if}
         {#if !board.auction.cards.length}<p>Recorded offer <strong>Not recorded</strong></p>{/if}
         {#if board.turn != null}<p>Recorded active seat · {label(board.turn)}</p>{/if}
         <p>Bid history <strong>Not recorded</strong></p>
@@ -201,7 +206,7 @@
           <p>Final cash</p>
           <ol class="standings" aria-label="Recorded final cash standings">
             {#each board.players as player (player.seat)}
-              <li><span>{player.name}{player.winner ? " · Winner" : ""}</span><strong>{recordedCash(player.finalCash)}</strong></li>
+              <li><span>{player.name}{player.winner ? " · Winner" : ""}</span><strong>{board.publicHistory && !board.publicFinalCash ? "Unavailable" : recordedCash(player.finalCash)}</strong></li>
             {/each}
           </ol>
         </div>
@@ -215,10 +220,23 @@
     {#if board.phase !== "complete"}
       <section class="hand" aria-labelledby="hand-heading">
         <div class="heading hand-heading">
-          <h2 id="hand-heading">Your hand <small>{board.hand.length} paintings</small></h2>
-          {#if board.historical}<strong>{board.concluded ? "Final cash" : "Cash balance"} · {recordedCash(historicalViewer?.finalCash)}</strong>{:else}<strong>{cash(board.players[viewerSeat].cash)} available</strong>{/if}
+          <h2 id="hand-heading">{board.publicHistory ? "Recorded hands" : "Your hand"}
+            {#if !board.publicHistory || publicPlayer?.hand}<small>{visibleHand.length} paintings</small>{/if}
+          </h2>
+          {#if board.publicHistory}
+            {#if publicPlayer?.finalCash != null}<strong>Final cash · {cash(publicPlayer.finalCash)}</strong>{/if}
+          {:else if board.historical}<strong>{board.concluded ? "Final cash" : "Cash balance"} · {recordedCash(historicalViewer?.finalCash)}</strong>{:else}<strong>{cash(board.players[viewerSeat].cash)} available</strong>{/if}
         </div>
-        <ModernArtHand {uid} cards={board.hand} known={!board.historical || board.handKnown}>
+        {#if board.publicHands && publicPlayer}
+          <label class="hand-player">Player
+            <select value={publicPlayer.seat} onchange={(event) => selectedPublicSeat = Number(event.currentTarget.value)}>
+              {#each board.players as player (player.seat)}
+                <option value={player.seat}>{player.name}</option>
+              {/each}
+            </select>
+          </label>
+        {/if}
+        <ModernArtHand {uid} cards={visibleHand} known={board.publicHistory ? !!publicPlayer?.hand : !board.historical || board.handKnown}>
           {#snippet children(groups)}
             {#each groups as [group, cards] (group)}
               {#if group}<h3>{group}</h3>{/if}
@@ -231,7 +249,8 @@
             {/each}
           {/snippet}
         </ModernArtHand>
-        {#if board.historical && !board.handKnown}<p>Hand <strong>Not recorded</strong></p>{:else if board.hand.length === 0}<p>{board.historical ? "No paintings recorded in this hand." : "No cards in hand. You can still bid when eligible."}</p>{/if}
+        {#if board.publicHistory && !board.publicHands}<p>Recorded hands are unavailable for public viewing.</p>
+        {:else if board.publicHistory ? !publicPlayer?.hand : board.historical && !board.handKnown}<p>Hand <strong>Not recorded</strong></p>{:else if visibleHand.length === 0}<p>{board.historical ? "No paintings recorded in this hand." : "No cards in hand. You can still bid when eligible."}</p>{/if}
       </section>
 
       <section class="seats" aria-label="Museums">
@@ -240,9 +259,9 @@
             <h2>{label(player.seat)}</h2>
             <ModernArtPlayerBadges metadata={player.badges} />
             {#if board.historical}
-              <p>{player.handCount ?? "Not recorded"} in hand · {board.concluded ? "Final cash" : "Cash"} <strong>{recordedCash(player.finalCash)}</strong></p>
+              <p>{#if !board.publicHistory || board.publicHands}{player.handCount ?? "Not recorded"} in hand · {/if}{board.concluded ? "Final cash" : "Cash"} <strong>{board.publicHistory && !board.publicFinalCash ? "Unavailable" : recordedCash(player.finalCash)}</strong></p>
               <p>{player.holdings.length > 0 ? "Recorded acquisitions" : "Acquisitions · Not recorded"}</p>
-              {#if player.hand?.length}
+              {#if !board.publicHistory && player.hand?.length}
                 <details>
                   <summary>Recorded hand</summary>
                   <div class="cards">{#each player.hand as card (card.id)}<ModernArtCard {card} />{/each}</div>
@@ -265,8 +284,10 @@
 
     {#if board.recent.length || board.historical}
       <section class="activity">
-        <h2>Recent actions</h2>
-        {#if board.historical}<p>Only existing frame references are shown. A complete action sequence was not recorded.</p>{/if}
+        <h2>{board.publicHistory ? "Recorded history" : "Recent actions"}</h2>
+        {#if board.publicHistory}
+          <p>{board.publicEvents ? "Recorded paintings and available frame references appear here." : "Recorded history is unavailable for public viewing."}</p>
+        {:else if board.historical}<p>Only existing frame references are shown. A complete action sequence was not recorded.</p>{/if}
         <ul class="numbered-actions">
           {#each [...board.recent].reverse() as event}
             <li data-action-number={event.number}><strong>{event.number ? `#${event.number}` : event.frame ? `Frame ${event.frame}` : ""}</strong> {describe(event)}</li>
@@ -341,11 +362,13 @@
   .lot, .bid-form, .actions:not(:empty), .cards { margin-block-start: .75rem; }
   .bid-form { align-items: end; }
   .bid-form label { display: grid; gap: .25rem; }
-  .practice button:not([data-card-id]), .bid-form input {
+  .practice button:not([data-card-id]), .bid-form input, .hand-player select {
     min-height: 44px; padding: .45rem .65rem; border: 1px solid var(--oak-line);
     border-radius: var(--oak-radius-control); color: var(--oak-text); background: #493628; font: inherit;
   }
   .bid-form input { width: 7rem; }
+  .hand-player { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .5rem; }
+  .hand-player select { max-width: 100%; }
   .practice button.action { background: #efd29f; color: #2c1b12; font-weight: 700; }
   .practice button:disabled { cursor: wait; }
   .marker { display: inline-block; width: .56em; height: .56em; border-radius: 50%; margin-inline-end: .42em; vertical-align: .12em; }

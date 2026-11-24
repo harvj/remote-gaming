@@ -1,0 +1,26 @@
+<main id="game-directory" class="directory-content historical-explorer" data-art-role="default" tabindex="-1">
+  <header>
+    <h1>Modern Art</h1>
+    <p>Explore completed games, their recorded paintings, and the final results.</p>
+  </header>
+  <h2>Historical games</h2>
+  <% if @games.empty? %>
+    <p>No historical games are available yet.</p>
+  <% else %>
+    <ul class="historical-games" role="list">
+      <% @games.each do |game| %>
+        <li>
+          <h3><%= link_to l(game.fetch(:date), format: :long), historical_explorer_session_path(game.fetch(:uid)) %></h3>
+          <ul role="list">
+            <% game.fetch(:players).each do |player| %>
+              <li>
+                <span><%= player.fetch(:name) %><%= " · Winner" if player.fetch(:winner) %></span>
+                <% unless player[:score].nil? %><strong><%= "$#{player[:score]}k" %></strong><% end %>
+              </li>
+            <% end %>
+          </ul>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</main>

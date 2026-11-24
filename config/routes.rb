@@ -2,11 +2,20 @@ Rails.application.routes.draw do
   get "/up", to: "rails/health#show"
   get "/ready", to: "directory#ready"
 
+  if HistoricalExplorer.enabled? || Rails.env.test?
+    constraints ->(request) { HistoricalExplorer.available_on?(request.host) } do
+      get "history", to: "historical_explorer#index", as: :historical_explorer
+      get "history/:uid", to: "historical_explorer#show", as: :historical_explorer_session
+      get "/", to: "historical_explorer#index", constraints: ->(_request) { !ModernArtStaging.enabled? }
+    end
+  end
+
   login_host = ->(request) do
     next true unless Rails.env.production?
     next ModernArtStaging::HOSTS.include?(request.host) if ModernArtStaging.enabled?
 
-    GameDirectory::DIRECTORY_HOSTS.include?(request.host) || GameDirectory.new.internal_game(request.host).present?
+    HistoricalExplorer.available_on?(request.host) || GameDirectory::DIRECTORY_HOSTS.include?(request.host) ||
+      GameDirectory.new.internal_game(request.host).present?
   end
   constraints login_host do
     get "login", to: "auth#start", as: :login

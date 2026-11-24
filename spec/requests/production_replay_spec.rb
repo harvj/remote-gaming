@@ -2,9 +2,10 @@ require "rails_helper"
 require "open3"
 
 RSpec.describe "Production replay route boundaries", type: :request do
-  def production_routes(enable_replay, admin: false)
+  def production_routes(enable_replay, admin: false, explorer: false)
     environment = {
       "RAILS_ENV" => "production",
+      "REMOTE_GAMING_HISTORICAL_EXPLORER" => explorer ? "1" : nil,
       "DATABASE_URL" => nil,
       "SECRET_KEY_BASE_DUMMY" => "1",
       "REMOTE_GAMING_PRIVATE_STAGING" => nil,
@@ -31,6 +32,13 @@ RSpec.describe "Production replay route boundaries", type: :request do
 
   it "leaves the public directory's production routes alone by default" do
     expect(production_routes(false)).not_to match(/session_replays#|session_branches#|dummy_accesses#|game_sessions#|historical_users#|modern_art_practice_tables#/)
+  end
+
+  it "adds only public historical GET routes with the explorer enabled in production" do
+    routes = production_routes(false, explorer: true)
+    expect(routes).to match(/GET +\/history.*historical_explorer#index/)
+    expect(routes).to match(/GET +\/history\/:uid.*historical_explorer#show/)
+    expect(routes).not_to match(/(?:POST|PATCH|PUT|DELETE).*historical_explorer#|game_sessions#|players#|session_cards#|session_branches#|modern_art_practice_tables#|session_replays#|historical_users#|\/cable/)
   end
 
   it "mounts owner administration independently of replay and gameplay" do

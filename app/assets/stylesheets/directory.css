@@ -141,3 +141,23 @@
 
 [data-shell-applications] ul { margin: 0; padding: 0; list-style: none; }
 [data-shell-applications] strong { display: block; padding: .5rem .75rem 0; }
+
+.historical-games, .historical-games ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.historical-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
+  gap: .75rem;
+}
+.historical-games > li {
+  border: 1px solid var(--oak-line);
+  border-radius: var(--oak-radius-container);
+  background: var(--oak-outer);
+  padding: 1rem;
+  overflow-wrap: anywhere;
+}
+.historical-games h3 { margin: 0 0 .5rem; }
+.historical-games li li { display: flex; justify-content: space-between; gap: .5rem; }

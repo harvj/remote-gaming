@@ -1,0 +1,5 @@
+<main id="game-directory" class="directory-content replay-content" data-art-role="default" tabindex="-1">
+  <p>Completed <time datetime="<%= @date.iso8601 %>"><%= l(@date, format: :long) %></time></p>
+  <%= render "shared/modern_art_digital_table", board: @board, uid: @uid,
+    endpoint: nil, lobby_url: historical_explorer_path, replay: true %>
+</main>

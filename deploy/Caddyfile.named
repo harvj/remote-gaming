@@ -1,5 +1,5 @@
 # Import alongside the existing Arkham block.
-radioactivita.com, gaming.harvj.com, pandemic.radioactivita.com, modernart.radioactivita.com {
+radioactivita.com, gaming.harvj.com, pandemic.radioactivita.com, modernart.radioactivita.com, modern-art.radioactivita.com {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:3012
 }

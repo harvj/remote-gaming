@@ -37,7 +37,7 @@ def route_for(host):
 expected = {
     "arkham.radioactivita.com": ["unix//var/www/arkham/shared/tmp/sockets/puma.sock"],
     **dict.fromkeys(
-        ("radioactivita.com", "gaming.harvj.com", "pandemic.radioactivita.com", "modernart.radioactivita.com"),
+        ("radioactivita.com", "gaming.harvj.com", "pandemic.radioactivita.com", "modernart.radioactivita.com", "modern-art.radioactivita.com"),
         ["127.0.0.1:3012"],
     ),
 }

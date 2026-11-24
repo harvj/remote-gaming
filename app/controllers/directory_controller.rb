@@ -7,7 +7,14 @@ class DirectoryController < ActionController::Base
     directory = GameDirectory.new
     if GameDirectory::DIRECTORY_HOSTS.include?(request.host) ||
         (!Rails.env.production? && !request.host.end_with?(".#{GameDirectory::DOMAIN}"))
-      @games = directory.games
+      @games = directory.games.map do |game|
+        if game.fetch(:slug) == "modernart" && HistoricalExplorer.available_on?(HistoricalExplorer::HOST)
+          game.merge(available: true, destination: "https://#{HistoricalExplorer::HOST}/",
+            description: "Explore completed Modern Art games, paintings, and recorded results.")
+        else
+          game
+        end
+      end
       @title = "Remote Gaming"
     elsif (game = directory.internal_game(request.host))
       @games = [ game ]

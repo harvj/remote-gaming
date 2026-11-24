@@ -1,11 +1,12 @@
 class Games::ModernArt::Board
-  def initialize(state, events, viewer)
+  def initialize(state, events, viewer, reveal_completed_hands: false)
     @session = state.fetch("session")
     @players = state.fetch("players").reject { |player| player["removed_at"] }
       .sort_by { |player| [ player["turn_order"] || 0, player.fetch("id") ] }
     @cards = state.fetch("cards")
     @events = events
-    @viewer = @players.find { |player| player["user_id"] == viewer.id }
+    @viewer = @players.find { |player| player["user_id"] == viewer.id } if viewer
+    @reveal_completed_hands = reveal_completed_hands
   end
 
   def call
@@ -50,7 +51,9 @@ class Games::ModernArt::Board
   end
 
   def visible_hand?(player_id)
-    @viewer && (player_id == @viewer["id"] || (player_id && @session["completed_at"]))
+    return true if @viewer && player_id == @viewer["id"]
+
+    player_id && @session["completed_at"] && (@viewer || @reveal_completed_hands)
   end
 
   def reported_sales(painted)

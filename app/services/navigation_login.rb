@@ -17,7 +17,7 @@ module NavigationLogin
 
     case host
     when "gaming.harvj.com" then "https://gaming.harvj.com/"
-    when "radioactivita.com", "modernart.radioactivita.com", "pandemic.radioactivita.com" then "https://radioactivita.com/"
+    when "radioactivita.com", HistoricalExplorer::HOST, "modernart.radioactivita.com", "pandemic.radioactivita.com" then "https://radioactivita.com/"
     else "/"
     end
   end
