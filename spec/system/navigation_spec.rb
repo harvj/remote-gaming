@@ -10,7 +10,7 @@ RSpec.describe "Remote Gaming navigation", type: :system do
     widths.each do |width|
       viewport(width)
       visit root_path
-      expect(page).to have_link("remote-gaming.", href: "/")
+      expect(page).to have_link("remote gaming", href: "/")
       expect(page).to have_link("Log In", href: "/login")
       expect(page).to have_link("Jim Harvey", href: "https://harvj.com")
       expect(page.evaluate_script("document.documentElement.scrollWidth")).to eq(width)
@@ -24,10 +24,10 @@ RSpec.describe "Remote Gaming navigation", type: :system do
       viewport(width)
       visit game_session_path(table.uid)
       within("header.navbar") do
-        expect(page).to have_link("remote-gaming.", href: "/")
+        expect(page).to have_link("remote gaming", href: "/")
         expect(page).to have_text("Logged in as")
         expect(page).to have_no_link("Log In")
-        click_link "remote-gaming."
+        click_link "remote gaming"
       end
       expect(page).to have_current_path(root_path)
       expect(page).to have_css(".directory-apps")

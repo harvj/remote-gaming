@@ -2,6 +2,7 @@
   import { watchApplications } from "../shell_applications.js";
   import { onMount, onDestroy } from "svelte";
 
+  export let wordmark;
   export let directoryHome = "/";
   export let currentUser = null;
   export let currentGame = null;
@@ -49,7 +50,7 @@
 
 <div class="nav-inner shell-header-row">
   <div class="shell-brand">
-    <a class="brand shell-wordmark" href={directoryHome}>remote-gaming.</a>
+    <a class="brand shell-wordmark" href={directoryHome}>{wordmark}</a>
   </div>
 
   {#if currentGame && currentUser}

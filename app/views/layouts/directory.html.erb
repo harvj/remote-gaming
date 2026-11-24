@@ -17,9 +17,7 @@
     <a class="shell-skip" href="#game-directory">Skip to content</a>
     <header class="directory-header shell-header-row" data-art-role="top">
       <%= content_tag(@game_page ? :div : :h1, class: "directory-brand shell-brand") do %>
-        <%= link_to NavigationLogin.directory_home(request.host), class: "directory-wordmark" do %>
-          remote-gaming<span>.</span>
-        <% end %>
+        <%= link_to NavigationLogin::WORDMARK, NavigationLogin.directory_home(request.host), class: "directory-wordmark" %>
       <% end %>
       <%= render "directory/navigation" %>
     </header>

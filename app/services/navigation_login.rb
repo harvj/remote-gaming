@@ -1,4 +1,5 @@
 module NavigationLogin
+  WORDMARK = "remote gaming".freeze
   RETURN_PATH = %r{\A(?:/|/modern_art|/replay|/admin/historical-users(?:/\d+)?|/s/[a-zA-Z0-9_-]+(?:/replay(?:\?frame=\d+)?)?)\z}
 
   def self.return_path(value)

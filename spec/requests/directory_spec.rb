@@ -9,7 +9,7 @@ RSpec.describe "Game directory", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Not yet available")
       page = Nokogiri::HTML5(response.body)
-      expect(page.css("h1").map { |heading| heading.text.strip }).to eq([ "remote-gaming." ])
+      expect(page.css("h1").map { |heading| heading.text.strip }).to eq([ "remote gaming" ])
       expect(page.css("main .directory-cards > li").size).to eq(3)
       expect(page.at_css("#site-art-icon")["data-art-id"]).to eq("remote-gaming.favicon")
       expect(page.at_css("main").text).not_to include("What are we playing?")
