@@ -6,7 +6,9 @@ Rails.application.routes.draw do
     constraints ->(request) { HistoricalExplorer.available_on?(request.host) } do
       get "history", to: "historical_explorer#index", as: :historical_explorer
       get "history/:uid", to: "historical_explorer#show", as: :historical_explorer_session
-      get "/", to: "historical_explorer#index", constraints: ->(_request) { !ModernArtStaging.enabled? }
+    end
+    constraints ->(request) { !ModernArtStaging.enabled? && HistoricalExplorer.available_on?(request.host) } do
+      get "/", to: "historical_explorer#index"
     end
   end
 
