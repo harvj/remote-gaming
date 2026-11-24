@@ -53,7 +53,8 @@ RSpec.describe "Public historical tabletop", type: :system do
         check "Group by artist"
         expect(page).to have_css("[data-card-id]", count: 5)
       end
-      expect(page.evaluate_script("document.documentElement.scrollWidth")).to eq(width)
+      geometry = page.evaluate_script("[innerWidth, document.documentElement.scrollWidth === document.documentElement.clientWidth]")
+      expect(geometry).to eq([ width, true ])
       screenshot("tabletop", width)
       click_button "Game Rules"
       expect(page).to have_css("dialog[open]", text: "Modern Art rules")
