@@ -106,3 +106,18 @@ Inspect the selected journal and the root-only backup directory after any failur
 Install the reviewed Infrastructure runtime using its published contract and pin the reviewed Infrastructure source revision. Place `application_shell_gate.py`, `application_shell_registry_cache.py`, and `application_shell_renewal.py` in `/usr/local/lib/application-shell/lib`. Install its `deploy/keys/application-shell-publisher*.pem` under `/usr/local/lib/application-shell/deploy/keys`. Install this application's `deploy/refresh-shell-registry` at `/usr/local/lib/application-shell/refresh-remote-gaming-registry`. All installed files and their directories must be root-owned and inaccessible to application writers. Install the registry service and timer under `/etc/systemd/system`. After `daemon-reload`, start the respective service and enable its timer using instance `staging` or `production`. Check the service journal and its state directory before accepting the environment. The timer normally refreshes every five minutes with jitter and retries on the next interval. A failed refresh leaves the last verified snapshot in place. Each environment has its own root-owned state and Rails performs no publication network requests.
 
 Set `APPROVED_ARTIFACT_SHA256` to the reviewed archive digest for each stage. Production additionally requires `APPLICATION_SHELL_REVIEW` and `APPLICATION_SHELL_STATE` for the exact reviewed commit and a durable local pointer checkpoint. Use the Infrastructure `application-shell-preflight` executable, supplying its path via `APPLICATION_SHELL_PREFLIGHT` if it is not on PATH. A failure stops deployment before contacting the production host. Keep ordinary rollback and recovery on the app-owned path.
+
+## REL-01
+
+Before installing the updated production helper, install the reviewed
+Infrastructure checker at `/usr/local/libexec/harvj/release-integrity`.
+Configure the helper's execution identity with read-only Git and GitHub branch
+metadata access and pinned GitHub SSH host keys. Protect `main` against forced
+updates and deletion. Verify one successful and one rejected candidate in the
+installed environment before relying on the helper.
+
+Production records the exact ancestry observation in the protected release as
+`.release-integrity.json`. Include its main SHA, source SHA and artifact digest
+in the deployment receipt alongside the release tag and independent serving
+check. Staging and the existing immutable rollback command keep their existing
+behavior.

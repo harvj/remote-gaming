@@ -171,6 +171,11 @@ deploy_release() {
   printf '{"schema_version":1,"application":"remote-gaming","kind":"candidate","target_version":"%s","candidate_number":%s,"source_sha":"%s","artifact_sha256":"%s"}\n' \
     "${BASH_REMATCH[1]}" "${BASH_REMATCH[5]}" "$sha" "$digest" > "$build/.release-candidate.json"
   install -m 0644 "$build/.release-candidate.json" "$build/app/.release-candidate.json"
+  if [[ $environment == production ]]; then
+    /usr/local/libexec/harvj/release-integrity harvj/remote-gaming "$sha" "$digest" \
+      >"$build/rel-01.json" || fail "REL-01 could not verify the exact artifact against protected main"
+    install -m 0600 "$build/rel-01.json" "$build/app/.release-integrity.json"
+  fi
   install -d -m 0750 -o "$role" -g "$role" "$build/app/tmp" "$build/app/log"
   chown -hR "$role:$role" "$build/app/tmp"
   ln -s "$base/shared/storage" "$build/app/storage"
